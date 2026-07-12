@@ -1,0 +1,27 @@
+#!/bin/bash
+# Apply seahub's database migrations. Invoked by seafile-migrate when seahub is
+# installed. Idempotent: Django tracks applied migrations in the database, so this
+# is a no-op once up to date. Runs from the shipped venv.
+set -euo pipefail
+
+HUB=/usr/lib/seahub
+VENV="$HUB/venv"
+
+export DJANGO_SETTINGS_MODULE=seahub.settings
+export SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
+export SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
+export CCNET_CONF_DIR=/var/lib/seafile/ccnet
+export SEAHUB_DIR="$HUB/seahub"
+export PYTHONPATH="$HUB/seahub:$HUB/seahub/thirdpart:$HUB:/usr/lib/seafile/lib/python3/site-packages:/etc/seafile"
+
+if [ -f /etc/seafile/seafile.env ]; then
+    set -a; . /etc/seafile/seafile.env; set +a
+fi
+
+cd "$HUB/seahub"
+echo "seahub-migrate: applying database migrations"
+"$VENV/bin/python" manage.py migrate --noinput
+# Collect static files (and build the staticfiles manifest) into the writable
+# STATIC_ROOT; a reverse proxy (nginx) serves them under STATIC_URL.
+echo "seahub-migrate: collecting static files"
+"$VENV/bin/python" manage.py collectstatic --noinput -i admin

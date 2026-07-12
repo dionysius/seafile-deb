@@ -1,0 +1,68 @@
+# Please consider only editing this file through systemd drop-in files
+# (e.g. `systemctl edit seafile-migrate`). This will enable you to get
+# updates to this file automatically, without your overrides being lost.
+
+# Refer to the manpage `systemd.unit` for detailed documentation on each option.
+[Unit]
+Description=Seafile database initialisation and upgrade
+Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
+After=network.target
+# When using the MySQL/MariaDB backend on this host, order after it:
+#After=mariadb.service
+#Requires=mariadb.service
+
+[Service]
+## Service execution environment
+EnvironmentFile=-%E/default/seafile-server
+EnvironmentFile=%E/seafile/seafile.env
+Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=LD_LIBRARY_PATH=/usr/lib/seafile/lib
+Environment=PYTHONPATH=/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
+Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
+Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
+Environment=CCNET_CONF_DIR=/var/lib/seafile/ccnet
+# Run once and exit; NO RemainAfterExit, so seaf-server's Requires= re-runs it on
+# every start (including the post-upgrade restart). The script itself decides via
+# the version stamp whether there is any work to do.
+Type=oneshot
+ExecStart=/usr/lib/seafile/bin/seafile-migrate
+WorkingDirectory=/var/lib/seafile
+
+## Permissions and directories
+User=seafile
+Group=seafile
+ConfigurationDirectory=seafile
+ConfigurationDirectoryMode=0750
+# migration writes the databases, the version stamp and the pre-upgrade backups
+StateDirectory=seafile seafile/seafile-data seafile/ccnet seafile/seahub-data seafile/backups
+StateDirectoryMode=0750
+UMask=0027
+
+## Sandboxing and isolation
+# Looser than the daemons: migration forks shell/python upgrade scripts and the
+# sqlite3/mysqldump tools, so it needs a broader profile than seaf-server.
+NoNewPrivileges=true
+RestrictSUIDSGID=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+#:if SYSTEMD_MAJOR >= 257
+ProtectControlGroups=strict
+#:else
+ProtectControlGroups=true
+#:endif
+#:if SYSTEMD_MAJOR >= 257
+PrivateTmp=disconnected
+#:else
+PrivateTmp=true
+#:endif
+# Upgrade scripts run python; leave W^X off.
+MemoryDenyWriteExecute=false
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target

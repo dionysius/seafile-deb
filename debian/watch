@@ -1,0 +1,35 @@
+version=4
+
+# Main upstream: seafile-server. Community edition uses vX.Y.Z-server tags
+# (the parallel vX.Y.Z-pro tags are the proprietary edition and must be ignored).
+opts="filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%@PACKAGE@_\$1.orig.tar.gz%" \
+  https://github.com/haiwen/seafile-server/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
+
+# Components that move in lockstep with seafile-server (same vX.Y.Z-server tag):
+# seahub, seafobj, seafdav, seafevents.
+opts="component=seahub, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seahub-\$1.tar.gz%" \
+  https://github.com/haiwen/seahub/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
+
+opts="component=seafobj, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seafobj-\$1.tar.gz%" \
+  https://github.com/haiwen/seafobj/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
+
+opts="component=seafdav, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seafdav-\$1.tar.gz%" \
+  https://github.com/haiwen/seafdav/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
+
+opts="component=seafevents, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seafevents-\$1.tar.gz%" \
+  https://github.com/haiwen/seafevents/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
+
+# libsearpc and libevhtp are intentionally NOT tracked here. They are frozen build
+# components on their own version streams (3.x, 1.x), always lower than the main
+# version (13.x). uscan compares every component against the main package version
+# and skips anything "not newer", so it cannot fetch them. They are imported as
+# pre-placed component tarballs instead - see the commands in debian/gbp.conf.

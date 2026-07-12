@@ -1,0 +1,18 @@
+# Default settings for seahub. Sourced by the seahub systemd service.
+# Do not set seafile variables here - use /etc/seafile/seafile.env instead.
+
+# seahub's python dependencies are managed at runtime with the bundled uv, which
+# resolves them into a cache/venv under the service's CacheDirectory.
+# more options: https://docs.astral.sh/uv/reference/environment/
+UV_CACHE_DIR=/var/cache/seahub/uv
+UV_PROJECT_ENVIRONMENT=/var/cache/seahub/venv
+# use the distribution python (matches the system seaserv/pysearpc modules)
+UV_PYTHON_PREFERENCE=only-system
+UV_COMPILE_BYTECODE=true
+UV_NO_PROGRESS=true
+
+# number of gunicorn worker processes
+SEAHUB_WORKERS=3
+
+# Timezone (TZ identifier).
+TZ=Etc/UTC

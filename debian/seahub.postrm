@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "purge" ]; then
+  for f in /etc/seafile/seahub_settings.py /etc/seafile/gunicorn.conf.py /etc/default/seahub; do
+    ucf --purge "$f" || true
+    ucfr --purge seahub "$f" || true
+    rm -f "$f" || true
+  done
+  rmdir /etc/seafile 2>/dev/null || true
+  rm -rf /var/cache/seahub || true
+  # /var/lib/seafile (seahub.db, seahub-data) holds user data and is NOT removed.
+fi
+
+#DEBHELPER#

@@ -1,0 +1,3 @@
+/usr/share/seafile-server/seafile.env /etc/seafile/seafile.env
+/usr/share/seafile-server/seafile.conf /etc/seafile/seafile.conf
+/usr/share/seafile-server/seafile-server.default /etc/default/seafile-server

@@ -1,0 +1,2 @@
+usr/lib/*/libsearpc.so.*
+usr/lib/python3/dist-packages/pysearpc

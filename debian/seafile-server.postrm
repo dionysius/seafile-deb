@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "purge" ]; then
+  for f in /etc/seafile/seafile.env /etc/seafile/seafile.conf /etc/default/seafile-server; do
+    ucf --purge "$f" || true
+    ucfr --purge seafile-server "$f" || true
+    rm -f "$f" || true
+  done
+  rmdir /etc/seafile 2>/dev/null || true
+  # /var/lib/seafile (object store, databases, ccnet) holds user data and is
+  # deliberately NOT removed. Delete it manually if you really want to.
+fi
+
+#DEBHELPER#

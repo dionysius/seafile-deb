@@ -1,0 +1,3 @@
+# Grouped package: the shared library and its python bindings ship together under
+# the upstream name rather than a soname-versioned libsearpcN + python3-searpc split.
+package-name-doesnt-match-sonames libsearpc*

@@ -1,0 +1,108 @@
+# Please consider only editing this file through systemd drop-in files
+# (e.g. `systemctl edit seaf-fileserver`). This will enable you to get updates
+# to this file automatically, without your overrides being lost.
+
+# Refer to the manpage `systemd.unit` for detailed documentation on each option.
+[Unit]
+Description=Seafile file server (HTTP upload/download)
+Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
+After=network.target seaf-server.service
+# The file server talks to seaf-server over the RPC pipe and shares its lifecycle.
+Requires=seaf-server.service
+BindsTo=seaf-server.service
+
+# Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
+[Service]
+## Service execution environment
+EnvironmentFile=-%E/default/seafile-server
+EnvironmentFile=%E/seafile/seafile.env
+Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=LD_LIBRARY_PATH=/usr/lib/seafile/lib
+Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
+Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
+# Log to stdout so the journal captures everything (journalctl -u seaf-fileserver).
+Environment=SEAFILE_LOG_TO_STDOUT=true
+# The go file server runs in the foreground; systemd supervises it directly.
+Type=exec
+ExecStart=/usr/lib/seafile/bin/fileserver \
+  -F /etc/seafile \
+  -d /var/lib/seafile/seafile-data \
+  -p /run/seafile
+WorkingDirectory=/var/lib/seafile
+Restart=on-failure
+RestartSec=5s
+
+## Permissions and directories
+User=seafile
+Group=seafile
+# Read config from /etc/seafile and read/write the object store; the RPC pipe dir is
+# created and owned by seaf-server (this unit is bound to it).
+ConfigurationDirectory=seafile
+ConfigurationDirectoryMode=0750
+StateDirectory=seafile seafile/seafile-data
+StateDirectoryMode=0750
+UMask=0027
+
+## Connection and process limits
+LimitNOFILE=1048576
+
+## Sandboxing and isolation
+# An overview is available using `systemd-analyze security seaf-fileserver`.
+AmbientCapabilities=
+CapabilityBoundingSet=
+# Uncomment these to allow the file server to bind to ports in the range 0-1024.
+#AmbientCapabilities=CAP_NET_BIND_SERVICE
+#CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Process restrictions
+NoNewPrivileges=true
+RestrictSUIDSGID=true
+SecureBits=noroot noroot-locked
+
+# Filesystem protection
+ProtectSystem=strict
+ProtectHome=true
+ProtectProc=noaccess
+ProcSubset=pid
+
+# Namespace isolation
+#:if SYSTEMD_MAJOR >= 257
+PrivateTmp=disconnected
+#:else
+PrivateTmp=true
+#:endif
+PrivateDevices=true
+PrivateIPC=true
+#:if SYSTEMD_MAJOR >= 258
+PrivateBPF=true
+#:endif
+
+# Kernel and system protection
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+#:if SYSTEMD_MAJOR >= 257
+ProtectControlGroups=strict
+#:else
+ProtectControlGroups=true
+#:endif
+
+# Execution restrictions
+# The go runtime needs writable+executable memory, so this must stay disabled.
+MemoryDenyWriteExecute=false
+#:if SYSTEMD_MAJOR >= 255
+SetLoginEnvironment=false
+#:endif
+
+# System call and network filtering
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=true
+
+# Cleanup
+RemoveIPC=true
+
+[Install]
+WantedBy=multi-user.target

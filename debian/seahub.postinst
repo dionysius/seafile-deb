@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+  ucf --three-way /usr/share/seahub/seahub_settings.py /etc/seafile/seahub_settings.py
+  ucf --three-way /usr/share/seahub/gunicorn.conf.py /etc/seafile/gunicorn.conf.py
+  ucf --three-way /usr/share/seahub/seahub.default /etc/default/seahub
+  ucfr seahub /etc/seafile/seahub_settings.py
+  ucfr seahub /etc/seafile/gunicorn.conf.py
+  ucfr seahub /etc/default/seahub
+
+  # Generate the Django secret key on first install if none is set.
+  settings=/etc/seafile/seahub_settings.py
+  if [ -f "$settings" ] && grep -q '^SECRET_KEY = ""$' "$settings"; then
+    key=$(od -An -N37 -tx1 /dev/urandom | tr -d ' \n')
+    sed -i "s|^SECRET_KEY = \"\"\$|SECRET_KEY = \"$key\"|" "$settings"
+  fi
+fi
+
+#DEBHELPER#
+
+# The seafile user is provided by seafile-server (a dependency, already configured).
+# seahub_settings.py holds the secret key and must be readable by that user, not world.
+if [ "$1" = "configure" ]; then
+  settings=/etc/seafile/seahub_settings.py
+  if [ -f "$settings" ]; then
+    chown root:seafile "$settings"
+    chmod 0640 "$settings"
+  fi
+fi

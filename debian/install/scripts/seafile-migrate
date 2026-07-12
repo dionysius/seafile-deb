@@ -1,0 +1,196 @@
+#!/bin/bash
+# Initialise or upgrade the seafile/ccnet databases, backing them up first.
+#
+# State model (mirrors upstream's docker upgrade.py, adapted to the FHS layout):
+#   - the installed version is baked into /usr/lib/seafile/version at build time
+#   - the on-disk data version is a stamp file at /var/lib/seafile/current_version
+#   - no stamp + no data  -> initialise the schema
+#   - no stamp + data     -> adopt the existing data (just write the stamp)
+#   - installed == stamp  -> nothing to do
+#   - installed >  stamp  -> back up, run the upgrade scripts, update the stamp
+#   - installed <  stamp  -> downgrade: refuse (restore a backup instead)
+#
+# This handles the ccnet and seafile databases. When seahub is installed it also
+# invokes seahub's own migration step (django), so all migrations run from one place.
+set -euo pipefail
+
+INSTALLDIR=/usr/lib/seafile
+STATEDIR=/var/lib/seafile
+CONFDIR=/etc/seafile
+CCNET="$STATEDIR/ccnet"
+DATA="$STATEDIR/seafile-data"
+STAMP="$STATEDIR/current_version"
+BACKUPS="$STATEDIR/backups"
+
+INSTALLED=$(cat "$INSTALLDIR/version")
+
+# Load the seafile environment (database backend selection, credentials).
+if [ -f "$CONFDIR/seafile.env" ]; then
+    set -a; . "$CONFDIR/seafile.env"; set +a
+fi
+
+# Backend is mysql if seafile.conf says so or the MySQL connection is configured,
+# otherwise the default sqlite.
+backend=sqlite
+if grep -qsiE '^[[:space:]]*type[[:space:]]*=[[:space:]]*mysql' "$CONFDIR/seafile.conf" \
+   || [ -n "${SEAFILE_MYSQL_DB_HOST:-}" ]; then
+    backend=mysql
+fi
+
+log() { echo "seafile-migrate: $*"; }
+
+# --- sqlite helpers ---------------------------------------------------------
+
+sqlite_dbs() {
+    # component-name db-path schema-file (relative to sql/sqlite)
+    echo "groupmgr $CCNET/GroupMgr/groupmgr.db groupmgr.sql"
+    echo "config   $CCNET/misc/config.db       config.sql"
+    echo "org      $CCNET/OrgMgr/orgmgr.db      org.sql"
+    echo "user     $CCNET/PeerMgr/usermgr.db    user.sql"
+    echo "seafile  $DATA/seafile.db             seafile.sql"
+}
+
+init_sqlite() {
+    mkdir -p "$CCNET/GroupMgr" "$CCNET/misc" "$CCNET/OrgMgr" "$CCNET/PeerMgr" "$DATA"
+    sqlite_dbs | while read -r name db sql; do
+        log "creating $name database"
+        sqlite3 "$db" ".read $INSTALLDIR/sql/sqlite/$sql"
+    done
+}
+
+sqlite_initialised() {
+    # consider the data initialised if the main seafile database has tables
+    [ -f "$DATA/seafile.db" ] && [ -n "$(sqlite3 "$DATA/seafile.db" '.tables' 2>/dev/null)" ]
+}
+
+# --- mysql helpers ----------------------------------------------------------
+
+mysql_cmd() {
+    mysql -h"${SEAFILE_MYSQL_DB_HOST:-127.0.0.1}" -P"${SEAFILE_MYSQL_DB_PORT:-3306}" \
+          -u"${SEAFILE_MYSQL_DB_USER:-seafile}" -p"${SEAFILE_MYSQL_DB_PASSWORD:-}" "$@"
+}
+
+init_mysql() {
+    local ccnet_db="${SEAFILE_MYSQL_DB_CCNET_DB_NAME:-ccnet_db}"
+    local seafile_db="${SEAFILE_MYSQL_DB_SEAFILE_DB_NAME:-seafile_db}"
+    log "loading ccnet schema into $ccnet_db"
+    mysql_cmd "$ccnet_db" < "$INSTALLDIR/sql/mysql/ccnet.sql"
+    log "loading seafile schema into $seafile_db"
+    mysql_cmd "$seafile_db" < "$INSTALLDIR/sql/mysql/seafile.sql"
+    # NOTE: the databases and the seafile user/grants must already exist; create
+    # them out of band (see the manual) - this script only loads the schema.
+}
+
+mysql_initialised() {
+    local seafile_db="${SEAFILE_MYSQL_DB_SEAFILE_DB_NAME:-seafile_db}"
+    [ -n "$(mysql_cmd -N -e "SHOW TABLES FROM \`$seafile_db\`" 2>/dev/null)" ]
+}
+
+# --- backup -----------------------------------------------------------------
+
+backup_dbs() {
+    local from="$1" dir
+    dir="$BACKUPS/${from}-$(date +%Y%m%d%H%M%S)"
+    mkdir -p "$dir"
+    if [ "$backend" = sqlite ]; then
+        sqlite_dbs | while read -r name db sql; do
+            [ -f "$db" ] && sqlite3 "$db" ".backup '$dir/$name.db'"
+        done
+    else
+        local ccnet_db="${SEAFILE_MYSQL_DB_CCNET_DB_NAME:-ccnet_db}"
+        local seafile_db="${SEAFILE_MYSQL_DB_SEAFILE_DB_NAME:-seafile_db}"
+        mysqldump -h"${SEAFILE_MYSQL_DB_HOST:-127.0.0.1}" -P"${SEAFILE_MYSQL_DB_PORT:-3306}" \
+                  -u"${SEAFILE_MYSQL_DB_USER:-seafile}" -p"${SEAFILE_MYSQL_DB_PASSWORD:-}" \
+                  --databases "$ccnet_db" "$seafile_db" > "$dir/dump.sql"
+    fi
+    log "database backup written to $dir"
+}
+
+# --- upgrade ----------------------------------------------------------------
+
+major_minor() { echo "$1" | cut -d. -f1,2; }
+
+run_upgrade_scripts() {
+    local from="$1" to="$2"
+    # Upstream upgrade scripts derive their paths from their own location and
+    # expect the relocatable layout with a writable install tree. We run them in
+    # a prepared view: a temporary top dir whose conf/data/ccnet point at ours,
+    # with a seafile-server-latest symlink to the install, and the interactive
+    # "read dummy" prompts stripped (as the docker build does).
+    local top scriptsdir
+    top=$(mktemp -d)
+    ln -s "$CONFDIR" "$top/conf"
+    ln -s "$DATA" "$top/seafile-data"
+    ln -s "$CCNET" "$top/ccnet"
+    ln -s "$STATEDIR/seahub-data" "$top/seahub-data"
+    ln -s "$INSTALLDIR" "$top/seafile-server-latest"
+    scriptsdir="$INSTALLDIR/upgrade"
+
+    prepare() { sed 's/^[[:space:]]*read dummy[[:space:]]*$//' "$1" > "$top/$(basename "$1")"; chmod +x "$top/$(basename "$1")"; }
+
+    if [ "$(major_minor "$from")" = "$(major_minor "$to")" ]; then
+        log "running minor upgrade $from -> $to"
+        prepare "$scriptsdir/minor-upgrade.sh"
+        ( cd "$top/seafile-server-latest" && "$top/minor-upgrade.sh" )
+    else
+        # chain the major upgrade scripts between the two major.minor versions
+        local fmm tmm s va vb
+        fmm=$(major_minor "$from"); tmm=$(major_minor "$to")
+        for s in $(ls "$scriptsdir"/upgrade_*_*.sh 2>/dev/null | sort -V); do
+            va=$(basename "$s" | sed -E 's/upgrade_([0-9.]+)_([0-9.]+)\.sh/\1/')
+            vb=$(basename "$s" | sed -E 's/upgrade_([0-9.]+)_([0-9.]+)\.sh/\2/')
+            if dpkg --compare-versions "$va" ge "$fmm" && dpkg --compare-versions "$vb" le "$tmm"; then
+                log "running major upgrade script $(basename "$s")"
+                prepare "$s"
+                ( cd "$top/seafile-server-latest" && "$top/$(basename "$s")" )
+            fi
+        done
+    fi
+    rm -rf "$top"
+}
+
+# server (ccnet + seafile) database initialisation/upgrade
+migrate_server() {
+    if [ ! -f "$STAMP" ]; then
+        if "${backend}_initialised"; then
+            log "existing $backend data found without a version stamp; adopting as $INSTALLED"
+        else
+            log "initialising $backend databases for $INSTALLED"
+            "init_$backend"
+            # seaf-server expects an (empty) default library template directory
+            mkdir -p "$DATA/library-template"
+        fi
+        echo "$INSTALLED" > "$STAMP"
+        return 0
+    fi
+
+    local last
+    last=$(cat "$STAMP")
+    if [ "$last" = "$INSTALLED" ]; then
+        return 0
+    fi
+
+    if dpkg --compare-versions "$INSTALLED" lt "$last"; then
+        log "ERROR: installed version $INSTALLED is older than the data version $last."
+        log "Downgrades are not supported. Restore a backup from $BACKUPS matching $last,"
+        log "or reinstall seafile-server >= $last."
+        exit 1
+    fi
+
+    log "upgrading $last -> $INSTALLED"
+    backup_dbs "$last"
+    run_upgrade_scripts "$last" "$INSTALLED"
+    echo "$INSTALLED" > "$STAMP"
+}
+
+# --- main -------------------------------------------------------------------
+
+migrate_server
+
+# seahub, when installed, manages its own (django) database; run its migration step.
+# It is self-gating (django tracks applied migrations), and absent on a server-only install.
+if [ -x /usr/lib/seahub/bin/seahub-migrate ]; then
+    log "running seahub migration"
+    /usr/lib/seahub/bin/seahub-migrate
+fi
+log "done"

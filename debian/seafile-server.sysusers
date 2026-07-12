@@ -1,0 +1,2 @@
+#Type Name    ID GECOS                    Home directory      Shell
+u     seafile -  "Seafile file sync server" /var/lib/seafile   /usr/sbin/nologin

@@ -1,0 +1,5 @@
+usr/lib/seafile
+debian/install/system/seafile.env usr/share/seafile-server
+debian/install/system/seafile.conf usr/share/seafile-server
+debian/install/system/seafile-server.default usr/share/seafile-server
+usr/share/doc/seafile-server/THIRD-PARTY-LICENSES.txt.gz

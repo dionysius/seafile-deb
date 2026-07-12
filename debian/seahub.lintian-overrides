@@ -1,0 +1,11 @@
+# seahub bundles its own vendored python components (seafobj, wsgidav, objwrapper)
+# and prebuilt frontend assets; these are shipped as-is from upstream.
+package-contains-vcs-control-file [usr/lib/seahub/*]
+embedded-javascript-library * [usr/lib/seahub/*]
+source-contains-prebuilt-javascript-object [usr/lib/seahub/*]
+
+# the python dependencies are compiled into a shipped venv; its wheels bundle their
+# own private shared objects and are not stripped/versioned like system libraries.
+unstripped-binary-or-object [usr/lib/seahub/venv/*]
+package-installs-python-bytecode [usr/lib/seahub/venv/*]
+embedded-library [usr/lib/seahub/venv/*]

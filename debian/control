@@ -1,0 +1,128 @@
+Source: seafile-server
+Section: web
+Priority: optional
+Build-Depends: autoconf,
+               automake,
+               ca-certificates <!nocheck>,
+               chrpath,
+               cmake,
+               curl,
+               debhelper-compat (= 13),
+               dh-sequence-installsysusers,
+               fypp:native,
+               golang-go,
+               intltool,
+               libargon2-dev,
+               libarchive-dev,
+               libcurl4-openssl-dev,
+               libevent-dev,
+               libffi-dev,
+               libfuse-dev,
+               libglib2.0-dev,
+               libgoogle-perftools-dev,
+               libhiredis-dev,
+               libjansson-dev,
+               libjwt-dev,
+               libldap2-dev,
+               libmariadb-dev-compat | libmysqlclient-dev,
+               libonig-dev,
+               libpq-dev,
+               libsasl2-dev,
+               libsqlite3-dev,
+               libssl-dev,
+               libtool,
+               libunwind-dev,
+               libxml2-dev,
+               libxslt1-dev,
+               nodejs:native (>= 22) | npm:native,
+               pkgconf:native,
+               python3:native,
+               python3-dev,
+               uuid-dev,
+               valac,
+               zlib1g-dev,
+Maintainer: dionysius <dragon.dionysius@gmail.com>
+Standards-Version: 4.7.2
+Vcs-Git: https://github.com/dionysius/seafile-deb.git
+Vcs-Browser: https://github.com/dionysius/seafile-deb
+Homepage: https://www.seafile.com
+Rules-Requires-Root: no
+
+Package: seafile
+Architecture: all
+Depends: seafile-server (>= ${source:Version}),
+         seahub (>= ${source:Version}),
+         ${misc:Depends},
+# SQLite works out of the box; a database server is only needed for the MySQL/MariaDB backend.
+Recommends: nginx,
+            redis-server,
+Suggests: mariadb-server | default-mysql-server,
+Description: Open source cloud storage and file sync - all in one
+ Seafile is a self-hosted file sync and share solution with high performance
+ and reliability. It offers file syncing across devices, selective sync,
+ client-side and server-side encryption, and team collaboration features.
+ .
+ This metapackage installs the complete Seafile Community Edition server stack:
+ the storage and sync daemons (seafile-server) and the Django web frontend
+ Seahub (seahub).
+
+Package: libsearpc
+Architecture: any
+Multi-Arch: foreign
+Depends: python3,
+         ${misc:Depends},
+         ${shlibs:Depends},
+Description: Simple C language RPC framework based on JSON and libevent
+ Searpc is a simple RPC framework based on JSON and libevent. It is used by the
+ Seafile server and clients for inter-process communication between the various
+ components.
+ .
+ This package contains the libsearpc shared library and its pysearpc Python
+ bindings.
+
+Package: seafile-server
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends},
+# sqlite3 is used by seafile-server-migrate to load/back up the SQLite databases.
+Depends: libsearpc (>= ${source:Version}),
+         python3,
+         sqlite3,
+         ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: seahub,
+# mysql client (for the MySQL/MariaDB backend's schema load and backups)
+Suggests: default-mysql-client | mariadb-client,
+          fuse3,
+Built-Using: ${misc:Built-Using},
+Description: Open source cloud storage and file sync - storage and sync server
+ Seafile is a self-hosted file sync and share solution with high performance
+ and reliability. It offers file syncing across devices, selective sync,
+ client-side and server-side encryption, and team collaboration features.
+ .
+ This package contains the core Seafile Community Edition daemons: the storage
+ and sync server (seaf-server), the controller that supervises them, the go
+ file server and notification server, the FUSE virtual filesystem, and the
+ seaserv Python library used by the Seahub web frontend.
+
+Package: seahub
+# any (not all): ships a venv of python dependencies compiled for the build architecture
+Architecture: any
+Pre-Depends: ${misc:Pre-Depends},
+# python dependencies are compiled into a shipped venv at build time; ${shlibs:Depends}
+# resolves the system libraries the source-compiled wheels (mysqlclient, python-ldap)
+# link against (computed in rules from just those wheels).
+Depends: libsearpc (>= ${source:Version}),
+         python3,
+         redis-server | memcached,
+         seafile-server (>= ${source:Version}),
+         ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: nginx,
+Description: Open source cloud storage and file sync - web frontend (Seahub)
+ Seafile is a self-hosted file sync and share solution with high performance
+ and reliability. It offers file syncing across devices, selective sync,
+ client-side and server-side encryption, and team collaboration features.
+ .
+ This package contains Seahub, the Django web frontend, together with the
+ background task server (seafevents) and the WebDAV server (seafdav). Its
+ Python dependencies are managed with uv.

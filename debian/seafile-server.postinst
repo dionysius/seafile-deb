@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "configure" ]; then
+  ucf --three-way /usr/share/seafile-server/seafile.env /etc/seafile/seafile.env
+  ucf --three-way /usr/share/seafile-server/seafile.conf /etc/seafile/seafile.conf
+  ucf --three-way /usr/share/seafile-server/seafile-server.default /etc/default/seafile-server
+  ucfr seafile-server /etc/seafile/seafile.env
+  ucfr seafile-server /etc/seafile/seafile.conf
+  ucfr seafile-server /etc/default/seafile-server
+
+  # Generate a JWT signing key on first install if none is set. All seafile
+  # components must share this key; it is kept stable across upgrades.
+  envf=/etc/seafile/seafile.env
+  if [ -f "$envf" ] && grep -q '^JWT_PRIVATE_KEY=$' "$envf"; then
+    key=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')
+    sed -i "s|^JWT_PRIVATE_KEY=\$|JWT_PRIVATE_KEY=$key|" "$envf"
+  fi
+fi
+
+#DEBHELPER#
+
+# Runs after the sysusers snippet above has created the seafile user. The env
+# file holds secrets and must be readable by that user, not world.
+if [ "$1" = "configure" ]; then
+  envf=/etc/seafile/seafile.env
+  if [ -f "$envf" ]; then
+    chown root:seafile "$envf"
+    chmod 0640 "$envf"
+  fi
+fi

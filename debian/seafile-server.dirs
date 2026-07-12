@@ -1,0 +1,3 @@
+# needs to exist for manually invoking ucf with --three-way; ucf doesn't create
+# directories, and systemd-tmpfiles runs too late for postinst
+etc/seafile

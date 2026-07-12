@@ -1,0 +1,12 @@
+seafile-server (13.0.24-1) unstable; urgency=medium
+
+  * Initial packaging of Seafile Community Edition server (v13), built from
+    source without docker
+  * single source package with seafile-server as the main upstream; libsearpc,
+    libevhtp, seahub, seafobj, seafdav and seafevents are pulled in by tag as
+    upstream components and compiled together
+  * produces seafile-server (daemons), seahub (Django web frontend, python via
+    uv), libsearpc (RPC library) and the seafile metapackage
+  * SQLite backend by default, MySQL/MariaDB backend supported
+
+ -- dionysius <dragon.dionysius@gmail.com>  Sun, 12 Jul 2026 19:52:18 +0200

@@ -1,0 +1,43 @@
+name: deb packaging
+
+on:
+  push:
+    tags:
+      - 'debian/*.*.*-*'
+      - 'test/*'
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  build:
+    uses: dionysius/gbp-gha/.github/workflows/build.yml@main
+    secrets:
+      GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+    with:
+      # https://github.com/orgs/community/discussions/26671
+      DEBFULLNAME: dionysius (github-actions)
+      DEBEMAIL: dragon.dionysius+gha@gmail.com
+      images: '["debian:stable", "ubuntu:latest", "ubuntu:oldlts"]'
+      architectures: '["amd64", "arm64"]'
+      # seahub's frontend (react 18 + webpack 5) needs a recent node; distributions
+      # ship it without npm, so pin node 22 LTS from nodesource (bundles npm).
+      before_build_deps_install: |
+        apt-get install -y curl ca-certificates
+        curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+
+  test:
+    # Install the built .deb artifacts into a real systemd instance and smoke-check that
+    # seafile-server boots. See test.yml and .github/test/.
+    needs: [build]
+    uses: ./.github/workflows/test.yml
+    with:
+      build_matrix: ${{ needs.build.outputs.matrix }}
+
+  publish:
+    # Create the GitHub release from the built artifacts, then promote it after a delay. See publish.yml.
+    if: startsWith(github.event.ref, 'refs/tags/debian')
+    needs: [build, test]
+    uses: ./.github/workflows/publish.yml

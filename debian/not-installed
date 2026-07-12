@@ -1,0 +1,7 @@
+# libsearpc build-only artefacts: only needed to compile seafile-server (done in
+# this same build), never at runtime.
+usr/include/searpc*.h
+usr/lib/*/libsearpc.so
+usr/lib/*/libsearpc.la
+usr/lib/*/pkgconfig/libsearpc.pc
+usr/bin/searpc-codegen*
