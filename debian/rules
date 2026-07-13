@@ -166,6 +166,11 @@ override_dh_auto_test:
 override_dh_dwz:
 	dh_dwz -Xfileserver -Xnotification-server -Xseahub/venv
 
+# the venv ships prebuilt third-party wheels whose bundled .so files aren't ours to strip;
+# newer binutils objcopy also rejects some of them ("no .dynamic section")
+override_dh_strip:
+	dh_strip -Xseahub/venv
+
 override_dh_auto_install:
 # install libsearpc into debian/tmp for the libsearpc package (fresh each run)
 	$(MAKE) -C libsearpc install DESTDIR=$(TMPDEB)
