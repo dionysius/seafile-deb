@@ -31,11 +31,11 @@ jobs:
           deb_cn=$(awk '/^Codename:/{print $2}' <<<"$deb_release")
           [ -n "$deb_cn" ] || { echo "could not resolve debian stable codename" >&2; exit 1; }
 
-          # Ubuntu: the two newest LTS (even YY, .04), newest first.
+          # Ubuntu: the newest LTS (even YY, .04).
           aliases=$(incus image alias list images: -f csv -c a | sort -u)
           mapfile -t lts < <(grep -E '^ubuntu/[0-9][0-9]\.[0-9][0-9]$' <<<"$aliases" \
-            | cut -d/ -f2 | awk -F. '($1%2==0)&&($2=="04")' | sort -Vru | head -2)
-          [ "${#lts[@]}" -ge 2 ] || { echo "need >=2 ubuntu LTS, got: ${lts[*]:-none}" >&2; exit 1; }
+            | cut -d/ -f2 | awk -F. '($1%2==0)&&($2=="04")' | sort -Vru | head -1)
+          [ "${#lts[@]}" -ge 1 ] || { echo "need >=1 ubuntu LTS, got: ${lts[*]:-none}" >&2; exit 1; }
           declare -A ucn
           for v in "${lts[@]}"; do ucn[$v]=$(incus image info "images:ubuntu/$v" | awk '/^ *release:/{print $2; exit}'); done
 
@@ -45,7 +45,6 @@ jobs:
             case "$distro" in
               debian-*)      cn=$deb_cn;             ref="images:debian/$cn" ;;
               ubuntu-latest) cn=${ucn[${lts[0]}]};   ref="images:ubuntu/$cn" ;;
-              ubuntu-oldlts) cn=${ucn[${lts[1]}]};   ref="images:ubuntu/$cn" ;;
               *) echo "test-matrix: unmapped distro '$distro'" >&2; exit 1 ;;
             esac
             base=$(jq -c --arg ref "$ref" --arg cn "$cn" '. + {incus_image:$ref, codename:$cn}' <<<"$e")

@@ -20,7 +20,7 @@ jobs:
       # https://github.com/orgs/community/discussions/26671
       DEBFULLNAME: dionysius (github-actions)
       DEBEMAIL: dragon.dionysius+gha@gmail.com
-      images: '["debian:stable", "ubuntu:latest", "ubuntu:oldlts"]'
+      images: '["debian:stable", "ubuntu:latest"]'
       architectures: '["amd64", "arm64"]'
       # seahub's frontend (react 18 + webpack 5) needs a recent node; distributions
       # ship it without npm, so pin node 22 LTS from nodesource (bundles npm).
