@@ -1,8 +1,9 @@
 #!/bin/bash
 # Gate on a functional first boot of the seafile stack: the seafile-migrate one-shot must have
-# succeeded, seaf-server and seahub must be active, and seahub must answer HTTP 200 on its login
-# page — which exercises the whole chain (database init/migrate, seaf-server RPC, cache, static
-# manifest). Waits up to WAIT for readiness, prints logs on failure, exits non-zero on failure (the
+# succeeded, seaf-server and seahub must be active, each must log its healthy startup line in
+# journald, and seahub must answer HTTP 200 on its login page — which exercises the whole chain
+# (database init/migrate, seaf-server RPC, cache, static manifest). Waits up to WAIT for readiness,
+# prints logs on failure, exits non-zero on failure (the
 # release gate). prepare.sh already started the services; this never starts anything. Runs IN PLACE
 # as root, requires systemd, reads journald — ephemeral testbed only, never a user's live install.
 #
@@ -25,6 +26,7 @@ done
 rc=0; rows=()
 
 http_code() { curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$URL" 2>/dev/null || echo 000; }
+has_msg() { journalctl -u "$1" --no-pager 2>/dev/null | grep -qF "$2"; }
 
 info "Wait for seahub to answer at $URL (timeout ${WAIT}s)"
 i=0; code=000
@@ -50,6 +52,18 @@ for s in seaf-server seahub; do
   rows+=("| \`$s\` | active | $mark |")
 done
 
+info "Startup log messages (each service reporting healthy)"
+# Stable "running appropriately" markers per unit; revisit if upstream changes the wording.
+check_log() {
+  local unit="$1" msg="$2" mark
+  if has_msg "$unit" "$msg"; then mark="✅"; echo "LOG OK   $unit: \"$msg\""
+  else mark="❌"; echo "LOG MISS $unit: \"$msg\""; rc=1; fi
+  rows+=("| \`$unit\` | log: \`$msg\` | $mark |")
+}
+check_log seafile-migrate.service "seafile-migrate: done"   # our migrate one-shot completed
+check_log seaf-server.service     "Use database"            # seaf-server initialised its DB backend
+check_log seahub.service          "Listening at:"           # gunicorn bound and serving
+
 info "HTTP login page"
 if [ "$code" = 200 ]; then mark="✅"; echo "HTTP OK 200"
 else mark="❌"; echo "HTTP FAIL $code"; rc=1; fi
@@ -74,7 +88,7 @@ info "Summary"
   printf '%s\n' "${rows[@]}"
   echo ""
   echo "$verdict"
-} >> "$OUT"
+} | if [ "$OUT" = /dev/stdout ]; then cat; else cat >> "$OUT"; fi
 
 [ "$rc" -eq 0 ] && echo "RESULT: PASS" || echo "RESULT: FAIL"
 exit "$rc"
