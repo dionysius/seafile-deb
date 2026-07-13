@@ -229,10 +229,13 @@ override_dh_auto_install:
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
 	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|$$)' | sed 's/.*/  "&",/'; \
 	  echo '  "pyOpenSSL>=24",'; \
+	  echo '  "whitenoise>=6",'; \
 	  echo ']'; } > $(TMPDEB)$(HUBPREFIX)/pyproject.toml
 # pyOpenSSL is a transitive dep (pysaml2, capped <24.3); without a floor uv resolves an
 # ancient 22.x that references X509 flags cryptography 46 removed. Pin the floor so the
 # resolved pyOpenSSL (24.2) matches the modern cryptography.
+# whitenoise is added by the packaging (not upstream): seahub serves its own collected
+# static assets from gunicorn, so the self-contained default needs no external web server.
 	cd $(TMPDEB)$(HUBPREFIX) && $(UV) lock --python python3
 	$(UV) venv --relocatable --python python3 $(TMPDEB)$(HUBPREFIX)/venv
 	cd $(TMPDEB)$(HUBPREFIX) && UV_PROJECT_ENVIRONMENT=$(TMPDEB)$(HUBPREFIX)/venv \
