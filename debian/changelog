@@ -1,4 +1,4 @@
-seafile-server (13.0.25-1) unstable; urgency=medium
+seafile-server (13.0.25-1~alpha1) unstable; urgency=medium
 
   * Initial packaging of Seafile Community Edition server (v13), built from
     source without docker
@@ -8,5 +8,7 @@ seafile-server (13.0.25-1) unstable; urgency=medium
   * produces seafile-server (daemons), seahub (Django web frontend, python via
     uv), libsearpc (RPC library) and the seafile metapackage
   * SQLite backend by default, MySQL/MariaDB backend supported
+  * NOT CRITICALLY AUTHORED, EVERYTHING CAN CHANGE, STEPS STILL REQUIRE
+    GOOD THOUGHT FOR PLANNED COMPATIBILITY/MAINTENANCE FLOWS
 
- -- dionysius <dragon.dionysius@gmail.com>  Sun, 12 Jul 2026 19:52:18 +0200
+ -- dionysius <dragon.dionysius@gmail.com>  Tue, 14 Jul 2026 01:04:18 +0200
