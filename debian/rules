@@ -192,6 +192,7 @@ override_dh_auto_install:
 	cp -a scripts/sql $(TMPDEB)$(SEAFPREFIX)/sql
 	cp -a seahub/scripts/upgrade $(TMPDEB)$(SEAFPREFIX)/upgrade
 	install -m 0755 debian/install/scripts/seafile-migrate $(TMPDEB)$(SEAFPREFIX)/bin/seafile-migrate
+	install -m 0755 debian/install/scripts/seafile-db-upgrade $(TMPDEB)$(SEAFPREFIX)/bin/seafile-db-upgrade
 	echo "$(DEB_VERSION_UPSTREAM)" > $(TMPDEB)$(SEAFPREFIX)/version
 
 # strip the leaked RUNPATH (libtool baked in the libsearpc build staging path);

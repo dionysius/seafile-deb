@@ -112,41 +112,33 @@ major_minor() { echo "$1" | cut -d. -f1,2; }
 
 run_upgrade_scripts() {
     local from="$1" to="$2"
-    # Upstream upgrade scripts derive their paths from their own location and
-    # expect the relocatable layout with a writable install tree. We run them in
-    # a prepared view: a temporary top dir whose conf/data/ccnet point at ours,
-    # with a seafile-server-latest symlink to the install, and the interactive
-    # "read dummy" prompts stripped (as the docker build does).
-    local top scriptsdir
-    top=$(mktemp -d)
-    ln -s "$CONFDIR" "$top/conf"
-    ln -s "$DATA" "$top/seafile-data"
-    ln -s "$CCNET" "$top/ccnet"
-    ln -s "$STATEDIR/seahub-data" "$top/seahub-data"
-    ln -s "$INSTALLDIR" "$top/seafile-server-latest"
-    scriptsdir="$INSTALLDIR/upgrade"
-
-    prepare() { sed 's/^[[:space:]]*read dummy[[:space:]]*$//' "$1" > "$top/$(basename "$1")"; chmod +x "$top/$(basename "$1")"; }
-
     if [ "$(major_minor "$from")" = "$(major_minor "$to")" ]; then
-        log "running minor upgrade $from -> $to"
-        prepare "$scriptsdir/minor-upgrade.sh"
-        ( cd "$top/seafile-server-latest" && "$top/minor-upgrade.sh" )
-    else
-        # chain the major upgrade scripts between the two major.minor versions
-        local fmm tmm s va vb
-        fmm=$(major_minor "$from"); tmm=$(major_minor "$to")
-        for s in $(ls "$scriptsdir"/upgrade_*_*.sh 2>/dev/null | sort -V); do
-            va=$(basename "$s" | sed -E 's/upgrade_([0-9.]+)_([0-9.]+)\.sh/\1/')
-            vb=$(basename "$s" | sed -E 's/upgrade_([0-9.]+)_([0-9.]+)\.sh/\2/')
-            if dpkg --compare-versions "$va" ge "$fmm" && dpkg --compare-versions "$vb" le "$tmm"; then
-                log "running major upgrade script $(basename "$s")"
-                prepare "$s"
-                ( cd "$top/seafile-server-latest" && "$top/$(basename "$s")" )
-            fi
-        done
+        # A minor upgrade (same major.minor) carries no ccnet/seafile schema change: upstream's
+        # minor-upgrade.sh only relocates avatars/custom/gunicorn inside the install tree, which
+        # this packaging lays out differently and ships read-only under /usr. seahub's own django
+        # migrations run afterwards (seahub-migrate), so there is nothing to do for the server here.
+        log "minor upgrade $from -> $to: no server schema migration required"
+        return 0
     fi
-    rm -rf "$top"
+    # A major upgrade carries real ccnet/seafile schema deltas (sql/<ver>). Apply them for every
+    # major boundary crossed, via seafile-db-upgrade (which reuses upstream's updater classes but
+    # skips seahub/seafevents, whose schema seahub-migrate handles through django afterwards).
+    local be sqlroot vdir vmm applied=0
+    [ "$backend" = mysql ] && be=mysql || be=sqlite3
+    sqlroot="$INSTALLDIR/upgrade/sql"
+    for vdir in $(ls "$sqlroot" 2>/dev/null | sort -V); do
+        vmm=$(major_minor "$vdir")
+        dpkg --compare-versions "$vmm" gt "$(major_minor "$from")" || continue
+        dpkg --compare-versions "$vmm" le "$(major_minor "$to")" || continue
+        log "applying server schema deltas for $vdir ($be)"
+        if ! CCNET_CONF_DIR="$CCNET" SEAFILE_DATA_DIR="$DATA" SEAFILE_CENTRAL_CONF_DIR="$CONFDIR" \
+                "$INSTALLDIR/bin/seafile-db-upgrade" "$vdir" "$be"; then
+            log "ERROR: applying schema deltas for $vdir failed; restore the backup from $BACKUPS."
+            exit 1
+        fi
+        applied=1
+    done
+    [ "$applied" = 1 ] || log "major upgrade $from -> $to: no server schema deltas to apply"
 }
 
 # server (ccnet + seafile) database initialisation/upgrade
