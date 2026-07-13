@@ -1,12 +1,15 @@
 #!/bin/bash
-# Prepare an ephemeral system to smoke-test the seafile-server package: add the runtime repo
-# (which also provides libsearpc) and install the freshly-built seafile-server .deb.
+# Prepare an ephemeral system to smoke-test the seafile stack, then start the services.
 #
 # DESTRUCTIVE - installs packages. Meant for an ephemeral CI container/VM, never a real install.
 #
 # Install source (first argument):
-#   * artifacts <DIR>  -> install the freshly-built .deb files in <DIR>
-#   * apt              -> apt-get install seafile-server (latest published)
+#   * artifacts <DIR>  -> install the freshly-built .deb files in <DIR> (the CI pipeline)
+#   * apt              -> add the published repo and apt-get install seafile (latest published)
+#
+# The artifacts path needs no external seafile repo: libsearpc, seafile-server and seahub (with its
+# bundled python venv) all come from the build, and every remaining dependency (python3, redis,
+# sqlite3, the shlibs-resolved system libraries) is a standard distro package.
 #
 # Usage:  prepare.sh artifacts <DIR>
 #         prepare.sh apt
@@ -20,32 +23,30 @@ case "$MODE" in
   apt) ;;
   *) error 2 "usage: prepare.sh {artifacts <DIR>|apt}" ;;
 esac
-. /etc/os-release
 [ -d /run/systemd/system ] || error 4 "systemd is not running (/run/systemd/system missing)"
-install -d -m 0755 /etc/apt/keyrings
-
-info "Runtime repo (apt.crunchy.run/seafile) - provides libsearpc and runtime deps"
 apt-get update -qq
-apt-get install -y -qq curl ca-certificates gnupg
-curl -fsSL https://apt.crunchy.run/seafile/install.sh | bash -
-apt-get update -qq
+# curl: the boot-check HTTP gate needs it (and the apt-mode repo bootstrap below)
+apt-get install -y -qq curl ca-certificates
 
 info "Install the seafile stack [mode: $MODE]"
 if [ "$MODE" = artifacts ]; then
+  # Install this arch's binaries (libsearpc, seafile-server, seahub) plus the arch-independent
+  # seafile metapackage (only built on the primary arch). Their Depends resolve from the archive.
   arch="$(dpkg --print-architecture)"
-  # install this arch's binaries (libsearpc, seafile-server, seahub) plus the
-  # arch-independent seafile metapackage (only built on the primary arch).
   mapfile -t debs < <(ls "$ARTIFACTS"/*_"$arch".deb "$ARTIFACTS"/*_all.deb 2>/dev/null)
   [ "${#debs[@]}" -gt 0 ] || error 1 "no matching .deb files (arch=$arch) in $ARTIFACTS"
   printf '  %s\n' "${debs[@]}"
   apt-get install -y "${debs[@]}"
 else
+  install -d -m 0755 /etc/apt/keyrings
+  apt-get install -y -qq gnupg
+  curl -fsSL https://apt.crunchy.run/seafile/install.sh | bash -
+  apt-get update -qq
   apt-get install -y seafile
 fi
 echo "--- installed ---"; dpkg -l 'seafile*' 'libsearpc*' | awk '/^ii/{print $2, $3}'
 
-info "Start services"
-systemctl start seafile.service || true
-systemctl start seahub.service || true
+info "Start services (seahub pulls in seaf-server and the seafile-migrate one-shot)"
+systemctl start seaf-server.service seahub.service || true
 
 info "DONE"
