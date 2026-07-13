@@ -109,8 +109,11 @@ override_dh_auto_clean:
 override_dh_auto_configure:
 	mkdir -p $(STAGING) debian/.buildbin
 
-# libevhtp (static, SSL disabled - upstream uses libevent+openssl directly)
+# libevhtp (static, SSL disabled - upstream uses libevent+openssl directly).
+# CMAKE_POLICY_VERSION_MINIMUM: libevhtp pins cmake_minimum_required(2.8), which CMake 4
+# (on newer distros) rejects outright; this makes it configure anyway.
 	cd libevhtp && cmake -DEVHTP_DISABLE_SSL=ON -DEVHTP_BUILD_SHARED=OFF \
+		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 		-DCMAKE_INSTALL_PREFIX=$(STAGING) -DCMAKE_INSTALL_LIBDIR=lib .
 	$(MAKE) -C libevhtp -j$(JOBS)
 	$(MAKE) -C libevhtp install
