@@ -3,10 +3,12 @@
 include /usr/share/dpkg/default.mk
 include /usr/share/dpkg/architecture.mk
 
-# seafile-server's C predates gcc-14's stricter defaults, where implicit function
-# declarations, implicit int and int-conversion became hard errors; upstream still
-# builds on gcc-13. Demote them back to warnings so the code compiles.
-export DEB_CFLAGS_MAINT_APPEND = -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion
+# seafile-server's C (and libevhtp's bundled oniguruma) predate gcc-14's stricter
+# defaults, where implicit function declarations, implicit int, int-conversion and
+# incompatible pointer types became hard errors; upstream still builds on gcc-13.
+# Demote them back to warnings so the code compiles. dpkg exports these through CFLAGS,
+# which the libevhtp cmake sub-build inherits too.
+export DEB_CFLAGS_MAINT_APPEND = -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion -Wno-error=incompatible-pointer-types
 include /usr/share/dpkg/buildflags.mk
 
 export DH_VERBOSE = 1
