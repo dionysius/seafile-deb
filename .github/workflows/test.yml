@@ -94,3 +94,11 @@ jobs:
         with:
           instance: seafile-test
           run: bash .github/test/boot-check.sh --out "$GITHUB_STEP_SUMMARY"
+
+      - name: Upgrade-check
+        # Fake the version stamp to an older release and reboot, exercising the migrate
+        # minor/major upgrade paths against the same artifacts. See .github/test/upgrade-check.sh.
+        uses: dionysius/incus-zabbly-actions/exec@v1
+        with:
+          instance: seafile-test
+          run: bash .github/test/upgrade-check.sh --out "$GITHUB_STEP_SUMMARY"
