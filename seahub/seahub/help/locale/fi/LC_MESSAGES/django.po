@@ -1,0 +1,2623 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# 
+# Translators:
+# Sami Lahtinen <sami.lahtinen@tietovirta.fi>, 2024
+# Teppo Sarjonen <teppo.sarjonen@gmail.com>, 2024
+# Seafile Info <info@seafile.com>, 2026
+# 
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-12-05 10:24+0800\n"
+"PO-Revision-Date: 2024-02-06 08:23+0000\n"
+"Last-Translator: Seafile Info <info@seafile.com>, 2026\n"
+"Language-Team: Finnish (https://app.transifex.com/haiwen/teams/5086/fi/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: fi\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: templates/help/base.html:34
+msgid "Side Nav Menu"
+msgstr "Sivu Navigointi -valikko"
+
+#: templates/help/base.html:48 templates/help/base.html:50
+#: templates/help/introduction.html:6
+msgid "Introduction"
+msgstr "Esittely"
+
+#: templates/help/base.html:53
+msgid "Managing files and folders"
+msgstr "Tiedostojen ja kansioiden hallinta"
+
+#: templates/help/base.html:55 templates/help/libraries_managing.html:5
+msgid "Managing files with libraries"
+msgstr "Tiedostojen hallinta kirjastojen avulla"
+
+#: templates/help/base.html:56
+msgid "Restoring deleted files"
+msgstr "Poistettujen tiedostojen palauttaminen"
+
+#: templates/help/base.html:57
+msgid "Finding old file versions"
+msgstr "Vanhempien tiedostoversioiden etsiminen"
+
+#: templates/help/base.html:58
+#: templates/help/library_history_and_snapshots.html:6
+msgid "Library history and snapshots"
+msgstr "Kirjaston historia ja tilannekuvat"
+
+#: templates/help/base.html:59
+msgid "Setting history retention period"
+msgstr "Historian säilytysajan asetus"
+
+#: templates/help/base.html:60 templates/help/deleting_a_library.html:5
+msgid "Deleting a library"
+msgstr "Kirjaston poistaminen"
+
+#: templates/help/base.html:61
+#: templates/help/viewing_files_within_web_app.html:5
+msgid "Viewing files within Web App"
+msgstr "Tiedostojen tarkasteleminen verkkosovelluksessa"
+
+#: templates/help/base.html:62 templates/help/full_text_file_search.html:5
+msgid "Full text file search"
+msgstr "Koko tekstin haku tiedostoissa"
+
+#: templates/help/base.html:65
+msgid "Sharing and collaboration"
+msgstr "Jakaminen ja yhteistyö"
+
+#: templates/help/base.html:67 templates/help/sharing_files_and_folders.html:5
+msgid "Sharing files and folders"
+msgstr "Tiedostojen ja kansioiden jakaminen"
+
+#: templates/help/base.html:68 templates/help/groups_managing.html:5
+msgid "Managing groups"
+msgstr "Ryhmien hallinta"
+
+#: templates/help/base.html:69
+msgid "Locking files"
+msgstr "Tiedostojen lukitseminen"
+
+#: templates/help/base.html:70
+msgid "Folder permission"
+msgstr "Kansion käyttöoikeudet"
+
+#: templates/help/base.html:71
+msgid "Departments sharing"
+msgstr "Osastojen jakaminen"
+
+#: templates/help/base.html:74
+msgid "Wiki and knowledge management"
+msgstr "Wiki ja tietänhallinta"
+
+#: templates/help/base.html:76 templates/help/manage_library_as_wiki.html:5
+msgid "Managing a library as Wiki"
+msgstr "Kirjaston hallinta wikinä"
+
+#: templates/help/base.html:79
+msgid "Desktop client and syncing"
+msgstr "Työpöytäasiakas ja synkronointi"
+
+#: templates/help/base.html:81
+msgid "Install and sync files"
+msgstr "Asennus ja tiedostojen synkronointi"
+
+#: templates/help/base.html:82
+msgid "Syncing existing folders"
+msgstr "Synkronoidaan olemassa olevia kansioita"
+
+#: templates/help/base.html:83 templates/help/selective_sync.html:6
+msgid "Selectively sync sub-folders"
+msgstr "Alikansioiden valikoitu synkronointi"
+
+#: templates/help/base.html:84 templates/help/read-only_syncing.html:5
+msgid "Read-only syncing"
+msgstr "Vain luku -synkronointi"
+
+#: templates/help/base.html:85
+msgid "Unsync and resync libraries"
+msgstr "Poista synkronointi ja synkronoi kirjastot uudestaan"
+
+#: templates/help/base.html:86 templates/help/sync_interval.html:6
+msgid "Setting sync interval"
+msgstr "Asetetaan synkronoinnin aikaväli"
+
+#: templates/help/base.html:87
+msgid "Proxy settings"
+msgstr "Välipalvelimen asetukset"
+
+#: templates/help/base.html:88 templates/help/conflicts.html:5
+msgid "File conflicts"
+msgstr "Ristiriitaiset tiedostot"
+
+#: templates/help/base.html:89
+msgid "Excluding files"
+msgstr "Tiedostojen poislukeminen"
+
+#: templates/help/base.html:92
+msgid "Drive client"
+msgstr "Levyasikas"
+
+#: templates/help/base.html:94 templates/help/using_drive_client.html:6
+msgid "Using Seafile drive client"
+msgstr "Seafile-levyasiakkaan käyttö"
+
+#: templates/help/base.html:95
+msgid "Using drive client 2.0 on Windows"
+msgstr "Levyasiakas 2.0:n käyttö Windowsissa"
+
+#: templates/help/base.html:98
+msgid "Security and encryption"
+msgstr "Turvallisuus ja salaus"
+
+#: templates/help/base.html:100
+msgid "How to use encrypted libraries"
+msgstr "Miten salattuja kirjastoja käytetään"
+
+#: templates/help/conflicts.html:7
+msgid ""
+"Once you and your friends sync a shared file library onto your computers, "
+"you may add, delete or edit files in the library together. Every change you "
+"make to the library would be automatically synced to others' computers."
+msgstr ""
+"Kun sinä ja ystäväsi synkronoitte jaetun tiedostokirjaston tietokoneillenne,"
+" voitte lisätä, poistaa ja muokata tiedostoja kirjastossa yhdessä. Kaikki "
+"kirjastoon tekemäsi muutokset synkronoituvat automaattisesti muiden "
+"tietokoneille."
+
+#: templates/help/conflicts.html:9
+msgid ""
+"Sometimes you and your friends may edit the same file at the same time. Your"
+" changes may conflict with each other's. In this case, Seafile would keep "
+"the first version synced to the cloud unchanged, while rename the other "
+"version to a \"conflict file\". A conflict file's name ends with it's "
+"author's email address, plus the current time, e.g. test.txt (SFConflict "
+"name@example.com 2015-03-07-11-30-28)."
+msgstr ""
+"Joskus sinä ja ystäväsi saatatte muokata samaa tiedostoa samanaikaisesti. "
+"Muutokset voivat olla ristiriidassa keskenään. Tällöin Seafile säilyttää "
+"pilveen ensimmäisenä synkronoidun version muuttumattomana ja nimeää toisen "
+"version \"ristiriitatiedostoksi\". Ristiriitatiedoston nimi päättyy tekijän "
+"sähköpostiosoitteeseen ja nykyiseen aikaan, esim. test.txt (SFConflict "
+"name@example.com 2015-03-07-11-30-28)."
+
+#: templates/help/deleting_a_library.html:6
+msgid ""
+"You can delete a library owned by you. A deleted library can be restored by "
+"you or Seafile server's administrator."
+msgstr ""
+"Voit poistaa itsellesi kuuluvan kirjaston. Poistetun kirjaston voi palauttaa"
+" sinä itse tai Seafile-palvelimen järjestelmänvalvoja."
+
+#: templates/help/deleting_a_library.html:7
+msgid "After a library is deleted, it has following effects:"
+msgstr "Kirjaston poistaminen aiheuttaa seuraavia vaikutuksia:"
+
+#: templates/help/deleting_a_library.html:9
+msgid "Share of the files and folders within this library are all canceled."
+msgstr ""
+"Kaikki kirjaston sisällä olevien tiedostojen ja kansioiden jakamukset "
+"perutaan."
+
+#: templates/help/deleting_a_library.html:10
+msgid ""
+"Desktop clients synced with this library cannot sync with it any more. But "
+"the local files on the client won't be deleted."
+msgstr ""
+"Kirjastoon synkronoidut työpöytäasiakkaat eivät enää synkronoi sitä, mutta "
+"asiakkaiden paikallisia tiedostoja ei poisteta."
+
+#: templates/help/departments.html:5
+msgid "Managing and using departments"
+msgstr "Osastojen hallinta ja käyttö"
+
+#: templates/help/departments.html:6
+msgid ""
+"Some organizations consist of complex department hierarchy. There are "
+"usually two common use cases for file management in these organizations:"
+msgstr ""
+"Jotkut organisaatiot sisältävät monimutkaisia osastohierarkioita. Näissä "
+"organisaatioissa on yleensä kaksi yleistä käyttötapausta tiedostojen "
+"hallintaan:"
+
+#: templates/help/departments.html:8
+msgid ""
+"There should be a common file sharing space for the organization. The folder"
+" hierarchy should map the department hierarchy. There will be separate "
+"folder or space assigned to each department."
+msgstr ""
+"Organisaatiolla tulee olla yhteinen tiedostojen jakotila. Kansiohierarkian "
+"tulisi vastata osastohierarkiaa. Jokaista osastoa varten on varattu oma "
+"kansio tai tila."
+
+#: templates/help/departments.html:9
+msgid ""
+"The sharing space should be owned and managed by the organization, but not "
+"individual employees. So that the ownership of files doesn't have to be "
+"changed when an employee leaves the organization."
+msgstr ""
+"Jakotilan omistaja ja hallinnoija on organisaatio, eivät yksittäiset "
+"työntekijät. Tällöin tiedostojen omistajuutta ei tarvitse vaihtaa, kun "
+"työntekijä lähtee organisaatiosta."
+
+#: templates/help/departments.html:11
+msgid ""
+"The \"Departments\" feature is designed to meet the above two use cases. "
+"We'll introduce this feature from 3 different perspectives:"
+msgstr ""
+"\"Osastot\"-ominaisuus on suunniteltu täyttämään nämä kaksi käyttötapausta. "
+"Esittelemme ominaisuuden kolmesta eri näkökulmasta:"
+
+#: templates/help/departments.html:13 templates/help/departments.html:17
+msgid "System admin"
+msgstr "Järjestelmänvalvoja"
+
+#: templates/help/departments.html:14 templates/help/departments.html:35
+msgid "Department admin"
+msgstr "Osastonvalvoja"
+
+#: templates/help/departments.html:15 templates/help/departments.html:52
+msgid "Department members"
+msgstr "Osaston jäsenet"
+
+#: templates/help/departments.html:18
+msgid "The system admin can:"
+msgstr "Järjestelmänvalvoja voi:"
+
+#: templates/help/departments.html:20 templates/help/departments.html:24
+msgid "Manage department hierarchy and members"
+msgstr "Hallinnoida osastohierarkiaa ja jäseniä"
+
+#: templates/help/departments.html:21 templates/help/departments.html:29
+msgid "Assign storage quota for departments"
+msgstr "Määrittää tallennuskiintiöt osastoille"
+
+#: templates/help/departments.html:22 templates/help/departments.html:31
+msgid "Create and manage shared libraries in departments"
+msgstr "Luoda ja hallinnoida jaettuja kirjastoja osastoissa"
+
+#: templates/help/departments.html:25
+msgid ""
+"The system admin can set up the department hierarchy in two ways: manual "
+"setup or import from Active Directory."
+msgstr ""
+"Järjestelmänvalvoja voi luoda osastohierarkian kahdella tavalla: "
+"manuaalisesti tai tuomalla sen Active Directorysta."
+
+#: templates/help/departments.html:26
+msgid ""
+"The system admin can create any number of top level departments and create "
+"any levels of sub-departments under each department. And each level of "
+"department can be populated with members. The system admin can set the role "
+"of each member to 'member' or 'admin'. We'll introduce how a department "
+"admin can manage department later."
+msgstr ""
+"Järjestelmänvalvoja voi luoda useita ylimmän tason osastoja ja mitä tahansa "
+"tasoisia aliosastoja kunkin osaston alle. Jokaiseen tasoon voidaan lisätä "
+"jäseniä. Järjestelmänvalvoja voi asettaa jokaiselle jäsenelle rooliksi "
+"\"jäsen\" tai \"ylläpitäjä\". Selvitetään myöhemmin, miten osastonvalvoja "
+"hallinnoi osastoa."
+
+#: templates/help/departments.html:27
+msgid ""
+"The system admin can also import the hierarchy from OUs (Organizational "
+"Units) in AD. Each OU will be imported as a department. And the sub-OUs "
+"under an OU will be imported as sub-departments. Department libraries can be"
+" automatically created in the import process."
+msgstr ""
+"Järjestelmänvalvoja voi myös tuoda hierarkian AD:n organisaatioyksiköistä "
+"(OU). Jokainen OU tuodaan osastona ja sen alihakemistot aliosastoina. "
+"Osastokirjastot voidaan luoda automaattisesti tuontivaiheessa."
+
+#: templates/help/departments.html:28
+msgid ""
+"System admin can also delete a department after all the sub-departments and "
+"libraries are deleted."
+msgstr ""
+"Järjestelmänvalvoja voi myös poistaa osaston, kun kaikki aliosastot ja "
+"kirjastot on poistettu."
+
+#: templates/help/departments.html:30
+msgid ""
+"The libraries created inside a department are owned by the department "
+"itself, not by any individual user. So the system admin can assign storage "
+"quota to a department. The total size of all the libraries in a department "
+"cannot exceed the storage quota. <strong>Please note that the quota of sub-"
+"department doesn't depend on the quota of its parent department.</strong>"
+msgstr ""
+"Osastossa luodut kirjastot ovat osaston omistuksessa, eivät yksittäisten "
+"käyttäjien. Siksi järjestelmänvalvoja voi määrittää tallennuskiintiön "
+"osastolle. Kaikkien osaston kirjastojen koko ei voi ylittää kiintiötä. "
+"<strong>Huom: aliosaston kiintiö ei riipu ylempänä olevan osaston "
+"kiintiöstä.</strong>"
+
+#: templates/help/departments.html:32
+msgid ""
+"Department libraries can be created by the system admin or department admin."
+" There is also an option to control whether individual users can share "
+"libraries to a department."
+msgstr ""
+"Osastokirjastoja voi luoda järjestelmänvalvoja tai osastonvalvoja. On myös "
+"asetuksena, joka määrittää, voivatko yksittäiset käyttäjät jakaa kirjastoja "
+"osastolle."
+
+#: templates/help/departments.html:33
+msgid ""
+"All the above operations can be done in the system admin interface. See the "
+"below screenshot for information."
+msgstr ""
+"Kaikki yllä mainitut toimenpiteet suoritetaan järjestelmänvalvojan "
+"käyttöliittymässä. Lisätietoja on alla olevassa kuvakaappauksessa."
+
+#: templates/help/departments.html:36
+msgid ""
+"As noted above, department admin is a special role assigned by the system "
+"admin to some members of a department. Department admins can perform the "
+"following operations in a department after login to his/her own account."
+msgstr ""
+"Kuten mainittu, osastonvalvoja on erityinen rooli, jonka järjestelmänvalvoja"
+" asettaa osaston jollekin jäsenelle. Osastonvalvojat voivat suorittaa "
+"seuraavia toimenpiteitä osastossa kirjautumisen jälkeen omalla tilillään."
+
+#: templates/help/departments.html:38
+msgid "Access to the libraries of the department"
+msgstr "Pääsy osaston kirjastoihin"
+
+#: templates/help/departments.html:39
+msgid "Manage members in his/her department"
+msgstr "Hallinnoda oman osaston jäseniä"
+
+#: templates/help/departments.html:40
+msgid "Manage libraries in his/her department"
+msgstr "Hallinnoda oman osaston kirjastoja"
+
+#: templates/help/departments.html:42
+msgid ""
+"If a user is the admin of a department, he/she can add or delete members in "
+"the department. Any users registered in the system can be added as member of"
+" the department. But if the departments are imported from AD, the changes to"
+" membership will be overwritten on the next sync with AD."
+msgstr ""
+"Jos käyttäjä on osastonvalvoja, hän voi lisätä ja poistaa jäseniä osastosta."
+" Jokainen järjestelmään rekisteröity käyttäjä voidaan lisätä osaston "
+"jäseneksi. Mutta jos osastot on tuotu AD:sta, jäsenmuutokset ylikirjoitetaan"
+" seuraavassa AD-synkronoinnissa."
+
+#: templates/help/departments.html:44
+msgid ""
+"Department admin can manage the libraries in the department. The supported "
+"operations are:"
+msgstr ""
+"Osastonvalvoja voi hallinnoda osaston kirjastoja. Tuetut toimenpiteet ovat:"
+
+#: templates/help/departments.html:46
+msgid "Create or delete library"
+msgstr "Luoda tai poistaa kirjaston"
+
+#: templates/help/departments.html:47
+msgid "Change library name"
+msgstr "Muuttaa kirjaston nimeä"
+
+#: templates/help/departments.html:48
+msgid ""
+"Share a library to users or groups outside of this department. This is very "
+"useful for cross-department collaboration."
+msgstr ""
+"Jakaa kirjaston osaston ulkopuolisille käyttäjille tai ryhmille. Tämä on "
+"erittäin hyödyllistä osastojen välisessä yhteistyössä."
+
+#: templates/help/departments.html:49
+#, python-format
+msgid ""
+"Set fine-grained permission to folders in the libraries for users or sub-"
+"departments in this department. This works like <a "
+"href=\"%(SITE_ROOT)shelp/folder_permission/\">the folder permission "
+"feature</a>."
+msgstr ""
+"Asettaa tarkkoja käyttöoikeuksia kirjastojen kansioihin osaston käyttäjille "
+"tai aliosastoille. Tämä toimii kuten <a "
+"href=\"%(SITE_ROOT)shelp/folder_permission/\">kansion käyttöoikeudet</a>."
+
+#: templates/help/departments.html:53
+msgid ""
+"A normal member of the department can use the department just like a group. "
+"Each department is presented to its members as a group. A user can not only "
+"access to the libraries in the department he/she belongs to, but also the "
+"libraries in the parent departments of his/her department. For example, if "
+"John is in the \"EMEA\" sub-department under the \"Sales\" department, and "
+"\"Sales\" is a sub-department under the company \"ACME\", John can then "
+"access to the groups \"EMEA\", \"Sales\" and \"ACME\". The groups for "
+"departments are marked with a \"building\" icon next to its name."
+msgstr ""
+"Osaston tavallinen jäsen voi käyttää osastoa kuten ryhmää. Jokaista osastoa "
+"näytetään jäsenille ryhmänä. Käyttäjällä on pääsy sekä oman osaston että "
+"ylempien osastojen kirjastoihin. Esimerkiksi jos John kuuluu "
+"\"Myynti\"-osaston aliosastoon \"EMEA\", ja \"Myynti\" on \"ACME\"-yhtiön "
+"aliosasto, Johnilla on pääsy ryhmiin \"EMEA\", \"Myynti\" ja \"ACME\". "
+"Osastoryhmät on merkitty rakennuskuvakkeella nimen vieressä."
+
+#: templates/help/desktop_proxy.html:6
+msgid "Using proxy in Seafile client"
+msgstr "Välityspalvelimen käyttö Seafile-asiakkaassa"
+
+#: templates/help/desktop_proxy.html:8
+msgid ""
+"Seafile client supports 3 types of proxy servers: HTTP proxy, SOCKS5 proxy "
+"and system proxy settings."
+msgstr ""
+"Seafile-asiakas tukee kolmea välityspalvelintyyppiä: HTTP-välityspalvelin, "
+"SOCKS5-välityspalvelin ja järjestelmän välityspalvelinasetukset."
+
+#: templates/help/desktop_proxy.html:10
+msgid ""
+"HTTP proxy and SOCKS5 proxy requires you to enter the proxy server's address"
+" and port. If you use system proxy settings, Seafile client reads proxy "
+"settings from the operating system. The operating system has some mechanisms"
+" to auto-detect proxy server information. So you don't have to manually "
+"enter proxy server address."
+msgstr ""
+"HTTP- ja SOCKS5-välityspalvelin vaativat palvelimen osoitteen ja portin. Jos"
+" käytät järjestelmän asetuksia, Seafile lukee ne suoraan "
+"käyttöjärjestelmästä. Järjestelmä voi tunnistaa välityspalvelimen "
+"automaattisesti, joten sinun ei tarvitse syöttää osoitetta manuaalisesti."
+
+#: templates/help/desktop_proxy.html:12
+msgid ""
+"To change proxy settings, click the Seafile icon in the system notification "
+"area. Choose \"Settings\" in the menu. In the pop-up settings dialog, you "
+"can change proxy settings in the \"Network\" tab."
+msgstr ""
+"Vaihtaaksesi välityspalvelinasetuksia klikkaa Seafile-kuvaketta järjestelmän"
+" ilmoitusalueella. Valitse valikosta \"Asetukset\". Ponnahdusikkunassa voit "
+"muokata välityspalvelinasetuksia \"Verkko\"-välilehdessä."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:6
+msgid "SeaDrive 2.0 for Windows 10"
+msgstr "SeaDrive 2.0 Windows 10:lle"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:8
+msgid ""
+"SeaDrive 2.0 (and future versions) is redesigned with deeper integration to "
+"Windows 10 operating system. It supports Windows 10 1709 version (2017 Fall "
+"Update for Windows 10) and later versions. We recommend Windows 10 users to "
+"upgrade to SeaDrive 2.0 for more native virtual drive experience."
+msgstr ""
+"SeaDrive 2.0 (ja tulevat versiot) on uudelleen suunniteltu syvällisemmällä "
+"integraatiolla Windows 10:een. Se tukee Windows 10 versiota 1709 (2017 Fall "
+"Update) ja uudempia versioita. Suosittelemme Windows 10 -käyttäjiä "
+"päivittämään SeaDrive 2.0:een saadakseen luonnollisemman "
+"virtuaalilevykokemuksen."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:10
+msgid "Install and access the Virtual Drive"
+msgstr "Asennus ja virtuaalilevyn käyttö"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:11
+msgid ""
+"You can download SeaDrive 2.0 from official Seafile website. After "
+"installation and logging into your Seafile account, SeaDrive will start "
+"downloading library and file lists from the server (just as in SeaDrive "
+"1.0.x). It may take some time, depending on the number of files available in"
+" your seafile account. The download is progressive, so in the mean time you "
+"can already access some files in the virtual drive."
+msgstr ""
+"Voit ladata SeaDrive 2.0:n viralliselta Seafile-verkkosivustolta. Asennuksen"
+" ja Seafile-tiliin kirjautumisen jälkeen SeaDrive alkaa ladata kirjasto- ja "
+"tiedostoluetteloita palvelimelta (samanlaisesti kuin SeaDrive 1.0.x). Se voi"
+" kestää jonkin aikaa riippuen tilissä olevien tiedostojen määrästä. Lataus "
+"tapahtuu vaiheittain, joten voit käyttää joitain tiedostoja virtuaalilevyssä"
+" kesken sen."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:12
+msgid ""
+"To access the virtual drive, just open Windows file explorer. There is a "
+"\"seadrive\" node in the navigation pane of Windows file explorer."
+msgstr ""
+"Virtuaalilevyn käyttöön avaa vain Windowsin tiedostoselain. Siinä on "
+"navigointipaneelissa \"seadrive\"-kohta."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:16
+msgid "Accessing files in the Virtual Drive"
+msgstr "Tiedostojen käyttö virtuaalilevyssä"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:17
+msgid ""
+"Libraries are grouped into 4 categories in the virtual drive: My Libraries, "
+"Shared with me, Shared with groups and Shared with all."
+msgstr ""
+"Kirjastot on ryhmitelty neljään luokkaan virtuaalilevyssä: Omat kirjastot, "
+"Jaettu minulle, Jaettu ryhmien kanssa ja Jaettu kaikille."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:18
+msgid ""
+"As you can see, the file status icons is more integrated into Windows file "
+"explorer. The icons are a bit different form version 1.0."
+msgstr ""
+"Näet, että tiedostojen tilakuvakkeet on integroitu paremmin Windowsin "
+"tiedostoselaimeen. Kuvakkeet ovat hieman erilaisia kuin versiossa 1.0."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:19
+msgid ""
+"Files in the virtual drive are created as \"placeholders\" in the local file"
+" system. They may be in 3 states:"
+msgstr ""
+"Virtuaalilevyn tiedostot luodaan paikalliselle järjestelmälle "
+"\"paikkamerkkeinä\". Niillä voi olla kolme tilaa:"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:21
+msgid ""
+"<b>Placeholder file</b>: An empty representation of the file and can only be"
+" opened when there is network connection."
+msgstr ""
+"<b>Paikkamerkkitiedosto</b>: Tyhjä esitys tiedostosta, joka voidaan avata "
+"vain verkkoyhteydellä."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:22
+msgid ""
+"<b>Full file</b>: The file has been downloaded and saved locally. Download "
+"is automatic when a placeholder file is opened for the first time. These "
+"files are available whenever you open SeaDrive regardless to network "
+"connections. The operating system may decide to clear a full file when more "
+"disk space is needed."
+msgstr ""
+"<b>Täysi tiedosto</b>: Tiedosto on ladattu ja tallennettu paikalliselle "
+"levylle. Lataus tapahtuu automaattisesti, kun paikkamerkkitiedosto avataan "
+"ensimmäisen kerran. Nämä tiedostot ovat käytettävissä aina SeaDrivea "
+"avatessa riippumatta verkkoyhteydestä. Käyttöjärjestelmä voi poistaa täyden "
+"tiedoston, kun tarvitset enemmän levytilaa."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:23
+msgid ""
+"<b>Pinned full file</b>: The file has been downloaded and saved locally. It "
+"is guaranteed to be available offline."
+msgstr ""
+"<b>Kiinnitetty täysi tiedosto</b>: Tiedosto on ladattu ja tallennettu "
+"paikalliselle. Se on varmasti käytettävissä myös ilman verkkoa."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:26
+msgid ""
+"You can control which files or folder are cached locally. This can be "
+"changed from the context menu when you right click on a file or folder. "
+"Choose \"Always keep on this device\" when you want to pin a file or folder "
+"locally; choose \"Free up space\" when you want to clean the cache for a "
+"file or folder."
+msgstr ""
+"Voit hallinnoida, mitkä tiedostot ja kansiot tallennetaan välimuistiin "
+"paikalliselle levylle. Tämä voidaan muuttaa oikeanpuoleisen napsautuksen "
+"valikossa. Valitse \"Säilytä aina tässä laitteessa\", kun haluat kiinnittää "
+"tiedoston tai kansion paikallisesti. Valitse \"Vapauta tilaa\", kun haluat "
+"poistaa tiedoston tai kansion välimuistin."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:28
+msgid ""
+"In SeaDrive 1.0, cached files are not automatically updated when they're "
+"updated on the server. In SeaDrive 2.0, full and pinned files are "
+"automatically kept in sync with the server."
+msgstr ""
+"SeaDrive 1.0:ssa välimuistitiedostoja ei päivitetä automaattisesti "
+"palvelimella. SeaDrive 2.0:ssa täydet ja kiinnitetyt tiedostot "
+"synkronoituvat automaattisesti palvelimen kanssa."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:30
+msgid "File Download and Control"
+msgstr "Tiedostojen lataus ja hallinta"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:31
+msgid ""
+"Whenever you open a placeholder file, the operating system will "
+"automatically start to download it. If the file may take some time to "
+"download, there will be a progress bar shown up in file explorer and you may"
+" cancel the download."
+msgstr ""
+"Aina kun avaat paikkamerkkitiedoston, käyttöjärjestelmä aloittaa sen "
+"latauksen automaattisesti. Jos lataus kestää kauan, tiedostoselaimeen "
+"näytetään edistymispalkki ja voit peruuttaa latauksen."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:32
+msgid ""
+"Sometimes a background application may try to download a file in the virtual"
+" drive (such as an Anti-Virus software). You will be notified by the "
+"operating system about this and you may choose to cancel the download or "
+"disallow the application from automatically downloading files in the future."
+msgstr ""
+"Joskus taustasovellus (kuten virustorjuntaohjelma) voi yrittää ladata "
+"tiedoston virtuaalilevyssä. Käyttöjärjestelmä ilmoittaa tästä sinulle, ja "
+"voit peruuttaa latauksen tai estää sovellusta lataamasta tiedostoja "
+"automaattisesti tulevaisuudessa."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:34
+#: templates/help/using_drive_client.html:79
+msgid "FAQ"
+msgstr "Usein kysytyt kysymykset"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:35
+msgid "Can I create, delete, rename libraries?"
+msgstr "Voinko luoda, poistaa ja nimetä uudelleen kirjastoja?"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:36
+msgid ""
+"Yes. When you create, delete or rename library folders in the virtual drive,"
+" the operation will be reflected on the server. You can only create, delete,"
+" rename libraries under the \"My Libraries\" category. Creating, deleting or"
+" renaming libraries in other categories will be ignored."
+msgstr ""
+"Kyllä. Kun luot, poistat tai nimetät uudelleen kirjastokansioita "
+"virtuaalilevyssä, toimenpiteet päivittyvät palvelimelle. Voit tehdä näitä "
+"toimenpiteitä vain \"Omat kirjastot\" -kohdassa. Muissa luokissa kirjastojen"
+" luominen, poisto ja uudelleen nimeäminen jätetään huomioimatta."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:38
+msgid "Can I create files or folders outside of a library folder?"
+msgstr "Voinko luoda tiedostoja tai kansioita kirjaston ulkopuolelle?"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:39
+msgid ""
+"Yes. But files created outside of a library folder will be ignored and NOT "
+"synced to the server. A new folder under the \"My Libraries\" folder will be"
+" handled as a new library."
+msgstr ""
+"Kyllä. Mutta kirjaston ulkopuolella luodut tiedostot jätetään huomioimatta "
+"eikä niitä synkronoida palvelimelle. Uusi kansio \"Omat kirjastot\" -kansion"
+" alla käsitellään uutena kirjastona."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:41
+msgid "Can I access encrypted libraries?"
+msgstr "Voinko käyttää salattuja kirjastoja?"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:42
+msgid ""
+"Yes. By default, encrypted libraries are not synced and shown in the virtual"
+" drive. You need to manually choose which encrypted libraries to sync and "
+"enter the password. Just right click on the SeaDrive icon in the system tray"
+" area and choose \"Show encrypted libraries\". A window will show up and you"
+" can choose to sync or unsync an encrypted library."
+msgstr ""
+"Kyllä. Oletuksena salattuja kirjastoja ei synkronoida eikä näytetä "
+"virtuaalilevyssä. Sinun on valittava manuaalisesti, mitkä salatut kirjastot "
+"synkronoidaan ja syötettävä salasana. Napsauta hiiren oikealla SeaDrive-"
+"kuvaketta ilmoitusalueella ja valitse \"Näytä salatut kirjastot\". Ikkunassa"
+" voit valita, synkronoitanko salatun kirjaston."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:44
+msgid "Is it compatible to SeaDrive 1.0?"
+msgstr "Onko yhteensopiva SeaDrive 1.0:n kanssa?"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:45
+msgid ""
+"SeaDrive 2.0 will use any existing accounts and their metadata (stored under"
+" C:\\users\\username\\seadrive\\ folder). But it will not use the cached "
+"files from SeaDrive 1.0. So any locally cached files in 1.0 version will not"
+" be accessible in 2.0 version. You can start SeaDrive 1.0 again to upload "
+"the files to server or copy them out."
+msgstr ""
+"SeaDrive 2.0 käyttää olemassa olevia tilejä ja niiden metatietoja "
+"(tallennettu C:\\users\\käyttäjänimi\\seadrive\\ kansioon). Se ei kuitenkaan"
+" käytä SeaDrive 1.0:n välimuistitiedostoja. Siksi versio 1.0:n paikalliset "
+"tiedostot eivät ole käytettävissä versiossa 2.0. Voit käynnistää SeaDrive "
+"1.0:n uudelleen ladataaksesi tiedostot palvelimelle tai kopioidaksesi ne "
+"ulos."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:47
+msgid "How do I clean the cache?"
+msgstr "Miten tyhjennän välimuistin?"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:48
+msgid ""
+"You can manually choose which folders or files to be cached locally. If you "
+"find a folder consumes too much space, just choose to \"Free up space\" on "
+"that folder and all cached files in that folder will be cleaned. There is no"
+" need to set cache cleaning time and cache size limit as in SeaDrive 1.0. "
+"Because placeholders are just normal files created on your local disk, your "
+"cache size is only limited by the available disk space on your computer."
+msgstr ""
+"Voit manuaalisesti valita, mitkä kansiot tai tiedostot tallennetaan "
+"paikalliseen välimuistiin. Jos jokin kansio vie liikaa tilaa, valitse sille "
+"\"Vapauta tilaa\" ja kaikki sen välimuistitiedostot poistetaan. Ei tarvitse "
+"asettaa välimuistin tyhjennysaikaa tai kokorajaa kuten SeaDrive 1.0:ssa. "
+"Paikkamerkit ovat tavallisia tiedostoja paikallisella levyllä, joten "
+"välimuistin koko rajoittuu vain koneen vapaaseen tilaan."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:50
+msgid "How to remove left-over SeaDrive shortcuts in Windows Explorer?"
+msgstr "Miten poistan jääneitä SeaDrive-pikakuvakkeita Windows Explorerissa?"
+
+#: templates/help/drive_client_2.0_for_windows_10.html:51
+msgid ""
+"The \"SeaDrive\" shortcut in Windows Explorer won't disappear after you exit"
+" SeaDrive program or switch Seafile accounts in SeaDrive. This is an "
+"intended behavior. You don't need to remove them if you still need to access"
+" the account later."
+msgstr ""
+"Windows Explorerissa oleva \"SeaDrive\"-pikakuvake ei häviä, kun suljet "
+"ohjelman tai vaihdat tiliä SeaDrivessa. Tämä on tarkoituksellista. Sinun ei "
+"tarvitse poistaa niitä, jos tarvitset tiliä myöhemmin."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:53
+msgid ""
+"You can usually remove those shortcuts by uninstalling SeaDrive program and "
+"choose \"Remove account information\" in the prompt dialog."
+msgstr ""
+"Yleensä voit poistaa nämä pikakuvakkeet asentamalla SeaDrive-ohjelman "
+"poiston ja valitsemalla ponnahdusikkunassa \"Poista tilitiedot\"."
+
+#: templates/help/drive_client_2.0_for_windows_10.html:54
+msgid ""
+"If uninstallation doesn't remove the shortcuts successfully, you can remove "
+"the SeaDrive shortcut in Windows Explorer by editing the registry. Open the "
+"path "
+"\"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\\""
+" in registry editor. Remove the sub-keys correspond to the shortcut you want"
+" to remove."
+msgstr ""
+"Jos poisto ei poista pikakuvakkeita, voit poistaa ne muokkaamalla "
+"rekisteriä. Avaa rekisterieditorissa polku "
+"\"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Desktop\\NameSpace\\\""
+" ja poista ne alihakaimet, jotka vastaavat poistettavia pikakuvakkeita."
+
+#: templates/help/encrypted_libraries.html:6
+msgid "How to Use Encrypted Libraries"
+msgstr "Miten salattuja kirjastoja käytetään:"
+
+#: templates/help/encrypted_libraries.html:8
+msgid ""
+"Seafile provides client-side end-to-end data encryption. You can create "
+"encrypted libraries to use this feature. File contents in encrypted "
+"libraries are encrypted on client side. The encryption password is not "
+"stored on the server. So even the server administrator can't access your "
+"file contents."
+msgstr ""
+"Seafile tarjoaa asiakaspäässä tapahtuvan päätepisteeseen asti ulottuvan "
+"datansalauksen. Voit luoda salattuja kirjastoja käyttääksesi tätä "
+"ominaisuutta. Salattujen kirjastojen tiedostot salataan asiakaspäässä. "
+"Salasanaa ei tallenneta palvelimelle, joten edes palvelimenvalvoja ei näe "
+"tiedostojen sisältöä."
+
+#: templates/help/encrypted_libraries.html:10
+msgid "When creating an encrypted library:"
+msgstr "Salattua kirjastoa luodessa:"
+
+#: templates/help/encrypted_libraries.html:12
+msgid ""
+"If you create an encrypted library in the web app, the password is sent to "
+"the server. The server uses this password to create the library. But it "
+"doesn't store the plain text password."
+msgstr ""
+"Jos luot salatun kirjaston verkkosovelluksessa, salasana lähetetään "
+"palvelimelle. Palvelin käyttää sitä kirjaston luomiseen, mutta ei tallenna "
+"selkokielistä salasanaa."
+
+#: templates/help/encrypted_libraries.html:13
+#, python-format
+msgid ""
+"If you create an encrypted library from a local folder with the desktop "
+"client (see <a href=\"%(SITE_ROOT)shelp/install_sync/\">file syncing</a>), "
+"the password is not sent to the server."
+msgstr ""
+"Jos luot salatun kirjaston paikallisesta kansiosta työpöytäasiakkaalla "
+"(katso <a href=\"%(SITE_ROOT)shelp/install_sync/\">tiedostojen "
+"synkronointi</a>), salasanaa ei lähetetä palvelimelle."
+
+#: templates/help/encrypted_libraries.html:17
+msgid "When you access the encrypted library:"
+msgstr "Kun avaat salatun kirjaston:"
+
+#: templates/help/encrypted_libraries.html:19
+msgid ""
+"If you use web app, you have to input the password to the server. The server"
+" will cache the password in encrypted format for 1 hour. It won't store the "
+"password on disk."
+msgstr ""
+"Jos käytät verkkosovellusta, sinun on syötettävä salasana palvelimelle. "
+"Palvelin säilyttää salatun salasanan välimuistissa tunnin ajan eikä tallenna"
+" sitä levylle."
+
+#: templates/help/encrypted_libraries.html:20
+msgid ""
+"If you use desktop client to sync the library, the password is not sent to "
+"the server. The client decrypts and encrypts file contents locally. The "
+"plain text password is not stored on the client disk either."
+msgstr ""
+"Jos käytät työpöytäasiakasta kirjaston synkronointiin, salasanaa ei lähetetä"
+" palvelimelle. Asiakas salaa ja purkaa salauksen paikallisesti. "
+"Selkokielistä salasanaa ei tallenneta asiakkaan levylle."
+
+#: templates/help/encrypted_libraries.html:21
+msgid ""
+"iOS client supports client side encryption since version 2.1.6. Android "
+"client supports it since version 2.1.0."
+msgstr ""
+"iOS-asiakas tukee asiakaspäässä tapahtuvaa salausta versiosta 2.1.6 lähtien."
+" Android-asiakas alkaa tukea sitä versiosta 2.1.0."
+
+#: templates/help/encrypted_libraries.html:25
+msgid ""
+"Note that encrypted library only encrypts the contents of the files, but not"
+" the folder and file names."
+msgstr ""
+"Huom: salattu kirjasto salaa vain tiedostojen sisällön, ei kansio- eikä "
+"tiedostonimiä."
+
+#: templates/help/file_locking.html:5
+msgid "File locking"
+msgstr "Tiedostojen lukitseminen"
+
+#: templates/help/file_locking.html:6
+msgid ""
+"When more than one person collaborate on a file, it's likely that more than "
+"one person modify the file at about the same time. Seafile handles this "
+"situation nicely with conflict files. But it's often more convenient to lock"
+" the file when one person wants to exclusively modify the file. Seafile "
+"Professional Edition supports file locking."
+msgstr ""
+"Kun useampi ihminen työskentelee yhdessä tiedoston parissa, useat voivat "
+"muokata sitä samanaikaisesti. Seafile hoitaa tämän ristiriitatiedostoilla. "
+"Mutta usein on kätevämpää lukita tiedosto, kun joku haluaa muokata sitä "
+"yksinoikeudella. Seafile Professional Edition tukee tiedostojen "
+"lukitsemista."
+
+#: templates/help/file_locking.html:7
+msgid ""
+"File locking works on both the web app and the desktop syncing client. We'll"
+" introduce them one by one."
+msgstr ""
+"Tiedostojen lukitseminen toimii sekä verkkosovelluksessa että "
+"työpöytäasiakkaassa. Esittelemme ne yksitellen."
+
+#: templates/help/file_locking.html:8
+msgid "File locking on the Web App"
+msgstr "Tiedostojen lukitseminen verkkosovelluksessa"
+
+#: templates/help/file_locking.html:9
+msgid ""
+"To lock a file, you can navigate into the file's folder on the web app, and "
+"click on the \"operations\" drop-down menu."
+msgstr ""
+"Lukitaksesi tiedoston siirry sen kansioon verkkosovelluksessa ja klikkaa "
+"\"toimenpiteet\"-pudotusvalikkoa."
+
+#: templates/help/file_locking.html:11
+msgid ""
+"After the file is locked, you can see a red \"stop sign\" at the corner of "
+"the file icon. Moving the mouse on the stop sign, you can see who locks the "
+"file. And you can also unlock a file that's locked by you. But you cannot "
+"unlock files locked by others."
+msgstr ""
+"Tiedoston lukittua näet punaisen pysähtymismerkin kuvakkeen kulmassa. Hiiren"
+" siirtäessä merkin päälle näet, kuka on lukinnut tiedoston. Voit avata "
+"lukituksen omista tiedostoista, mutta ei muiden lukitsemista."
+
+#: templates/help/file_locking.html:13
+msgid "File locking on the desktop client"
+msgstr "Tiedostojen lukitseminen työpöytäasiakkaassa"
+
+#: templates/help/file_locking.html:14
+msgid ""
+"After a library is synced to the desktop, you can lock/unlock files in that "
+"library inside File Explorer on Windows or Finder on Mac OS."
+msgstr ""
+"Kun kirjasto on synkronoitu työpöydälle, voit lukita ja avata lukituksia sen"
+" tiedostoista Windowsin File Explorerissa tai Mac OS:n Finderissa."
+
+#: templates/help/file_locking.html:15
+msgid ""
+"To lock a file, just right click on a synced file and choose \"lock this "
+"file\" in the \"Seafile\" menu."
+msgstr ""
+"Lukitaksesi tiedoston napsauta hiiren oikealla synkronoidun tiedoston päällä"
+" ja valitse \"Seafile\"-valikossa \"Lukitse tämä tiedosto\"."
+
+#: templates/help/file_locking.html:17
+msgid ""
+"If a file is locked by you, you can see an orange \"stop sign\" on the file "
+"icon. You can choose to unlock it."
+msgstr ""
+"Jos olet lukinnut tiedoston, näet oranssin pysähtymismerkin kuvakkeessa. "
+"Voit avata lukituksen."
+
+#: templates/help/file_locking.html:19
+msgid ""
+"If a file is locked by other user, you can see a red \"stop sign\" on the "
+"file icon. The file is automatically set to read-only. You cannot modify it "
+"until it's unlocked."
+msgstr ""
+"Jos toinen käyttäjä on lukinnut tiedoston, näet punaisen merkin kuvakkeessa."
+" Tiedosto asetetaan automaattisesti vain luku -tilaan. Et voi muokata sitä "
+"ennen lukituksen avaamista."
+
+#: templates/help/file_locking.html:21
+msgid ""
+"If a library is not synced, you can still use cloud file browser to lock and"
+" unlock files in it."
+msgstr ""
+"Jos kirjastoa ei ole synkronoitu, voit silti käyttää pilvitiedostoselainta "
+"sen tiedostojen lukitsemiseen."
+
+#: templates/help/file_locking.html:22
+msgid "Auto locking office files"
+msgstr "Office-tiedostojen automaattinen lukitseminen"
+
+#: templates/help/file_locking.html:23
+msgid ""
+"After a library is synced to the desktop, when you open a Microsoft Office "
+"file inside the library, Seafile automatically locks the file. When you "
+"close the file, Seafile automatically unlocks the file. The locking state is"
+" propagated to other computers syncing this library. It prevents concurrent "
+"editing the same Office file and is convenient for collaboration."
+msgstr ""
+"Kun kirjasto on synkronoitu työpöydälle, avatessasi Microsoft Office "
+"-tiedoston kirjastossa Seafile lukittaa sen automaattisesti. Sulkeasi "
+"tiedoston lukitus avautuu. Lukitustila levitetään kaikkiin kirjastoa "
+"synkronoitaviin tietokoneisiin. Se estää samanaikaisen muokkauksen ja "
+"helpottaa yhteistyötä."
+
+#: templates/help/file_locking.html:24
+msgid "Details about file locking"
+msgstr "Tiedot tiedostojen lukitsemisesta"
+
+#: templates/help/file_locking.html:25
+msgid "There are a few useful tips about how file locking works:"
+msgstr "Muutama hyödyllinen tieto tiedostojen lukitsemisesta:"
+
+#: templates/help/file_locking.html:27
+msgid "A locked file can only be unlocked by the user who locked it."
+msgstr "Lukittua tiedostoa voi avata vain käyttäjä, joka sen lukinnut."
+
+#: templates/help/file_locking.html:28
+msgid ""
+"A locked file cannot be modified, moved, renamed or deleted by other users. "
+"But other users can still move, delete or rename the parent folder of a "
+"locked file. The purpose of file locking is mainly to prevent concurrent "
+"editing."
+msgstr ""
+"Muu käyttäjä ei voi muokata, siirtää, nimetä uudelleen tai poistaa lukittua "
+"tiedostoa. Hän voi kuitenkin siirtää, poistaa ja nimetä uudelleen sen "
+"ylähakemistoa. Lukitsemisen tarkoitus on pääasiassa estää samanaikainen "
+"muokkaus."
+
+#: templates/help/file_locking.html:29
+msgid ""
+"When a locked file's parent folder is renamed or moved inside the same "
+"library, it remains locked after the operation."
+msgstr ""
+"Kun lukitun tiedoston ylähakemistoa nimetään uudelleen tai siirretään "
+"samassa kirjastossa, tiedosto pysyy lukittuna."
+
+#: templates/help/finding_older_version_files.html:6
+msgid "Finding older version of files"
+msgstr "Vanhempien tiedostoversioiden etsiminen"
+
+#: templates/help/finding_older_version_files.html:7
+msgid ""
+"Seafile tracks the modification history of all files. Whenever a file is "
+"modified, a new version is created, while the old version is still kept for "
+"a configurable period. When you want to access an older version of a file, "
+"the file history feature becomes very handy."
+msgstr ""
+"Seafile seuraa kaikkien tiedostojen muokkaushistoriaa. Aina kun tiedostoa "
+"muokataan, luodaan uusi versio ja vanha säilytetään määritellyn ajan. "
+"Vanhempien versioiden käyttöön tiedostohistoria on erittäin kätevä."
+
+#: templates/help/finding_older_version_files.html:8
+msgid "To list all the versions of a file:"
+msgstr "Näytäksesi kaikki tiedoston versiot:"
+
+#: templates/help/finding_older_version_files.html:10
+msgid ""
+"In Seafile Web App, navigate into the folder containing the file. Move the "
+"cursor onto the row of that file. An operation menu will appear. You can "
+"click the \"History\" button in that menu."
+msgstr ""
+"Seafile-verkkosovelluksessa siirry tiedoston sisältävään kansioon. Siirrä "
+"kursori tiedoston riville. Näytetään toimenpitevalikko, josta klikkaa "
+"\"Historia\"."
+
+#: templates/help/finding_older_version_files.html:11
+msgid ""
+"A list of all versions of that file will be displayed in time order, from "
+"newer to older. The list also contains the file's rename history."
+msgstr ""
+"Näytetään luettelo kaikista tiedoston versioista ajan mukaan uusimmasta "
+"vanhimpaan. Luettelossa on myös tiedoston uudelleen nimeämishistoria."
+
+#: templates/help/finding_older_version_files.html:12
+msgid "You can download, restore, view any version of the file."
+msgstr ""
+"Voit ladata, palauttaa ja tarkastella mitä tahansa tiedoston versiota."
+
+#: templates/help/finding_older_version_files.html:14
+#, python-format
+msgid ""
+"You can configure the retention period of file versions: <a "
+"href=\"%(SITE_ROOT)shelp/setting_library_history/\">setting history "
+"retention period</a>."
+msgstr ""
+"Voit määrittää tiedostoversioiden säilytysajan: <a "
+"href=\"%(SITE_ROOT)shelp/setting_library_history/\">historian säilytysajan "
+"asetus</a>."
+
+#: templates/help/folder_permission.html:6
+msgid "Use folder permission for fine-grained access control"
+msgstr "Kansion käyttöoikeuksien käyttö tarkkaan pääsynhallintaan"
+
+#: templates/help/folder_permission.html:8
+#, python-format
+msgid ""
+"For shared libraries or folders, you can set permission to its sub-folders "
+"for a person or a group. Available permissions are the same as the ones "
+"described in <a "
+"href=\"%(SITE_ROOT)shelp/sharing_files_and_folders/\">sharing libraries</a>."
+" Here are some use cases:"
+msgstr ""
+"Jaetuille kirjastoille ja kansioille voit asettaa käyttöoikeuksia "
+"alikansioihin tietyille käyttäjille tai ryhmille. Käytettävissä olevat "
+"oikeudet ovat samat kuin <a "
+"href=\"%(SITE_ROOT)shelp/sharing_files_and_folders/\">kirjastojen "
+"jakamisessa</a>. Seuraavat ovat esimerkkejä:"
+
+#: templates/help/folder_permission.html:10
+msgid ""
+"You shared a library to a group with \"read only\" permission. You also want"
+" to allow a specific member of the group to modify files in one sub-folder. "
+"You can grant write permission of this sub-folder to this person."
+msgstr ""
+"Jaoit kirjaston ryhmälle \"vain luku\" -oikeudella. Haluat kuitenkin sallia "
+"tietylle jäsenelle muokata tiedostoja yhdessä alikansiossa. Voit myöntää "
+"hänelle kirjoitusoikeuden tähän alikansioon."
+
+#: templates/help/folder_permission.html:11
+msgid ""
+"You shared a library to 3 groups. There are 3 sub-folders under that "
+"library, one for each group to upload files. However you don't want users to"
+" change files not belong to his/her group. You can grant write permission of"
+" a sub-folder only to its group."
+msgstr ""
+"Jaoit kirjaston kolmelle ryhmälle. Kirjastossa on kolme alikansiota, yksi "
+"kullakin ryhmälle tiedostojen lataamista varten. Et halua, että käyttäjät "
+"muokkaavat muiden ryhmien tiedostoja. Voit myöntää kirjoitusoikeuden "
+"alikansiosta vain sen omalle ryhmälle."
+
+#: templates/help/folder_permission.html:13
+msgid ""
+"Folder permissions are only effective for libraries and folders you share to"
+" others. To effectively set folder permissions to its sub-folders, you "
+"should first share the parent library or folder; otherwise the folder "
+"permission won't take effect."
+msgstr ""
+"Kansion käyttöoikeudet ovat voimassa vain niille kirjastoille ja kansioille,"
+" jotka jaat muille. Jotta alikansioiden oikeudet toimisivat, sinun on ensin "
+"jaettava ylempi kirjasto tai kansio. Muuten oikeudet eivät tule voimaan."
+
+#: templates/help/folder_permission.html:14
+msgid ""
+"One important design goal of folder permission is to support hierarchical "
+"permissions:"
+msgstr ""
+"Yksi tärkeä suunnittelutavoite kansioiden käyttöoikeuksille on tukea "
+"hierarkisia oikeuksia:"
+
+#: templates/help/folder_permission.html:16
+msgid ""
+"Sub-folders automatically inherit folder permissions from its parent folder."
+msgstr ""
+"Alikansiot perivät automaattisesti käyttöoikeudet ylempänä olevasta "
+"kansiosta."
+
+#: templates/help/folder_permission.html:17
+msgid ""
+"Permissions set on sub-folders overwrites permissions set on its parent "
+"folder. For example, you set \"read write\" permission on folder \"meeting "
+"files\" for user A, and you set \"read only\" permission on sub-folder "
+"\"meeting files/today\" for user A. Then user A's permission to \"meeting "
+"files/today\" is \"read only\"."
+msgstr ""
+"Alikansioon asetetut oikeudet ylikirjoittavat ylempänä olevan kansion "
+"oikeudet. Esimerkiksi: asetat käyttäjälle A \"luku-kirjoitus\" -oikeudet "
+"kansioon \"kokous tiedostot\" ja \"vain luku\" -oikeudet alikansioon "
+"\"kokous tiedostot/tänään\". Tällöin käyttäjällä A on vain luku -oikeus "
+"kyseiseen alikansioon."
+
+#: templates/help/folder_permission.html:19
+msgid "Basic usage"
+msgstr "Peruskäyttö"
+
+#: templates/help/folder_permission.html:20
+msgid ""
+"Only library's owner can set folder permissions for its sub-folders. In the "
+"file browsing interface, click \"more operations\" button, choose "
+"\"permission\" in the drop-down menu. In the pop-up window, you can see and "
+"set folder permissions on this folder."
+msgstr ""
+"Vain kirjaston omistaja voi asettaa käyttöoikeuksia sen alikansioihin. "
+"Tiedostoselaimessa klikkaa \"lisää toimenpiteitä\" -painiketta ja valitse "
+"pudotusvalikosta \"oikeudet\". Ponnahdusikkunassa voit nähdä ja asettaa "
+"kansion käyttöoikeuksia."
+
+#: templates/help/folder_permission.html:21
+msgid ""
+"If you want to see all folder permissions set in a library, hover the mouse "
+"on the library. Click \"more operations\" button, choose \"Folder "
+"Permission\" in the drop-down menu. In the pop-up window, you can see and "
+"set folder permissions in this library."
+msgstr ""
+"Jos haluat nähdä kaikki kirjastoon asetetut kansioiden oikeudet, siirrä "
+"hiiri kirjaston päälle. Klikkaa \"lisää toimenpiteitä\" ja valitse \"Kansion"
+" oikeudet\" pudotusvalikossa. Ikkunassa näet ja voit muokata kaikkia "
+"kirjaston kansioiden oikeuksia."
+
+#: templates/help/folder_permission.html:22
+msgid ""
+"When other users navigate into a folder, there will be a small \"eye\" icon "
+"next to \"read only\" sub-folders. When the user navigate into that sub-"
+"folder, he/she won't be able to add/modify/delete files."
+msgstr ""
+"Kun muut käyttäjät siirtyvät kansioon, \"vain luku\" -alikansioiden vieressä"
+" on pieni silmäkuvake. Siirtyessään kyseiseen alikansioon he eivät voi "
+"lisätä, muokata tai poistaa tiedostoja."
+
+#: templates/help/folder_permission.html:24
+msgid ""
+"If a \"read only\" folder is synced to PC with the Seafile desktop App, "
+"changes under a \"read only\" folder won't be uploaded to the cloud."
+msgstr ""
+"Jos \"vain luku\" -kansio on synkronoitu PC:lle Seafile-"
+"työpöytäsovelluksella, siinä tehdyt muutokset eivät lähde pilveen."
+
+#: templates/help/folder_permission.html:25
+msgid "Advanced: priority between different permissions"
+msgstr "Edistynyt: eri oikeuksien prioriteetti"
+
+#: templates/help/folder_permission.html:27
+msgid ""
+"Folder permissions have higher priority than the permission set in share. "
+"For example, if you share a library to user A with \"read write\" "
+"permission, and also set \"read only\" permission to a sub-folder of that "
+"library. Then user A only has \"read only\" access to the sub-folder, while "
+"he/she has \"read write\" access to all other sub-folders and files."
+msgstr ""
+"Kansion käyttöoikeudet ovat korkeampaan prioriteettia kuin jakamiseen "
+"asetetut oikeudet. Esimerkiksi: jaat kirjaston käyttäjälle A \"luku-"
+"kirjoitus\" -oikeudella ja asetat \"vain luku\" -oikeudet yhdelle "
+"alikansiosta. Tällöin käyttäjällä A on vain luku -oikeus kyseiseen "
+"alikansioon, mutta luku-kirjoitus -oikeudet muihin alikansioihin ja "
+"tiedostoihin."
+
+#: templates/help/folder_permission.html:28
+msgid ""
+"Folder permissions set to a specific user have higher priority than "
+"permissions set to a group. That is, when checking permission for a folder, "
+"if the system matches a permission specific to the user, it'll ignore all "
+"permissions set for the groups the user belongs to."
+msgstr ""
+"Yksittäiselle käyttäjälle asetetut kansioiden oikeudet ovat korkeampaan "
+"prioriteettia kuin ryhmille asetetut. Eli tarkistaessa oikeuksia järjestelmä"
+" käyttää ensin käyttäjälle määriteltyjä oikeuksia ja jättää ryhmäoikeudet "
+"huomioimatta."
+
+#: templates/help/folder_permission.html:29
+msgid ""
+"Permissions on sub-folders have higher priority than those on parent "
+"folders."
+msgstr ""
+"Alikansioiden oikeudet ovat korkeampiarvoisia kuin pääkansioiden oikeudet."
+
+#: templates/help/folder_permission.html:31
+msgid "Here is a more complex example:"
+msgstr "Tässä on monimutkaisempi esimerkki:"
+
+#: templates/help/folder_permission.html:32
+msgid ""
+"Supposed the folder structure looks like \"A/B\", user \"John\" is in group "
+"\"Staff\". If you set \"read only\" permission on folder A for John, and, "
+"you also set \"read write\" permission on folder \"A/B\" for group "
+"\"Staff\". Then John's permission to folder \"A/B\" is still only \"read "
+"only\". That's because, according to rule 2, \"read only\" permission is "
+"first matched for folder \"A/B\" and user \"John\", which is inherited from "
+"its parent \"A\"."
+msgstr ""
+"Oletetaan, että kansiorakenne on \"A/B\", käyttäjä \"John\" kuuluu ryhmään "
+"\"Staff\". Jos asetat Johnille kansioon A \"vain luku\" -oikeudet ja "
+"ryhmälle \"Staff\" kansioon \"A/B\" \"luku ja kirjoitus\" -oikeudet, "
+"Johnilla on edelleen vain \"vain luku\" -oikeudet kansioon \"A/B\". Syynä "
+"on, että säännön 2 mukaan kansioon \"A/B\" ja käyttäjälle \"John\" "
+"sovelletaan ensin \"vain luku\" -oikeuksia, jotka periytyvät sen "
+"pääkansiosta \"A\"."
+
+#: templates/help/full_text_file_search.html:6
+msgid ""
+"If you're using a Pro Edition Server, you can search file and folder names, "
+"as well as the content of certain files, in the Seafile web app. Currently "
+"Seafile can search the contents of the following types of files:"
+msgstr ""
+"Jos käytät Pro Edition -palvelinta, voit hakea tiedosto- ja kansionimiä sekä"
+" tiettyjen tiedostojen sisältöä Seafilen verkkosovelluksessa. Tällä hetkellä"
+" Seafile voi hakea seuraavien tiedostotyyppien sisällön:"
+
+#: templates/help/full_text_file_search.html:8
+#: templates/help/viewing_files_within_web_app.html:8
+msgid "Microsoft Office Doc: .doc, .docx (Pro Edition Server only)"
+msgstr "Microsoft Office Doc: .doc, .docx (vain Pro Edition -palvelin)"
+
+#: templates/help/full_text_file_search.html:9
+#: templates/help/viewing_files_within_web_app.html:9
+msgid "Microsoft Office PowerPoint: .ppt, .pptx (Pro Edition Server only)"
+msgstr "Microsoft Office PowerPoint: .ppt, .pptx (vain Pro Edition -palvelin)"
+
+#: templates/help/full_text_file_search.html:10
+#: templates/help/viewing_files_within_web_app.html:10
+msgid "Microsoft Office Excel: .xls, .xlsx (Pro Edition Server only)"
+msgstr "Microsoft Office Excel: .xls, .xlsx (vain Pro Edition -palvelin)"
+
+#: templates/help/full_text_file_search.html:11
+#: templates/help/viewing_files_within_web_app.html:11
+msgid "LibreOffice files"
+msgstr "LibreOffice-tiedostot"
+
+#: templates/help/full_text_file_search.html:12
+#: templates/help/viewing_files_within_web_app.html:12
+msgid "PDF files"
+msgstr "PDF-tiedostot"
+
+#: templates/help/full_text_file_search.html:13
+#: templates/help/viewing_files_within_web_app.html:14
+msgid "Markdown files: .md"
+msgstr "Markdown-tiedostot: .md"
+
+#: templates/help/full_text_file_search.html:14
+#: templates/help/viewing_files_within_web_app.html:15
+msgid "Various source code files"
+msgstr "Erilaisia lähdekooditiedostoja"
+
+#: templates/help/full_text_file_search.html:15
+#: templates/help/viewing_files_within_web_app.html:16
+msgid "Text files: .txt, .log"
+msgstr "Tekstitiedostot: .txt, .log"
+
+#: templates/help/full_text_file_search.html:17
+msgid ""
+"Note that your Seafile system administrator may not have enabled the full-"
+"text search feature. In that case, you can only search file and folder "
+"names."
+msgstr ""
+"Huomaa, että Seafile-järjestelmän ylläpitäjä ei ole välttämättä ottanut koko"
+" tekstihakua käyttöön. Tällöin voit hakea vain tiedosto- ja kansionimiä."
+
+#: templates/help/groups_managing.html:6
+msgid ""
+"Creating a group is a convenient way to share files to many people. In "
+"Seafile, you can create and manage a group easily."
+msgstr ""
+"Ryhmän luominen on kätevä tapa jakaa tiedostoja useille ihmisille. "
+"Seafilella voit luoda ja hallinnoida ryhmiä helposti."
+
+#: templates/help/groups_managing.html:7
+msgid "Here is how groups work in Seafile:"
+msgstr "Näin ryhmät toimivat Seafilella:"
+
+#: templates/help/groups_managing.html:9
+msgid ""
+"Each group has a owner. The owner is the creator of the group by default. "
+"He/she can transfer the ownership of the group to another member."
+msgstr ""
+"Jokaisella ryhmällä on omistaja. Omistaja on oletuksena ryhmän luoja. Hän "
+"voi siirtää ryhmän omistajuuden toiselle jäsenelle."
+
+#: templates/help/groups_managing.html:10
+msgid ""
+"Each group can have multiple admins. The group owner and group admins can "
+"add more group admins."
+msgstr ""
+"Jokaisella ryhmällä voi olla useita ylläpitäjiä. Ryhmän omistaja ja "
+"ylläpitäjät voivat lisätä lisää ryhmän ylläpitäjiä."
+
+#: templates/help/groups_managing.html:11
+msgid ""
+"The group admin can add/delete members in the group. And he/she can also "
+"unshare a library in the group."
+msgstr ""
+"Ryhmän ylläpitäjä voi lisätä ja poistaa jäseniä ryhmästä. Hän voi myös "
+"lopettaa kirjaston jakamisen ryhmässä."
+
+#: templates/help/groups_managing.html:13
+msgid ""
+"Click on the \"Shared with groups\" tab on the left panel, and you'll see "
+"all the groups you're in. Clicking into any group, you'll see the libraries "
+"shared into this group."
+msgstr ""
+"Klikkaa vasemmalla paneelissa välilehteä \"Jaettu ryhmien kanssa\", ja näet "
+"kaikki ryhmät, joissa olet jäsenenä. Klikkaamalla ryhmää näet siinä jaetut "
+"kirjastot."
+
+#: templates/help/groups_managing.html:14
+msgid ""
+"To create a new group, click on the \"Shared with groups\" tab on the left "
+"panel. Then click on \"All Groups\". In the page, you can click the \"New "
+"Group\" button to create a group."
+msgstr ""
+"Luodaksesi uuden ryhmän, klikkaa vasemmalla paneelissa \"Jaettu ryhmien "
+"kanssa\" -välilehteä. Sen jälkeen klikkaa \"Kaikki ryhmät\". Sivulla voit "
+"luoda ryhmän klikkaamalla \"Uusi ryhmä\" -painiketta."
+
+#: templates/help/groups_managing.html:15
+#, python-format
+msgid ""
+"See <a href=\"%(SITE_ROOT)shelp/sharing_files_and_folders/\">sharing files "
+"and folders</a> about how to share libraries or folders to a group."
+msgstr ""
+"Lisätietoja kirjastojen ja kansioiden jakamisesta ryhmälle on kohdassa <a "
+"href=\"%(SITE_ROOT)shelp/sharing_files_and_folders/\">tiedostojen ja "
+"kansioiden jakaminen</a>."
+
+#: templates/help/ignore.html:6
+msgid "Excluding files/folders from syncing"
+msgstr "Tiedostojen ja hakemistojen poislukeminen synkronoinnista."
+
+#: templates/help/ignore.html:8
+msgid ""
+"Sometimes you don't want to sync some files or folders inside a library. To "
+"achieve this, create a seafile-ignore.txt file in the root folder of a "
+"library. This special file specifies the files and folders that Seafile "
+"should not sync. Each line in a ignore.txt file specifies a pattern. The "
+"following pattern format are supported."
+msgstr ""
+"Joissain tapauksissa et halua synkronoida joitain tiedostoja tai kansioita "
+"kirjaston sisällä. Tähän tarkoitukseen luo seafile-ignore.txt-tiedosto "
+"kirjaston juurikansioon. Tämä erityinen tiedosto määrittelee, mitkä "
+"tiedostot ja kansiot Seafilen ei saa synkronoida. Jokainen rivi tiedostossa "
+"määrittelee suodattimen. Seuraavia muotoja tuetaan."
+
+#: templates/help/ignore.html:10
+msgid "A blank line matches no files."
+msgstr "Tyhjä rivi ei vastaa mitään tiedostoja."
+
+#: templates/help/ignore.html:11
+msgid "A line starting with # serves as a comment."
+msgstr "Rivi joka alkaa # on kommentti."
+
+#: templates/help/ignore.html:12
+msgid ""
+"Seafile supports wildcards in the pattern. For example, \"foo/*\" matches "
+"\"foo/1\" and \"foo/hello\". \"foo/?\" matches \"foo/1\" but not "
+"\"foo/hello\". Note that the wildcard character * recursively matches all "
+"the paths under a folder. For instance, \"foo/*.html\" matches "
+"\"foo/a.html\" and \"foo/templates/b.html\"."
+msgstr ""
+"Seafile tukee jokerimerkkejä suodattimissa. Esimerkiksi \"foo/*\" vastaa "
+"\"foo/1\" ja \"foo/hello\". \"foo/?\" vastaa \"foo/1\", mutta ei "
+"\"foo/hello\". Huomaa, että jokerimerkki * vastaa rekursiivisesti kaikkia "
+"polkuja kansion alla. Esimerkiksi \"foo/*.html\" vastaa \"foo/a.html\" ja "
+"\"foo/templates/b.html\"."
+
+#: templates/help/ignore.html:13
+msgid ""
+"If the pattern ends with a slash, it would only match a folder. In other "
+"words, \"foo/\" will match a folder \"foo\" and paths underneath it, but "
+"will not match a regular file or a symbolic link \"foo\"."
+msgstr ""
+"Jos suodatin päättyy kauttaviivaan, se vastaa vain kansiota. Toisin sanoen, "
+"\"foo/\" vastaa kansiota \"foo\" ja sen alikansioita, mutta ei tavallista "
+"tiedostoa tai symbolista linkkiä \"foo\"."
+
+#: templates/help/ignore.html:14
+msgid ""
+"If a pattern doesn't end with a slash or a wildcard, it would not match a "
+"folder. For example, \"foo\" can only match regular file \"foo\" or a "
+"symbolic link; while \"foo/\" and \"foo*\" match a folder and paths under "
+"it."
+msgstr ""
+"Jos suodatin ei päätty kauttaviivaan tai jokerimerkkiin, se ei vastaa "
+"kansiota. Esimerkiksi \"foo\" vastaa vain tavallista tiedostoa \"foo\" tai "
+"symbolista linkkiä; kun taas \"foo/\" ja \"foo*\" vastaavat kansiota ja sen "
+"alikansioita."
+
+#: templates/help/ignore.html:18
+msgid "Example"
+msgstr "Esimerkki"
+
+#: templates/help/ignore.html:36
+msgid "Notes"
+msgstr "Huomioitavaa"
+
+#: templates/help/ignore.html:38
+msgid ""
+"The seafile-ignore.txt file only controls which files to exclude on the "
+"client side. You can still create a file from seahub web interface that's "
+"excluded on the client. In this case,"
+msgstr ""
+"seafile-ignore.txt-tiedosto vaikuttaa ainoastaan poissuljettuihin "
+"tiedostoihin asiakaspäässä. Voit silti luoda Seahub-verkkoliittymällä "
+"tiedoston, joka on poissuljettu asiakkaassa. Tässä tapauksessa,"
+
+#: templates/help/ignore.html:40
+msgid ""
+"The created file will still be synced back to clients. But any later local "
+"changes to those files will be ignored."
+msgstr ""
+"Luotu tiedosto synkronoidaan silti asiakkaille, mutta myöhemmät paikalliset "
+"muutokset niihin jätetään huomioimatta."
+
+#: templates/help/ignore.html:41
+msgid ""
+"If the file is modified on seahub, the new version will also be synced back "
+"to clients; If the file on the client is also modified, a conflict file will"
+" be generated on the client."
+msgstr ""
+"Jos tiedostoa muokataan Seahubissa, uusi versio synkronoidaan takaisin "
+"asiakkaille; jos tiedostoa muokataan myös asiakaspäässä, asiakkaassa syntyy "
+"ristiriitatiedosto."
+
+#: templates/help/ignore.html:45
+msgid ""
+"seafile-ignore.txt only ignores files that are not synced yet. If a file is "
+"already synced, and some time later you add it to the ignore list, its "
+"existing versions won't be removed."
+msgstr ""
+"seafile-ignore.txt jättää huomioimatta vain vielä synkronoimattomia "
+"tiedostoja. Jos tiedosto on jo synkronoitu ja lisäät sen myöhemmin "
+"poisjättöluetteloon, sen olemassa olevia versioita ei poisteta."
+
+#: templates/help/install_sync.html:6
+msgid "Installing Seafile client program"
+msgstr "Seafile-asiakasohjelman asentaminen"
+
+#: templates/help/install_sync.html:8
+msgid ""
+"After downloading Seafile client program, you have 3 steps left to get it up"
+" and running."
+msgstr ""
+"Ladattuasi Seafile-asiakasohjelman, sinulla on kolme vaihetta ohjelman "
+"käyttöönottoon."
+
+#: templates/help/install_sync.html:10
+msgid "1. Select a disk partition to store local Seafile data"
+msgstr "1. Valitse levypartitio Seafilen paikallisen datan tallentamiseen"
+
+#: templates/help/install_sync.html:11
+msgid "Selecting a folder to store Seafile data"
+msgstr "Valitaan kansiota Seafilen datalle."
+
+#: templates/help/install_sync.html:13
+msgid "2. Add an account"
+msgstr "2. Lisää tili"
+
+#: templates/help/install_sync.html:14
+msgid "Add an account on your private Seafile server or our public server."
+msgstr ""
+"Lisää tili omalle yksityiselle Seafile-palvelimelle tai julkiselle "
+"palvelimellemme."
+
+#: templates/help/install_sync.html:18
+msgid "3. Sync a library"
+msgstr "3. Synkronoi kirjasto"
+
+#: templates/help/install_sync.html:20
+msgid "Click the \"Sync this library\" button to sync it with a local folder."
+msgstr ""
+"Klikkaa \"Synkronoi tämä kirjasto\" -painiketta synkronoidaksesi sen "
+"paikallisen kansion kanssa."
+
+#: templates/help/install_sync.html:21
+msgid ""
+"Then you add some files into the library. They will be automatically synced "
+"with cloud platform."
+msgstr ""
+"Lisää sitten tiedostoja kirjastoon. Ne synkronoidaan automaattisesti "
+"pilvipalvelun kanssa."
+
+#: templates/help/install_sync.html:26
+msgid "4. (Optional) Create a library"
+msgstr "4. (Optio) Lisää kirjasto"
+
+#: templates/help/install_sync.html:28
+msgid "You can also create a library from a local folder."
+msgstr "Voit myös luoda kirjaston paikallisesta hakemistosta."
+
+#: templates/help/install_sync.html:34
+msgid "5. Browse files on the cloud"
+msgstr "Selaa tiedostoja verkkopalvelimella"
+
+#: templates/help/install_sync.html:35
+msgid ""
+"In some occasions, you want to modify files on the cloud directly without "
+"syncing them. Seafile client comes with a \"cloud file browser\" to meet "
+"this need. Click an unsynced library will open the cloud file browser."
+msgstr ""
+"Joissain tapauksissa haluat muokata pilvessä olevia tiedostoja suoraan ilman"
+" synkronointia. Seafile-asiakas sisältää \"pilvitiedostoselaimen\" tähän "
+"tarkoitukseen. Klikkaamalla synkronoimatonta kirjastoa avaat "
+"pilvitiedostoselaimen."
+
+#: templates/help/introduction.html:8
+msgid ""
+"Seafile is an enterprise file hosting platform with high reliability and "
+"performance."
+msgstr ""
+"Seafile on yritysluokan tiedostojen isännöintialusta, jolla on korkea "
+"luotettavuus ja suorituskyky."
+
+#: templates/help/introduction.html:9
+#, python-format
+msgid ""
+"Seafile contains a web interface for you to manage and share files. It has "
+"two kinds of desktop clients, <a "
+"href=\"%(SITE_ROOT)shelp/install_sync/\">the file syncing client</a> and <a "
+"href=\"%(SITE_ROOT)shelp/using_drive_client\">the drive client</a>. It also "
+"has mobile clients for Android and iOS."
+msgstr ""
+"Seafile sisältää verkkoliittymän tiedostojen hallintaan ja jakamiseen. Siinä"
+" on kaksi työpöytäasiakasta: <a "
+"href=\"%(SITE_ROOT)shelp/install_sync/\">tiedostosynkronointiasiakas</a> ja "
+"<a href=\"%(SITE_ROOT)shelp/using_drive_client\">levyasikas</a>. Lisäksi "
+"sillä on mobiiliasiakkaat Androidille ja iOS:lle."
+
+#: templates/help/introduction.html:10
+msgid ""
+"You can download the clients in <a "
+"href=\"https://www.seafile.com/en/download/\" target=\"_blank\">Seafile web "
+"site</a>."
+msgstr ""
+"Voit ladata asiakkaat <a href=\"https://www.seafile.com/en/download/\" "
+"target=\"_blank\">Seafilen verkkosivustolta</a>."
+
+#: templates/help/introduction.html:11
+msgid ""
+"If this manual does not contain the information you needed, you can seek "
+"help in our forum: <a href=\"https://forum.seafile.com\" "
+"target=\"_blank\">https://forum.seafile.com</a>."
+msgstr ""
+"Jos tämä opas ei sisällä tarvitsemaasi tietoa, voit pyytää apua "
+"foorumillamme: <a href=\"https://forum.seafile.com\" "
+"target=\"_blank\">https://forum.seafile.com</a>."
+
+#: templates/help/libraries_managing.html:6
+msgid ""
+"Seafile uses \"libraries\" to organize your files. A library is a top level "
+"container for a set of files and folders. You can create a library for each "
+"project you work on, or each document type you want to save in Seafile. A "
+"library works mostly like a top level folder. But it also has some special "
+"properties:"
+msgstr ""
+"Seafile käyttää \"kirjastoja\" tiedostojen järjestämiseen. Kirjasto on "
+"ylempi tason säiliö tiedostoille ja kansioille. Voit luoda kirjaston "
+"jokaiselle projektillesi tai asiakirjatyypille, jonka haluat tallentaa "
+"Seafileen. Kirjasto toimii pääosin ylempänä tason kansiona, sillä on "
+"kuitenkin joitain erityispiirteitä:"
+
+#: templates/help/libraries_managing.html:8
+msgid ""
+"Each library keeps its own file modification history. There is no global "
+"file modification history across all libraries."
+msgstr ""
+"Jokainen kirjasto säilyttää oman tiedostojen muokkaushistoriansa. Kaikkien "
+"kirjastojen yhtenäistä muokkaushistoriaa ei ole."
+
+#: templates/help/libraries_managing.html:9
+msgid ""
+"Each library can be synced to desktop clients separately. You can choose "
+"which libraries to be synced."
+msgstr ""
+"Jokainen kirjasto voidaan synkronoida erikseen työpöytäasiakkaisiin. Voit "
+"valita, mitkä kirjastot synkronoidaan."
+
+#: templates/help/libraries_managing.html:11
+msgid ""
+"When you log into Seafile's web app for the first time, Seafile "
+"automatically creates a default library named \"My Library\" for you. You "
+"can also create more libraries. Here is what it looks like when you've "
+"created a few libraries."
+msgstr ""
+"Kirjauduttuasi ensimmäistä kertaa Seafilen verkkosovellukseen, Seafile luo "
+"automaattisesti oletuskirjaston nimeltä \"Oma kirjasto\". Voit luoda myös "
+"lisää kirjastoja. Näin se näyttää, kun olet luonut muutamia kirjastoja."
+
+#: templates/help/libraries_managing.html:13
+msgid ""
+"You can navigate into a library and manage your files and folders. You can "
+"upload, download, rename, move, copy and delete files."
+msgstr ""
+"Voit siirtyä kirjastoon ja hallinnoida tiedostoja ja kansioita. Voit ladata "
+"tiedostoja palvelimelle ja paikalliselle levylle, nimetä ne uudelleen, "
+"siirtää, kopioida ja poistaa niitä."
+
+#: templates/help/libraries_managing.html:15
+#, python-format
+msgid ""
+"After <a href=\"%(SITE_ROOT)shelp/install_sync/\">syncing a library with "
+"desktop client</a>, you can do any file operations inside the local library "
+"folder. The operations will be uploaded to the server. "
+msgstr ""
+"<a href=\"%(SITE_ROOT)shelp/install_sync/\">Kirjaston synkronoinnin "
+"jälkeen</a> työpöytäasiakkaalla voit suorittaa mitä tahansa tiedosto-"
+"operaatioita paikallisessa kirjastokansiossa. Operaatiot lähetetään "
+"palvelimelle."
+
+#: templates/help/library_history_and_snapshots.html:7
+msgid ""
+"Seafile tracks modification history for the entire library. Whenever a file "
+"operation applies to a library (file update, file deletion etc.), Seafile "
+"creates a \"snapshot\" of the previous state of the library. The snapshot "
+"contains the complete file and folder structure of the library."
+msgstr ""
+"Seafile seuraaa koko kirjaston muokkaushistoriaa. Aina kun kirjastoon "
+"tehdään tiedosto-operaatioita (päivitys, poisto jne.), Seafile luo "
+"\"tilannekuvan\" kirjaston edellisestä tilasta. Tilannekuva sisältää "
+"kirjaston täyden tiedosto- ja kansiorakenteen."
+
+#: templates/help/library_history_and_snapshots.html:8
+msgid ""
+"In some cases, you have changed a lot of files in the library, and find that"
+" you want to revert all these changes. Restoring many files to their old "
+"versions can be tedious. At this time, the snapshot feature becomes very "
+"handy. You can restore the entire library to any point in the past. All the "
+"files in the library will be restored to that point of time, all at once. It"
+" works like a \"time machine\" for the library."
+msgstr ""
+"Joissain tapauksissa olet muokannut paljon tiedostoja kirjastossa ja haluat "
+"palauttaa kaikki muutokset. Monien tiedostojen palauttaminen vanhoihin "
+"versioihin voi olla työlästä. Tällöin tilannekuva-toiminto on erittäin "
+"kätevä. Voit palauttaa koko kirjaston minkä tahansa aikaisen tilaan. Kaikki "
+"kirjaston tiedostot palautuvat samanaikaisesti kyseiseen aikaan. Se toimii "
+"kuin \"aikakone\" kirjastolle."
+
+#: templates/help/library_history_and_snapshots.html:9
+msgid "To view library history and snapshots:"
+msgstr "Kirjaston historian ja tilannekuvien tarkasteleminen:"
+
+#: templates/help/library_history_and_snapshots.html:11
+msgid ""
+"In Seafile Web App, navigate into the root folder of a library. Click the "
+"\"History\" icon in the library navigation top bar. All the change record of"
+" the library will be displayed in a list."
+msgstr ""
+"Seafilen verkkosovelluksessa siirry kirjaston juurikansioon. Klikkaa "
+"\"Historia\" -kuvaketta kirjaston yläpalkissa. Kaikki kirjaston muutokset "
+"näytetään luettelona."
+
+#: templates/help/library_history_and_snapshots.html:12
+msgid ""
+"Click the \"view snapshot\" link on any modification record. You'll see the "
+"library state at the point of time."
+msgstr ""
+"Klikkaa \"Näytä tilannekuva\" -linkkiä mikä tahansa muokkausmerkinnässä. "
+"Näet kirjaston tilan kyseisen ajanhetkellä."
+
+#: templates/help/library_history_and_snapshots.html:15
+#, python-format
+msgid ""
+"You can configure the retention period of library history: <a "
+"href=\"%(SITE_ROOT)shelp/setting_library_history/\">setting history "
+"retention period</a>."
+msgstr ""
+"Voit määrittää kirjaston historian säilytysajan: <a "
+"href=\"%(SITE_ROOT)shelp/setting_library_history/\">historian säilytysajan "
+"asetus</a>."
+
+#: templates/help/manage_library_as_wiki.html:6
+msgid ""
+"Capturing and storing little structured data in an easy-to-use fashion – "
+"that is what Seafile’s wikis are for. Wiki pages are written in Markdown "
+"(MD), a simple markup language, to ensure cross platform compatibility. MD "
+"files store textual, tabular as well as graphical information; You can also "
+"add links to other documents in a Markdown file."
+msgstr ""
+"Pienten rakenteellisten tietojen kerääminen ja tallentaminen "
+"helppokäyttöisellä tavalla – tämä on Seafilen wikoiden tarkoitus. Wikisivut "
+"kirjoitetaan Markdown (MD) -kielellä, joka on yksinkertainen merkintäkieli "
+"ja taataan alustojen välinen yhteensopivuus. MD-tiedostot tallentavat "
+"tekstiä, taulukkoja ja graafista tietoa. Voit myös lisätä linkkejä muihin "
+"asiakirjoihin Markdown-tiedostoon."
+
+#: templates/help/manage_library_as_wiki.html:7
+msgid ""
+"You can manage a standard library in Seafile like a Wiki, with the \"Column "
+"View\" introduced in 7.0 version. Since Seafile implements wikis as standard"
+" Seafile libraries, they can be synced and shared with other users just like"
+" any ordinary library."
+msgstr ""
+"Voit hallinnoda tavallista Seafile-kirjastoa kuin wikiä käyttäen versiossa "
+"7.0 esiteltyä \"sarakelaitetta\". Koska Seafilen wikit toteutetaan "
+"tavallisina kirjastoina, niitä voidaan synkronoida ja jakaa muiden "
+"käyttäjien kanssa kuten mitä tahansa muuta kirjastoa."
+
+#: templates/help/manage_library_as_wiki.html:8
+msgid "Column view"
+msgstr "Sarakelaitteisto"
+
+#: templates/help/manage_library_as_wiki.html:9
+msgid ""
+"Wikis usually have a side bar containing a tree-like folder structure, to "
+"enable quick-and-easy browsing of Wiki pages. Seafile's Column View allows "
+"you to manage the files in a library in the same way as a Wiki space. Users "
+"can browse in it and move files and folders just by dragging and dropping. "
+"File actions such as renaming, moving, and opening via client are available "
+"in a right-click-accessible context menu."
+msgstr ""
+"Wikeissä on yleensä sivupalkki, jossa on puumainen kansiorakenne nopeaan ja "
+"helppoon selaamiseen. Seafilen sarakelaitteisto mahdollistaa kirjaston "
+"tiedostojen hallinnan samanlaiseksi kuin wikissä. Käyttäjät voivat selata ja"
+" siirtää tiedostoja ja kansioita vetämällä ja pudottamalla. Toimintoja kuten"
+" uudelleen nimeäminen, siirtäminen ja avaaminen asiakkaalla ovat "
+"käytettävissä oikealla napsautuksella avautuvassa valikossa."
+
+#: templates/help/manage_library_as_wiki.html:12
+msgid "WYSIWYG Markdown editor"
+msgstr "WYSIWYG-Markdown-muokkain"
+
+#: templates/help/manage_library_as_wiki.html:13
+msgid ""
+"Wiki pages in Seafile are saved as ordinary documents in Markdown format. To"
+" create a new Wiki page in a library, just create a new Markdown document. "
+"MD files can be edited straight from Seafile’s web interface with the online"
+" MD editor. The web-based editor offers a smooth user experience and rich "
+"formatting options for text, images, and tables. Images can be imported into"
+" MD files from libraries and local storage as well as by hyperlinks. Basic "
+"image editing functions such as scaling can also be performed in the "
+"editor’s what-you-see-is-what-you-get (WYSIWYG) interface. Tables can be "
+"inserted and modified with just a few clicks. The same thing goes for a "
+"table’s content: A table can be copied in its entirety or in part without "
+"leaving the WYSIWYG view."
+msgstr ""
+"Seafilen wikisivut tallennetaan tavallisina Markdown-muotoisina "
+"asiakirjoina. Luodaksesi uuden wikisivun kirjastoon, luo uusi Markdown-"
+"asiakirja. MD-tiedostoja voidaan muokata suoraan Seafilen verkkoliittymässä "
+"verkkomuokkaimella. Verkkomuokkain tarjoaa sujuvaa käyttökokemusta ja "
+"monipuolisia muotoiluvaihtoehtoja tekstille, kuville ja taulukoille. Kuvia "
+"voidaan tuoda MD-tiedostoihin kirjastoista, paikallisesta muistista sekä "
+"hyperlinkeillä. Peruskuvanmuokkaustoimintoja, kuten skaalaus, voidaan "
+"suorittaa muokkaimen WYSIWYG-liittymässä. Taulukoita voidaan lisätä ja "
+"muokata muutamalla klikkauksella. Sama koskee taulukoiden sisältöä: taulukon"
+" voi kopioida kokonaan tai osittain ilman WYSIWYG-näkymän poistumista."
+
+#: templates/help/manage_library_as_wiki.html:15
+msgid ""
+"The change history of a Markdown file can be easily accessed by clicking the"
+" \"File History\" button in the menu on top of the editor interface."
+msgstr ""
+"Markdown-tiedoston muokkaushistoriaan pääsee helposti käsiksi klikkaamalla "
+"\"Tiedoston historia\" -painiketta muokkaimen yläpalkissa."
+
+#: templates/help/manage_library_as_wiki.html:17
+msgid ""
+"You can open a hidden side bar on the right side of the Markdown editor. "
+"Table of contents, file information, and collaborative commenting are "
+"provided in this side bar."
+msgstr ""
+"Voit avata piilotun sivupalkin Markdown-muokkaimen oikealle puolelle. "
+"Sivupalkissa on sisällysluettelo, tiedoston tiedot ja yhteistyökommentointi."
+
+#: templates/help/manage_library_as_wiki.html:19
+msgid "File tagging and related documents"
+msgstr "Tiedostojen tägeittäminen ja liittyvät asiakirjat"
+
+#: templates/help/manage_library_as_wiki.html:20
+msgid ""
+"File tagging is an important feature for knowledge management. Seafile "
+"allows users to define tags for each library and apply tags to files. Tags "
+"can be managed from the side bar of the Markdown editor, or from the file "
+"browser interface."
+msgstr ""
+"Tiedostojen tägeittäminen on tärkeä ominaisuus tiet hallinnassa. Seafile "
+"mahdollistaa käyttäjien määritellä tägejä jokaiselle kirjastolle ja liittää "
+"niitä tiedostoihin. Tägejä voidaan hallinnoida Markdown-muokkaimen "
+"sivupalkista tai tiedostoselaimen kautta."
+
+#: templates/help/manage_library_as_wiki.html:23
+msgid ""
+"The file browser interface provides a summary of all file tags in the "
+"current library."
+msgstr ""
+"Tiedostoselaimen käyttöliittymä näyttää yhteenvedon kaikista nykyisen "
+"kirjaston tiedostotägeistä."
+
+#: templates/help/read-only_syncing.html:7
+msgid ""
+"If you want the be-shared users not be able to modify local copies, you can "
+"consider using the Seafile Drive client."
+msgstr ""
+"Jos haluat, että jaettavat käyttäjät eivät voi muokata paikallisia kopioita,"
+" voit käyttää Seafile Drive -asiakasta."
+
+#: templates/help/restoring_deleted_files.html:6
+msgid "Restoring deleted files and folders"
+msgstr "Poistettujen tiedostojen ja kansioiden palauttaminen"
+
+#: templates/help/restoring_deleted_files.html:7
+msgid ""
+"Each library in Seafile tracks your file deletion operations automatically. "
+"Sometimes you find files are deleted mistakenly. You can find back your "
+"deleted files in the trash bin of each library."
+msgstr ""
+"Jokainen Seafile-kirjasto seuraa automaattisesti tiedostojen poisto-"
+"operaatioita. Joskus tiedostot poistetaan vahingossa. Voit palauttaa "
+"poistettuja tiedostoja jokaisen kirjaston roskakorista."
+
+#: templates/help/restoring_deleted_files.html:8
+msgid "Here is how to use the trash bin feature:"
+msgstr "Näin käytät roskakori-toimintoa:"
+
+#: templates/help/restoring_deleted_files.html:10
+msgid ""
+"In Seafile Web App, navigate into the parent folder containing the deleted "
+"file or folder."
+msgstr ""
+"Seafilen verkkosovelluksessa siirry siihen ylähakemistoon, jossa poistettu "
+"tiedosto tai kansio sijaitsi."
+
+#: templates/help/restoring_deleted_files.html:11
+msgid ""
+"Click the \"trash\" icon in the library operation bar. The deleted files and"
+" folders will be listed in deletion time order. In the bottom of the list, "
+"you can click the \"more\" button to load more deleted files."
+msgstr ""
+"Klikkaa \"Roskakori\" -kuvaketta kirjaston toimenpitepalkissa. Poistetut "
+"tiedostot ja kansiot luetellaan poistoajan mukaan. Luettelon alhaalla voit "
+"ladata lisää poistettuja tiedostoja klikkaamalla \"lisää\" -painiketta."
+
+#: templates/help/restoring_deleted_files.html:12
+msgid ""
+"In the deleted files list, you can restore file and folders. If a file or "
+"folder's parent folder has been deleted, it will be restored to the "
+"library's root folder."
+msgstr ""
+"Poistettujen tiedostojen luettelosta voit palauttaa tiedostoja ja kansioita."
+" Jos tiedoston tai kansion ylähakemisto on poistettu, se palautetaan "
+"kirjaston juurikansioon."
+
+#: templates/help/restoring_deleted_files.html:13
+msgid ""
+"Note that the trash bin only contains files and sub-folders deleted under "
+"the current folder. Files deleted in the sub-folders of the current folder "
+"are also included in the list."
+msgstr ""
+"Huomaa, että roskakori sisältää vain nykyisen kansion alla poistettuja "
+"tiedostoja ja alikansioita. Luetteloon sisältyvät myös nykyisen kansion "
+"alikansioissa poistetut tiedostot."
+
+#: templates/help/restoring_deleted_files.html:15
+#, python-format
+msgid ""
+"You can configure the retention period of deleted files: <a "
+"href=\"%(SITE_ROOT)shelp/setting_library_history/\">setting history "
+"retention period</a>."
+msgstr ""
+"Voit määrittää poistettujen tiedostojen säilytysajan: <a "
+"href=\"%(SITE_ROOT)shelp/setting_library_history/\">historian säilytysajan "
+"asetus</a>."
+
+#: templates/help/selective_sync.html:8
+msgid ""
+"You may have some very large libraries on the Seafile server. And you're "
+"currently only interested in a sub-folder inside one library. Then you can "
+"selectively sync a sub-folder in a library, instead of syncing the entire "
+"library."
+msgstr ""
+"Seafile-palvelimella voi olla erittäin suuria kirjastoja, ja saatat olla "
+"kiinnostunut vain yhdestä alikansiosta kirjastossa. Voit silloin synkronoida"
+" vain valitun alikansion sen sijaan, että synkronoisit koko kirjaston."
+
+#: templates/help/selective_sync.html:10
+msgid ""
+"To sync a sub-folder, open cloud file browser by double clicking a library "
+"which hasn't been synced. Navigate into the parent folder of that sub-"
+"folder. Right click on the sub-folder. Choose \"Sync this folder\" in the "
+"pop-up menu."
+msgstr ""
+"Alihakemiston synkronointi: avaa pilvitiedostoselain tuplaklikkaamalla "
+"kirjastoa, jota ei ole synkronoitu. Siirry alihakemiston ylähakemistoon. "
+"Napsauta hiiren oikealla alikansiota ja valitse ponnahdusvalikosta "
+"\"Synkronoi tämä kansio\"."
+
+#: templates/help/selective_sync.html:14
+msgid ""
+"After syncing the sub-folder, you can see its syncing status in the \"Synced"
+" Libraries\" group in the client's main window."
+msgstr ""
+"Alihakemiston synkronoinnin jälkeen näet sen synkronointitilan "
+"asiakasohjelman pääikkunan \"Synkronoidut kirjastot\" -ryhmässä."
+
+#: templates/help/setting_library_history.html:6
+msgid "Setting library history retention period"
+msgstr "Kirjaston historian säilytysajan asetus"
+
+#: templates/help/setting_library_history.html:7
+msgid ""
+"A library's history retention period length controls how long you can access"
+" your history data in the following features:"
+msgstr ""
+"Kirjaston historian säilytysaika määrittää, kuinka pitkään voit käyttää "
+"historian tietoja seuraavissa toiminnoissa:"
+
+#: templates/help/setting_library_history.html:9
+msgid ""
+"Restore deleted files: you cannot restore files and folders deleted before "
+"the retention period."
+msgstr ""
+"Poistettujen tiedostojen palauttaminen: et voi palauttaa säilytysajan ennen "
+"poistettuja tiedostoja ja kansioita."
+
+#: templates/help/setting_library_history.html:10
+msgid ""
+"File versions: you cannot access file versions older than the retention "
+"period."
+msgstr ""
+"Tiedostojen versiot: et voi käyttää säilytysajan vanhempia "
+"tiedostoversioita."
+
+#: templates/help/setting_library_history.html:11
+msgid ""
+"Library history and snapshots: you cannot access library snapshots older "
+"than the retention period."
+msgstr ""
+"Kirjaston historia ja tilannekuvat: et voi käyttää säilytysajan vanhempia "
+"kirjaston tilannekuvia."
+
+#: templates/help/setting_library_history.html:13
+msgid ""
+"The retention period of old files versions can be configured for each "
+"library, separately. You must be the library's owner to set the retention "
+"period. To set retention period length:"
+msgstr ""
+"Vanhojen tiedostoversioiden säilytysaika voidaan määrittää erikseen "
+"jokaiselle kirjastolle. Asetusta voi tehdä vain kirjaston omistaja. Näin "
+"asetat säilytysajan:"
+
+#: templates/help/setting_library_history.html:15
+msgid ""
+"In Seafile Web App, click the \"Mine\" tab in the navigation panel (as in "
+"the below screenshot). All libraries owned by you will be listed."
+msgstr ""
+"Seafilen verkkosovelluksessa klikkaa navigointipaneelissa välilehteä "
+"\"Omat\" (kuvan mukaisesti). Näytetään luettelona kaikki sinulle kuuluvat "
+"kirjastot."
+
+#: templates/help/setting_library_history.html:16
+msgid ""
+"Move the cursor onto the row of the library. An operation menu will appear. "
+"Click \"History Setting\" in the drop-down menu."
+msgstr ""
+"Siirrä kursori kirjaston riville. Näytetään toimenpitevalikko. Valitse "
+"pudotusvalikosta \"Historian asetus\"."
+
+#: templates/help/setting_library_history.html:17
+msgid "In the pop-up dialog, you can set the length of file retention period."
+msgstr "Ponnahdusikkunassa voit asettaa tiedostojen säilytysajan pituuden."
+
+#: templates/help/sharing_files_and_folders.html:6
+msgid ""
+"In Seafile there are a few ways to share files and folders with others:"
+msgstr ""
+"Seafilella on useita tapoja jakaa tiedostoja ja kansioita muiden kanssa:"
+
+#: templates/help/sharing_files_and_folders.html:8
+msgid ""
+"Using links: there are multiple types of links that can be used to share "
+"with various scope of collaborators."
+msgstr ""
+"Linkkien käyttö: on useita linkkityyppejä, joita voidaan käyttää jakamiseen "
+"eri yhteistyökumppaneille."
+
+#: templates/help/sharing_files_and_folders.html:10
+msgid ""
+"Share links: Any user who has access to the links can access the files or "
+"folders pointed by the link. No login is required."
+msgstr ""
+"Jakolinkit: kuka tahansa, jolla on pääsy linkkiin, voi avata linkin "
+"osoittamat tiedostot tai kansiot. Kirjautumista ei vaadita."
+
+#: templates/help/sharing_files_and_folders.html:11
+msgid ""
+"Upload links: Any user who has access to the links can upload files to the "
+"folder pointed by the link. No login is required."
+msgstr ""
+"Siirtolinkit: kuka tahansa, jolla on pääsy linkkiin, voi ladata tiedostoja "
+"linkin osoittamaan kansioon. Kirjautumista ei vaadita."
+
+#: templates/help/sharing_files_and_folders.html:12
+msgid ""
+"Internal links: Only logged in users who have read permission to the file or"
+" folder can access this link. Used for internal file sharing."
+msgstr ""
+"Sisäiset linkit: vain kirjautuneet käyttäjät, joilla on lukuoikeus "
+"tiedostoon tai kansioon, voivat käyttää linkkiä. Käytetään sisäiseen "
+"tiedostojen jakamiseen."
+
+#: templates/help/sharing_files_and_folders.html:15
+msgid ""
+"Sharing libraries or folders: used for setting access permissions to a "
+"library or folder for specific users or groups. Users have to log in to "
+"access the folders."
+msgstr ""
+"Kirjastojen ja kansioiden jakaminen: käytetään oikeuksien asettamiseen "
+"tiettyjen käyttäjien tai ryhmien käyttöön. Käyttäjien on kirjauduttava "
+"sisään päästäkseen käsiksi kansioihin."
+
+#: templates/help/sharing_files_and_folders.html:17
+msgid "Creating share links to files or folders"
+msgstr "Jakolinkkien luominen tiedostoille tai kansioille"
+
+#: templates/help/sharing_files_and_folders.html:18
+msgid ""
+"Share links are public links to files or folders. They can be accessed by "
+"anyone, including those who don't have a Seafile account. You can also use "
+"password and expiration time to protect your links."
+msgstr ""
+"Jakolinkit ovat julkisia linkkejä tiedostoille tai kansioille. Kuka tahansa "
+"voi käyttää niitä, myös ilman Seafile-tiliä. Voit suojata linkkejä "
+"salasanalla ja vanhenemisajalla."
+
+#: templates/help/sharing_files_and_folders.html:19
+msgid ""
+"You can also set access permission to share links. There are three types of "
+"permissions:"
+msgstr ""
+"Voit myös asettaa käyttöoikeuksia jakolinkeille. On kolme oikeustyyppiä:"
+
+#: templates/help/sharing_files_and_folders.html:22
+msgid ""
+"Preview only: the file or files in the folder can only be viewed in web "
+"browser, but cannot be downloaded. This is useful for sharing confidential "
+"data."
+msgstr ""
+"Vain esikatselu: tiedostoa tai kansioon kuuluvia tiedostoja voidaan vain "
+"tarkastella selaimessa, ei ladata paikalliselle levylle. Hyödyllinen "
+"salaisen tiedon jakamisessa."
+
+#: templates/help/sharing_files_and_folders.html:23
+msgid ""
+"Edit on cloud and download: Similar to \"Preview and Download\", but if the "
+"file can be edited in web browser (e.g. an Office file), any user who has "
+"access to the link is allowed to edit it."
+msgstr ""
+"Muokkaus pilvessä ja lataus: Samoin kuin \"Esikatselu ja lataus\", mutta jos"
+" tiedostoa voidaan muokata selaimessa (esim. Office-tiedosto), jokainen "
+"linkin haltija voi muokata sitä."
+
+#: templates/help/sharing_files_and_folders.html:25
+msgid "To create a share link in Seafile web app:"
+msgstr "Jakolinkin luominen Seafilen verkkosovelluksessa:"
+
+#: templates/help/sharing_files_and_folders.html:27
+msgid ""
+"Navigate into the parent folder containing the file or folder. Hover your "
+"mouse over the file or folder and click on the \"Share\" icon that appears."
+msgstr ""
+"Siirry tiedoston tai kansion ylähakemistoon. Siirrä hiiri tiedoston tai "
+"kansion päälle ja klikkaa näytettyä \"Jaa\" -kuvaketta."
+
+#: templates/help/sharing_files_and_folders.html:28
+msgid ""
+"A pop-up window will appear with share options. Click the \"Share Link\" tab"
+" on the left panel. Then click \"Generate\" button to create a link. You can"
+" use password, expiration time and permission to protect your link."
+msgstr ""
+"Näytetään ponnahdusikkuna jakamisvaihtoehdoilla. Klikkaa vasemmalla "
+"paneelissa \"Jakolinkki\" -välilehteä. Sen jälkeen klikkaa \"Luo\" "
+"-painiketta linkin luomiseksi. Voit suojata linkin salasanalla, "
+"vanhenemisajalla ja käyttöoikeuksilla."
+
+#: templates/help/sharing_files_and_folders.html:29
+#: templates/help/sharing_files_and_folders.html:42
+msgid ""
+"Copy the link to email, instant messaging client or any other tool to send "
+"it to others."
+msgstr ""
+"Kopioi linkki sähköpostiin, pikaviestisovellukseen tai muuhun työkaluhun ja "
+"lähetä se muille."
+
+#: templates/help/sharing_files_and_folders.html:31
+msgid "You can also create share links from the desktop clients."
+msgstr "Voit luoda jakolinkkejä myös työpöytäasiakkaiden kautta."
+
+#: templates/help/sharing_files_and_folders.html:33
+msgid ""
+"If the library is synced, double click the library in the main window of "
+"Seafile client. The local folder of that library will be opened. Right click"
+" on the file or folder that you want to create a link to. In the pop-up "
+"menu, choose \"Seafile\" then \"Create share link\"."
+msgstr ""
+"Jos kirjasto on synkronoitu, tuplaklikkaa kirjastoa Seafile-asiakkaan "
+"pääikkunassa. Avataan kirjaston paikallinen kansio. Napsauta hiiren oikealla"
+" haluamasi tiedoston tai kansion päällä ja valitse ponnahdusvalikossa "
+"\"Seafile\" → \"Luo jakolinkki\"."
+
+#: templates/help/sharing_files_and_folders.html:34
+msgid ""
+"If the library is not synced, double click the library in the main window of"
+" Seafile client. The cloud file browser window will be opened, and you can "
+"create a link to a file or folder in it."
+msgstr ""
+"Jos kirjastoa ei ole synkronoitu, tuplaklikkaa kirjastoa Seafile-asiakkaan "
+"pääikkunassa. Avataan pilvitiedostoselain, jossa voit luoda linkin "
+"tiedostoon tai kansioon."
+
+#: templates/help/sharing_files_and_folders.html:36
+msgid "Creating upload links to folders"
+msgstr "Siirtolinkkien luominen kansioille"
+
+#: templates/help/sharing_files_and_folders.html:37
+msgid ""
+"You can use upload links to collect files from others. You can only create "
+"upload links for folders. Others cannot see the files in the folders. They "
+"can only upload files to them."
+msgstr ""
+"Voit käyttää siirtolinkkejä muiden tiedostojen keräämiseen. Siirtolinkkejä "
+"voidaan luoda vain kansioille. Muut eivät näe kansioissa olevia tiedostoja, "
+"vaan vain ladata niitä sinne."
+
+#: templates/help/sharing_files_and_folders.html:38
+msgid "To create an upload link in Seafile web app:"
+msgstr "Siirtolinkin luominen Seafilen verkkosovelluksessa:"
+
+#: templates/help/sharing_files_and_folders.html:40
+msgid ""
+"Navigate into the parent folder containing the folder. Hover your mouse over"
+" the folder and click on the \"Share\" icon that appears."
+msgstr ""
+"Siirry kansion ylähakemistoon. Siirrä hiiri kansion päälle ja klikkaa "
+"näytettyä \"Jaa\" -kuvaketta."
+
+#: templates/help/sharing_files_and_folders.html:41
+msgid ""
+"A pop-up window will appear with share options. Click the \"Upload Link\" "
+"tab on the left panel. Then click \"Generate\" button to create a link. You "
+"can use password to protect your link."
+msgstr ""
+"Näytetään ponnahdusikkuna jakamisvaihtoehdoilla. Klikkaa vasemmalla "
+"paneelissa \"Siirtolinkki\" -välilehteä. Klikkaa \"Luo\" -painiketta linkin "
+"luomiseksi. Voit suojata linkin salasanalla."
+
+#: templates/help/sharing_files_and_folders.html:44
+msgid "Sharing libraries or folders"
+msgstr "Kirjastojen ja kansioiden jakaminen"
+
+#: templates/help/sharing_files_and_folders.html:45
+msgid ""
+"You can share a library or folder to other registered Seafile users. The "
+"shared library or folder can be accessed by others with the web app and "
+"Seafile clients."
+msgstr ""
+"Voit jakaa kirjaston tai kansion muille rekisteröityneille Seafile-"
+"käyttäjille. Jaettuja kirjastoja ja kansioita voidaan käyttää "
+"verkkosovelluksessa ja Seafile-asiakkaissa."
+
+#: templates/help/sharing_files_and_folders.html:46
+msgid "You can choose the range of the share:"
+msgstr "Voit valita jakamisen alueen:"
+
+#: templates/help/sharing_files_and_folders.html:48
+msgid "Share to user: You can share to one or more users."
+msgstr "Jaa käyttäjälle: voit jakaa yhdelle tai useammalle käyttäjälle."
+
+#: templates/help/sharing_files_and_folders.html:49
+msgid "Share to group: You can share to a group."
+msgstr "Jaa ryhmälle: voit jakaa ryhmälle."
+
+#: templates/help/sharing_files_and_folders.html:50
+msgid ""
+"Share to organization: If you're using a private server, sometimes it's "
+"useful to share to all members on the server (the entire organization)."
+msgstr ""
+"Jaa organisaatiolle: jos käytät yksityispalvelinta, on joskus hyödyllistä "
+"jakaa kaikille palvelimen jäsenille (koko organisaatiolle)."
+
+#: templates/help/sharing_files_and_folders.html:52
+msgid "You can also set permission on the share:"
+msgstr "Voit myös asettaa jakamiseen käyttöoikeuksia:"
+
+#: templates/help/sharing_files_and_folders.html:54
+msgid "Read-Write: users can read, write, upload, download and sync files."
+msgstr ""
+"Luku-Kirjoitus: käyttäjät voivat lukea, kirjoittaa, ladata palvelimelle ja "
+"paikalliselle levylle sekä synkronoida tiedostoja."
+
+#: templates/help/sharing_files_and_folders.html:55
+msgid "Read-only: users can read, download and sync files."
+msgstr "Vain luku: käyttäjät voivat lukea, ladata ja synkronoida tiedostoja."
+
+#: templates/help/sharing_files_and_folders.html:56
+msgid "Admin: besides the write permission, users can also share the library."
+msgstr ""
+"Ylläpitäjä: kirjoitusoikeuksien lisäksi käyttäjät voivat jakaa kirjaston "
+"eteenpäin."
+
+#: templates/help/sharing_files_and_folders.html:57
+msgid ""
+"Online Read-Write: users can view and edit files online via a web browser. "
+"The files cannot be downloaded."
+msgstr ""
+"Verkkoluku-Kirjoitus: käyttäjät voivat tarkastella ja muokata tiedostoja "
+"selaimessa verkossa. Tiedostoja ei voi ladata paikalliselle levylle."
+
+#: templates/help/sharing_files_and_folders.html:58
+msgid ""
+"Online Read-only: users can only view files online via a web browser. The "
+"files cannot be downloaded."
+msgstr ""
+"Vain verkkoluku: käyttäjät voivat vain tarkastella tiedostoja selaimessa "
+"verkossa. Tiedostoja ei voi ladata paikalliselle levylle."
+
+#: templates/help/sharing_files_and_folders.html:60
+msgid "To share a library or folder to a user or group:"
+msgstr "Kirjaston tai kansion jakaminen käyttäjälle tai ryhmälle:"
+
+#: templates/help/sharing_files_and_folders.html:62
+msgid ""
+"Hover your mouse over the library or folder and click on the \"Share\" icon "
+"that appears."
+msgstr ""
+"Siirrä hiiri kirjaston tai kansion päälle ja klikkaa näytettyä \"Jaa\" "
+"-kuvaketta."
+
+#: templates/help/sharing_files_and_folders.html:63
+msgid ""
+"A pop-up window will appear with share options. Click the \"Share to user\" "
+"or \"Share to group\" tab on the left panel. Select the user or group. Then "
+"click \"Submit\"."
+msgstr ""
+"Näytetään ponnahdusikkuna jakamisvaihtoehdoilla. Klikkaa vasemmalla "
+"paneelissa \"Jaa käyttäjälle\" tai \"Jaa ryhmälle\" -välilehteä. Valitse "
+"käyttäjä tai ryhmä ja klikkaa \"Lähetä\"."
+
+#: templates/help/sharing_files_and_folders.html:65
+msgid ""
+"After you share a library or folder to a user, the user can see it by "
+"clicking the \"Shared with me\" tab on the left panel in Seafile web app. If"
+" you share it to a group, the group members can only see it by navigating "
+"into the group."
+msgstr ""
+"Kun olet jakanut kirjaston tai kansion käyttäjälle, käyttäjä näkee sen "
+"klikkaamalla vasemmalla paneelissa \"Jaettu minulle\" -välilehteä Seafilen "
+"verkkosovelluksessa. Jos jaat sen ryhmälle, ryhmän jäsenet näkevät sen vain "
+"siirtymällä ryhmään."
+
+#: templates/help/sharing_files_and_folders.html:66
+msgid ""
+"To share a library to the entire organization: In Seafile web app, click the"
+" \"Shared with all\" tab on the left panel. Then click the \"Add Library\" "
+"button. In the drop-down menu, you can choose to share an existing library "
+"or create a new library and share it."
+msgstr ""
+"Kirjaston jakaminen koko organisaatiolle: Seafilen verkkosovelluksessa "
+"klikkaa vasemmalla paneelissa \"Jaettu kaikille\" -välilehteä. Sen jälkeen "
+"klikkaa \"Lisää kirjasto\" -painiketta. Pudotusvalikossa voit jakaa "
+"olemassaolevan kirjaston tai luoda uuden kirjaston ja jakaa sen."
+
+#: templates/help/sharing_files_and_folders.html:67
+msgid "Internal links"
+msgstr "Sisäiset linkit"
+
+#: templates/help/sharing_files_and_folders.html:68
+msgid ""
+"Only logged in users who have read permission to the file or folder can "
+"access this link. It is used for internal file sharing. It's a convenient "
+"way for sharing files among team members who have access to a common "
+"library. You may just copy the link and paste it into an email or IM "
+"software."
+msgstr ""
+"Vain kirjautuneet käyttäjät, joilla on lukuoikeus tiedostoon tai kansioon, "
+"voivat käyttää tätä linkkiä. Sitä käytetään sisäiseen tiedostojen "
+"jakamiseen. Se on kätevä tapa jakaa tiedostoja tiimijäsenten kesken, joilla "
+"on pääsy yhteiseen kirjastoon. Kopioi vain linkki ja liitä se sähköpostiin "
+"tai pikaviestisovellukseen."
+
+#: templates/help/sync_interval.html:8
+msgid ""
+"Usually Seafile client automatically detects changes on local folder and "
+"upload the changes to server. However, if the local folder is in a Windows "
+"network share drive, Seafile client cannot detect changes reliably. In this "
+"case, you can ask Seafile client to periodically checks for changes in the "
+"local folder. You can set the interval of this periodic sync. The interval "
+"is set in the unit of seconds."
+msgstr ""
+"Yleensä Seafile-asiakas tunnistaa automaattisesti muutokset paikallisessa "
+"kansiossa ja lähettää ne palvelimelle. Jos paikallinen kansio on kuitenkin "
+"Windowsin verkkojakolevyllä, Seafile-asiakas ei tunnista muutoksia "
+"luotettavasti. Tässä tapauksessa voit määrittää asiakkaan tarkistamaan "
+"paikallisen kansion muutokset ajastetusti. Voit asettaa tämän ajastetun "
+"synkronoinnin välin, joka annetaan sekunteina."
+
+#: templates/help/syncing_existing_folders.html:6
+msgid "Syncing with an existing folder"
+msgstr "Synkronointi olemassaolevan kansion kanssa"
+
+#: templates/help/syncing_existing_folders.html:8
+#, python-format
+msgid ""
+"Sometimes you already have a library on the Seafile server (shared by "
+"others, or uploaded from another computer). You can sync this library with "
+"an existing folder on your computer. The local folder must have the same "
+"name as the library. The files in the local folder will be merged with the "
+"files in the library. No file in the local folder or the library will be "
+"overwritten or lost. The merge will produce some <a "
+"href=\"%(SITE_ROOT)shelp/conflicts/\">conflict files</a> if file contents "
+"are different in the local folder and the library. "
+msgstr ""
+"Joskus sinulla on jo kirjasto Seafile-palvelimella (toisten jakama tai "
+"toiselta koneelta ladattu). Voit synkronoida tämän kirjaston tietokoneella "
+"olevan olemassaolevan kansion kanssa. Paikallisen kansion nimen tulee olla "
+"sama kuin kirjastolla. Paikallisen kansion tiedostot yhdistetään kirjaston "
+"tiedostojen kanssa. Ei tiedostoja paikallisessa kansiossa tai kirjastossa "
+"ylikirjoitetaan tai kadotetaan. Yhdistämisestä syntyy <a "
+"href=\"%(SITE_ROOT)shelp/conflicts/\">ristiriitatiedostoja</a>, jos "
+"tiedostojen sisällöt ovat erilaisia paikallisessa kansiossa ja kirjastossa."
+
+#: templates/help/syncing_existing_folders.html:10
+msgid ""
+"To sync a library with an existing folder, right click on the library in "
+"Seafile client's main window and click \"Sync this library\"."
+msgstr ""
+"Synkronoidaksesi kirjaston olemassaolevan kansion kanssa, napsauta hiiren "
+"oikealla kirjastoa Seafile-asiakkaan pääikkunassa ja valitse \"Synkronoi "
+"tämä kirjasto\"."
+
+#: templates/help/syncing_existing_folders.html:14
+msgid "In the pop-up dialog, click the \"Sync with an existing folder\" link."
+msgstr ""
+"Ponnahdusikkunassa klikkaa linkkiä \"Synkronoi olemassaolevan kansion "
+"kanssa\"."
+
+#: templates/help/syncing_existing_folders.html:18
+msgid "Then choose an existing folder to sync with this library."
+msgstr ""
+"Valitse sitten olemassa oleva kansio, jota synkronoidaan tämän kirjaston "
+"kanssa."
+
+#: templates/help/unsync_resync.html:6
+msgid "Unsync and resync library"
+msgstr "Synkronointi lopetettu ja uudelleen synkronoitu kirjasto"
+
+#: templates/help/unsync_resync.html:8
+#, python-format
+msgid ""
+"When you no longer want to sync a local folder with a library, you can "
+"unsync it. After you unsync a library, changes to the local folder and files"
+" will not be uploaded, and changes in the library will not be downloaded. If"
+" you want to sync the library with the local folder again, you can use the "
+"<a href=\"%(SITE_ROOT)shelp/syncing_existing_folders/\">sync with existing "
+"folder</a> feature."
+msgstr ""
+"Kun et enää halua synkronoida paikallista kansiota kirjaston kanssa, voit "
+"lopettaa synkronoinnin. Synkronoinnin lopettamisen jälkeen paikallisen "
+"kansion ja tiedostojen muutoksia ei lähetetä palvelimelle eikä kirjaston "
+"muutoksia ladata paikalliselle levylle. Jos haluat synkronoida kirjaston "
+"uudelleen paikallisen kansion kanssa, voit käyttää <a "
+"href=\"%(SITE_ROOT)shelp/syncing_existing_folders/\">synkronointia "
+"olemassaolevan kansion kanssa</a> -toimintoa."
+
+#: templates/help/unsync_resync.html:10
+msgid ""
+"Sometimes there are internal errors in the client which blocks syncing. In "
+"these cases, it's usually helpful to \"resync\" the library. Resync means "
+"unsync and then immediately sync the library with the same folder. You can "
+"find this action in the pop-up menu of the client's main window."
+msgstr ""
+"Joskus asiakkaassa esiintyy sisäisiä virheitä, jotka estävät synkronoinnin. "
+"Näissä tapauksissa on yleensä hyödyllistä \"uudelleen synkronoida\" "
+"kirjasto. Uudelleen synkronointi tarkoittaa synkronoinnin lopettamista ja "
+"sen jälkeen välitöntä uudelleen synkronointia samalla kansiolla. Tämän "
+"toimenpiteen löydät asiakkaan pääikkunan ponnahdusvalikosta."
+
+#: templates/help/using_drive_client.html:7
+msgid ""
+"After installing a drive client with the instructions on the <a "
+"href=\"https://www.seafile.com/en/download/\">download page</a>, you can "
+"start it by double clicking the \"SeaDrive\" app icon on your desktop."
+msgstr ""
+"Asentettuasi levyasikkaan <a "
+"href=\"https://www.seafile.com/en/download/\">ladattamasivuston</a> ohjeiden"
+" mukaan, voit käynnistää sen tuplaklikkaamalla \"SeaDrive\" -sovelluksen "
+"kuvaketta työpöydällä."
+
+#: templates/help/using_drive_client.html:8
+msgid ""
+"You'll be asked to choose a drive letter for the virtual drive. By default, "
+"\"S:\" will be used."
+msgstr ""
+"Sinulta pyydetään valitsemaan aseman kirjain virtuaalilevylle. Oletuksena "
+"käytetään kirjainta \"S:\"."
+
+#: templates/help/using_drive_client.html:9
+msgid "Then you'll be asked to log into your Seafile server."
+msgstr "Sen jälkeen sinua pyydetään kirjautumaa"
+
+#: templates/help/using_drive_client.html:12
+msgid ""
+"After successfully log into the server, the Drive client starts to fetch "
+"library and file list from the server. The file contents are not downloaded "
+"at this moment. So it'll not take very long. You can let it run in the "
+"background. You'll be noticed when the fetch is done."
+msgstr ""
+"Kun olet kirjautunut palvelimelle onnistuneesti, Drive‑asiakasohjelma alkaa "
+"hakea kirjasto- ja tiedostoluetteloa palvelimelta. Tiedostojen sisältöä ei "
+"ladata tällä hetkellä, joten se ei kestä kauan. Voit jättää sen toimimaan "
+"taustalla. Saat ilmoituksen, kun haku on valmis."
+
+#: templates/help/using_drive_client.html:14
+msgid ""
+"The virtual drive folder will be opened. You'll find it works just like an "
+"ordinary hard drive on your computer. The top level folders in the virtual "
+"drive are libraries on the Seafile server. File contents will be downloaded "
+"when you open a file. Recently opened file will be cached in your local "
+"disk. All cached files will be marked with a green tick."
+msgstr ""
+"Virtuaalilevyn kansio avautuu. Se toimii kuten tavallinen kiintolevy "
+"tietokoneellasi. Virtuaalilevyn korkeimman tason kansiot ovat "
+"Seafile‑palvelimen kirjastoja. Tiedostojen sisältö ladataan, kun avaat "
+"tiedoston. Äskettäin avatut tiedostot tallennetaan välimuistiin "
+"paikalliselle levyllesi. Kaikki välimuistiin tallennetut tiedostot merkitään"
+" vihreällä ruksilla."
+
+#: templates/help/using_drive_client.html:17
+msgid "Synced State"
+msgstr "Synkronoitu tila"
+
+#: templates/help/using_drive_client.html:18
+msgid ""
+"Files and folders in the virtual drive are in either cloud-only, synced, or "
+"in partially synced state."
+msgstr ""
+"Virtuaalilevyn tiedostot ja kansiot ovat joko pelkästään pilvessä, "
+"synkronoituina tai osittain synkronoituina."
+
+#: templates/help/using_drive_client.html:22
+#: templates/help/using_drive_client.html:51
+msgid "State"
+msgstr "Tila"
+
+#: templates/help/using_drive_client.html:23
+#: templates/help/using_drive_client.html:52
+msgid "Icon"
+msgstr "Ikonit"
+
+#: templates/help/using_drive_client.html:24
+#: templates/help/using_drive_client.html:53
+msgid "Details"
+msgstr "Yksityiskohdat"
+
+#: templates/help/using_drive_client.html:29
+msgid "Cloud-only content"
+msgstr "Pelkästään pilvessä oleva sisältö"
+
+#: templates/help/using_drive_client.html:31
+msgid ""
+"Cloud-only content shows in the virtual drive, but doesn’t use the full "
+"amount of space that the file would. In your file explorer, you can see the "
+"file, but the content isn’t fully downloaded until you need it. What "
+"downloaded is only information about the file, such as its name, its size "
+"and the date it was updated."
+msgstr ""
+"Pelkästään pilvessä oleva sisältö näkyy virtuaalilevyssä, mutta se ei käytä "
+"koko tiedoston tilaa. Tiedostoselaimessa näet tiedoston, mutta sisältöä ei "
+"ladata kokonaan ennen kuin tarvitset sitä. Ladataan vain tietoja "
+"tiedostosta, kuten nimi, koko ja päivämäärä."
+
+#: templates/help/using_drive_client.html:34
+msgid "Synced content"
+msgstr "Synkronoitu sisältö"
+
+#: templates/help/using_drive_client.html:36
+msgid ""
+"Synced content is downloaded and saved on the hard drive of your computer. "
+"You can directly edit these files from applications on your computer."
+msgstr ""
+"Synkronoitu sisältö on ladattu ja tallennettu tietokoneen kiintolevylle. "
+"Voit muokata näitä tiedostoja suoraan tietokoneen sovelluksista."
+
+#: templates/help/using_drive_client.html:39
+msgid "Partially synced content"
+msgstr "Osittain synkronoitu sisältö"
+
+#: templates/help/using_drive_client.html:41
+msgid ""
+"Partially synced folders contain both synced and cloud-only files or "
+"folders."
+msgstr ""
+"Osittain synkronoiduissa kansioissa on sekä synkronoituja että pelkästään "
+"pilvessä olevia tiedostoja tai kansioita."
+
+#: templates/help/using_drive_client.html:46
+msgid "Special States"
+msgstr "Erityistilat"
+
+#: templates/help/using_drive_client.html:47
+msgid ""
+"For files that are already synced to local computer, they may be in 3 other "
+"special states, besides the normal \"synced\" state. "
+msgstr ""
+"Tiedostot, jotka on jo synkronoitu paikalliselle tietokoneelle, voivat olla "
+"kolmessa muussa erityistilassa normaalin \"synkronoitu\" tilan lisäksi."
+
+#: templates/help/using_drive_client.html:58
+msgid "Locked by other user"
+msgstr "Toisen käyttäjän lukitsema"
+
+#: templates/help/using_drive_client.html:60
+msgid ""
+"The file is locked by other user on the server. You can only open the file "
+"in read-only mode. You cannot modify, delete, rename or move the file."
+msgstr ""
+"Tiedosto on lukittu toisella käyttäjällä palvelimella. Voit avata sen vain "
+"vain luku‑tilassa. Et voi muokata, poistaa, uudelleennimittää tai siirtää "
+"tiedostoa."
+
+#: templates/help/using_drive_client.html:63
+msgid "Locked by me"
+msgstr "Minun lukitsema"
+
+#: templates/help/using_drive_client.html:65
+msgid ""
+"The file is locked by you. This prevents others from modifying the file."
+msgstr ""
+"Olet lukinnut tiedoston. Tämä estää muita käyttäjiä muokkaamasta sitä."
+
+#: templates/help/using_drive_client.html:68
+msgid "Read-only"
+msgstr "Vain luku"
+
+#: templates/help/using_drive_client.html:70
+msgid ""
+"The folder or library of this file is shared with read-only permission to "
+"you. You cannot modify, delete or move the file."
+msgstr ""
+"Tämän tiedoston kansio tai kirjasto on jaettu sinulle vain luku‑oikeuksin. "
+"Et voi muokata, poistaa tai siirtää tiedostoa."
+
+#: templates/help/using_drive_client.html:74
+msgid ""
+"The Drive client regularly cleans up unused cached files in the background. "
+"You can also limit the local cache space."
+msgstr ""
+"Drive‑asiakasohjelma siivoaa säännöllisesti käyttämättömiä "
+"välimuistitiedostoja taustalla. Voit myös rajoittaa paikallisen välimuistin "
+"tilaa."
+
+#: templates/help/using_drive_client.html:76
+msgid ""
+"You can log into multiple accounts in the Drive client. However, only files "
+"on the current selected server will be shown in the virtual drive. You can "
+"switch among accounts."
+msgstr ""
+"Voit kirjautua useisiin tileihin Drive‑asiakasohjelmassa. Vain nykyisen "
+"valitun palvelimen tiedostot kuitenkin näytetään virtuaalilevyssä. Voit "
+"vaihtaa tilejä keskenään."
+
+#: templates/help/using_drive_client.html:80
+msgid "1. Why can't I create new files or delete folders in root folder?"
+msgstr ""
+"1. Miksi en voi luoda uusia tiedostoja tai poistaa kansioita juurikansiossa?"
+
+#: templates/help/using_drive_client.html:81
+msgid ""
+"The root folder of the virtual drive contains only library folders. Seafile "
+"can only sync files inside libraries. Files in the root folder cannot be "
+"uploaded to Seafile server. So it doesn't make sense to support creating "
+"files in root folder. Since the top level folders in the virtual drive "
+"represents libraries, we don't want users to delete their libraries by "
+"mistake. So the Drive client doesn't support deleting top level folders."
+msgstr ""
+"Virtuaalilevyn juurikansio sisältää vain kirjastokansioita. Seafile voi "
+"synkronoida vain kirjastojen sisällä olevia tiedostoja. Juurikansiossa "
+"olevia tiedostoja ei voi ladata Seafile‑palvelimelle. Siksi tiedostojen "
+"luominen juurikansiossa ei ole järkevää. Koska virtuaalilevyn korkeimman "
+"tason kansiot edustavat kirjastoja, emme halua käyttäjien poistavan niitä "
+"vahingossa. Siksi Drive‑asiakasohjelma ei tue korkeimman tason kansioiden "
+"poistamista."
+
+#: templates/help/viewing_files_within_web_app.html:6
+msgid ""
+"Some types of files can be directly opened and viewed within the Seafile Web"
+" App. Currently they are:"
+msgstr ""
+"Joitakin tiedostotyyppejä voi avata ja tarkastella suoraan "
+"Seafile‑verkkosovelluksessa. Tällä hetkellä nämä ovat:"
+
+#: templates/help/viewing_files_within_web_app.html:13
+msgid "Image files"
+msgstr "Kuvatiedostot"

@@ -1,0 +1,18 @@
+body {
+  overflow: hidden;
+}
+
+#wrapper {
+  height: 100%;
+}
+
+.top-header {
+  background-color: var(--bs-header-bg);
+  border-bottom: 1px solid #eee;
+  padding: .5rem 1rem;
+  flex-shrink: 0;
+}
+
+.content {
+  max-width: 950px;
+}

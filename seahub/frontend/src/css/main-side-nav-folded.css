@@ -1,0 +1,24 @@
+.side-panel .side-nav-folded {
+  overflow: visible;
+  background: var(--bs-body-bg);
+}
+
+.side-panel .side-nav-folded .side-nav-con {
+  overflow: visible;
+  background: var(--bs-body-bg);
+}
+
+.side-panel .side-nav-folded .nav-item {
+  cursor: default;
+}
+
+.side-panel .side-nav-folded .nav-item .nav-link:hover {
+  transition: all 250ms cubic-bezier(0.25, 0.1, 0.25, 0.1);
+}
+
+.side-nav-folded #files-sub-nav {
+  width: 240px;
+  background: var(--bs-body-bg);
+  top: 60px;
+  transition: left 250ms cubic-bezier(0.25, 0.1, 0.25, 0.1), opacity 250ms cubic-bezier(0.25, 0.1, 0.25, 0.1);
+}

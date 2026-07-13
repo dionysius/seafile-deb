@@ -1,0 +1,54 @@
+Basic Installation
+==================
+
+Libsearpc requires several other packages to be built. Before installing, read the `README` file and
+MAKE SURE the required packages have been installed in your system.
+
+
+1. If you downladed a tarball. Extract it to some path like `~/dev`, and cd ~/dev/libsearpc-1.0
+   If you git-cloned it from the repo, just cd into the directory.
+
+2. run the following commands sequentially:
+
+   ./autogen.sh
+   ./configure
+   make
+   make install
+
+   Note that `make install` requires root privilege, for example `sudo make install` in Debian distribution.
+
+
+Optionally compile pysearpc
+===========================
+
+By default, Pysearpc are compiled. If you'd like to not compile pysearpc, use the following command:
+
+   ./configure --enable-compile-python=no
+
+In this way, Pysearpc would not be compiled or installed.
+ 
+In MacOs, if you want to use py2app, you would better run the following commnads:
+   ./configure LDFLAGS="-Xlinker -headerpad_max_install_names"
+In this way, the following error will be avoided:
+   raise ValueError("New Mach-O header is too large to relocate")
+
+
+Optionally compile demos
+========================
+
+By default, a pair of client/server demo programs are compiled. If you'd like to disable this, use
+the following command:
+
+    ./configure --enable-compile-demo=no
+
+Note that whatever your choice is, the demos would never be installed. They just stay in the source
+directory.
+
+Other options
+=============
+
+Other options provided by Autoconf can be found in the manual of GNU Autoconf.
+
+http://www.gnu.org/software/autoconf/manual/autoconf.html
+
+

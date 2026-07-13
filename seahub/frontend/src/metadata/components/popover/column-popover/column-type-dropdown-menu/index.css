@@ -1,0 +1,22 @@
+.search-column-container {
+  padding: 8px 16px;
+}
+
+.search-column-container .form-control {
+  height: 2rem;
+}
+
+.column-type-item:hover {
+  color: var(--bs-body-color);
+  background-color: var(--bs-dropdown-tertiary-bg);
+}
+
+.column-type-item:hover .sf3-font-down {
+  color: #666;
+}
+
+.column-type-item .sf-metadata-icon {
+  fill: #aaa;
+  margin-right: 8px;
+  flex-shrink: 0;
+}

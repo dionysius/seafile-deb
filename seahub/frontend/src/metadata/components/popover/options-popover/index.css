@@ -1,0 +1,44 @@
+.sf-metadata-edit-column-options-popover .popover {
+  margin-left: -4px;
+  margin-top: 4px;
+  max-width: 600px;
+}
+
+.sf-metadata-edit-column-options-container {
+  min-width: 400px;
+  height: auto;
+  background: var(--bs-body-bg);
+}
+
+.sf-metadata-edit-column-options-container .sf-metadata-edit-column-options-search-container {
+  padding: 10px 10px 0;
+}
+
+.sf-metadata-edit-column-options-container .sf-metadata-option-search-control {
+  color: var(--bs-body-color);
+}
+
+.sf-metadata-edit-column-options-container .none-search-result {
+  height: 100px;
+  opacity: .5;
+  padding: 10px;
+  width: 100%;
+}
+
+.sf-metadata-edit-column-options-container .sf-metadata-select-options-list {
+  margin-bottom: 0;
+  margin-top: 1rem;
+  max-height: 300px;
+  overflow: auto;
+  padding: 0;
+}
+
+.sf-metadata-edit-column-options-container .sf-metadata-add-option {
+  border-top: none;
+  color: #666;
+}
+
+.sf-metadata-edit-column-options-container .sf-metadata-add-option .sf-metadata-add-option-icon {
+  fill: #666;
+  font-weight: 600;
+}

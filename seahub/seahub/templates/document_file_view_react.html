@@ -1,0 +1,22 @@
+{% extends 'file_view_react.html' %}
+{% load render_bundle from webpack_loader %}
+{% load seahub_tags %}
+
+{% block extra_style %}
+<link rel="resource" type="application/l10n" href="{{ MEDIA_URL }}js/pdf/web/locale/locale.properties" />
+{% render_bundle 'viewFileDocument' 'css' %}
+{% endblock %}
+
+{% block extra_data %}
+  commitID: '{{ current_commit.id }}' || '{{ repo.head_cmmt_id }}'
+{% endblock %}
+
+{% block render_bundle %}
+{% render_bundle 'viewFileDocument' 'js' %}
+<script type="text/javascript">
+var commit_id = '{{ current_commit.id }}' || '{{ repo.head_cmmt_id }}';
+var SEAFILE_FILE_URL = '{{ SITE_ROOT }}office-convert/static/{{ repo.id }}/' + commit_id + '{{ path|urlencode }}/fake.pdf';
+var SEAFILE_PDFJS_DIR = '{{MEDIA_URL}}js/pdf';
+</script>
+<script type="text/javascript" src="{{MEDIA_URL}}js/pdf/build/pdf.js"></script>
+{% endblock %}

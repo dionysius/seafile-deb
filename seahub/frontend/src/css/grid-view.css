@@ -1,0 +1,94 @@
+.grid-view {
+  padding: 0.625rem 1rem 10rem;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+  align-content: flex-start;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.grid-item {
+  width: 134px;
+  padding: 10px 4px;
+  margin: 4px;
+  text-align: center;
+  position: relative;
+  line-height: 0;
+}
+
+.grid-item:hover {
+  background: var(--bs-tr-hover-bg);
+  border-radius: 5px;
+}
+
+.grid-file-img-link {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 6px;
+  position: relative;
+  border-radius: 3px;
+  font-size: 0;
+  text-align: center;
+  line-height: 0;
+}
+
+.grid-file-img-link .thumbnail {
+  max-width: 88px;
+  max-height: 88px;
+  padding: 1px;
+  background: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-secondary-color);
+  border-radius: 1px;
+}
+
+.grid-file-img-link::before {
+  content: '';
+  display: inline-block;
+  vertical-align: middle;
+  height: 100%;
+}
+
+.grid-file-name {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  line-height: 17px;
+  font-size: 14px;
+  height: 34px;
+}
+
+.grid-file-name-link {
+  color: var(--bs-body-color);
+  font-size: 0.875rem;
+  -webkit-box-orient: vertical;
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+.grid-file-name-link:hover {
+  text-decoration: none;
+}
+
+.grid-file-locked-icon {
+  position: absolute;
+  bottom: 0;
+  right: 10px;
+  width: 16px;
+}
+
+.grid-selected-active {
+  background-color: var(--bs-nav-hover-bg);
+  border-radius: 5px;
+}
+
+.grid-drop-show {
+  background: var(--bs-tr-hover-bg);
+}
+
+.selection-box {
+  position: absolute;
+  background-color: rgba(0, 120, 215, 0.3);
+  border: 1px solid rgba(0, 120, 215, 0.8);
+}

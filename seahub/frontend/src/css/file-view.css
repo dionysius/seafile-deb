@@ -1,0 +1,212 @@
+body {
+  overflow: hidden;
+}
+
+#wrapper {
+  height: 100%;
+}
+
+.file-view-header {
+  padding: 4px 10px;
+  background: var(--bs-body-bg);
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  flex-shrink: 0;
+}
+
+.onlyoffice-file-view-header-shown {
+  transition: height .3s ease-in-out;
+  height: 56px;
+}
+
+.onlyoffice-file-view-header-hidden {
+  transition: all .3s ease-in-out;
+  display: none !important;
+}
+
+#unfold-onlyoffice-file-view-header {
+  position: absolute;
+  top: 0;
+  right: 40px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.6) !important;
+  border-radius: 0 0 14px 14px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+#unfold-onlyoffice-file-view-header:hover {
+  background: rgba(255, 255, 255, 1) !important;
+}
+
+.exdraw-view-header #unfold-onlyoffice-file-view-header {
+  right: 152px;
+  z-index: 6
+}
+
+.sf-only-office.doc-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.odp-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.fodp-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.ods-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.fods-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.odt-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.fodt-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.ppsx-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.ppt-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.pps-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.xls-view-header #unfold-onlyoffice-file-view-header {
+  right: 172px;
+}
+
+.sf-collabora-online #unfold-onlyoffice-file-view-header {
+  right: 200px;
+}
+
+.file-view-header .file-toolbar-btn {
+  position: relative;
+  min-width: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  margin-left: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.file-view-header .file-toolbar-btn .sdocfont {
+  font-size: .875rem;
+  font-weight: 400;
+  color: #666;
+}
+
+.file-view-header .file-toolbar-btn .seafile-multicolor-icon {
+  fill: #666;
+  width: .875rem;
+  height: .875rem;
+}
+
+.file-view-header .file-toolbar-btn:hover {
+  background-color: var(--bs-hover-bg) !important;
+}
+
+.file-view-header .file-toolbar-btn.disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.file-view-header .file-toolbar-btn.disabled:hover {
+  background: var(--bs-body-bg);
+}
+
+.file-view-header .file-toolbar-btn#save-file {
+  color: #ED7109;
+}
+
+.file-view-header .file-toolbar-btn .comment-tip {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  z-index: 100;
+  background: red;
+}
+
+.file-view-header .file-toolbar-more-operations {
+  height: 38px;
+  padding: 0;
+}
+
+.file-view-header .file-operator-folder-divider {
+  margin: 8px 0;
+  border-top: 1px solid #e6e9ed;
+  height: 1px;
+  width: 100%;
+}
+
+.file-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
+.file-star {
+  font-size: .875rem;
+  color: #999;
+  margin-left: .5rem;
+}
+
+.file-star:hover,
+.file-star:focus {
+  text-decoration: none;
+  color: #999;
+}
+
+.file-locked-icon {
+  margin-left: .5rem;
+}
+
+.meta-info {
+  font-size: .8125rem;
+}
+
+.file-view-body {
+  overflow-y: auto;
+}
+
+.file-view-body .file-view-content {
+  padding: 30px 0;
+  background: var(--bs-body-secondary-bg);
+  border-right: 4px solid transparent;
+}
+
+.tip {
+  color: #666;
+}
+
+.file-details-container {
+  position: absolute;
+  right: 0;
+  background: var(--bs-body-bg);
+  width: 300px;
+  height: 100%;
+  box-shadow: -1px 0 3px 0 #ccc;
+  animation: move .5s ease-in-out 1;
+  z-index: 50;
+}
+
+.seafile-file-detail-right-panel-wrapper {
+  display: flex;
+  position: relative;
+}
+
+@keyframes move {
+  from {
+    right: -500px;
+    opacity: 0.5;
+  }
+
+  to {
+    right: 0px;
+    opacity: 1;
+  }
+}
+
+/* for mobile */
+.file-view-body .seafile-comment {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .file-view-body .seafile-comment {
+    width: 360px;
+    border-left: 1px solid #e6e6dd;
+  }
+}

@@ -1,0 +1,54 @@
+{% extends "base_for_small_panel.html" %}
+{% load i18n %}
+
+{% block main_panel %}
+<div class="mt-9 mb-4 mx-auto small-panel">
+  <h2 class="text-center ellipsis" title="{{repo.name}}">{{repo.name}}</h2>
+  <p class="intro">{% trans "This library is encrypted. Please input the password if you want to browse it online. And the password will be kept on the server for only 1 hour." %}</p>
+  <form action="" method="post" id="repo-decrypt-form" class="mt-4">
+    <div class="form-group">
+      <label for="password">{% trans "Password" %}</label>
+      <input type="password" name="password" id="password" class="form-control" autofocus />
+    </div>
+    <button type="submit" class="btn btn-primary sf-btn-submit">{% trans "Submit" %}</button>
+    <p class="error hide"></p>
+  </form>
+</div>
+{% endblock %}
+{% block extra_script %}
+<script type="text/javascript">
+  $('#repo-decrypt-form').on('submit', function() {
+    var $form = $(this),
+        password = $('[name="password"]', $form).val().trim(),
+        $error = $('.error', $form);
+
+    if (!password) {
+        $error.html("{% trans "Please enter the password." %}").removeClass('hide');
+        return false;
+    }
+
+    var $submitBtn = $('[type="submit"]', $form);
+    disable($submitBtn);
+    $.ajax({
+        url: "{% url 'api-v2.1-repo-set-password' repo.id %}",
+        type: "POST",
+        dataType: 'json',
+        cache: false,
+        beforeSend: prepareCSRFToken,
+        data: {
+            password: password
+        },
+        success: function() {
+            location.href = "{{ next|escapejs }}";
+        },
+        error: function(xhr) {
+            var error_msg = prepareAjaxErrorMsg(xhr);
+            $error.html(error_msg).removeClass('hide');
+            enable($submitBtn);
+        }
+    });
+
+    return false;
+});
+</script>
+{% endblock %}

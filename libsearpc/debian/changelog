@@ -1,0 +1,45 @@
+libsearpc1 (3.2.0) unstable; urgency=low
+
+  * new upstream release
+
+ -- Jonathan Xu <jonathan.xu@seafile.com>  Thu, 24 Oct 2019 11:05:10 +0800
+
+libsearpc1 (3.1.0) unstable; urgency=low
+
+  * new upstream release
+
+ -- Jonathan Xu <jonathan.xu@seafile.com>  Fri, 16 Aug 2018 16:42:40 +0800
+
+libsearpc1 (3.0.8.3) unstable; urgency=low
+
+  * new upstream release
+
+ -- Jonathan Xu <jonathan.xu@seafile.com>  Wed, 15 Mar 2017 16:42:40 +0800
+
+libsearpc1 (3.0.8-2) unstable; urgency=low
+
+  * new upstream release
+
+ -- Jonathan Xu <jonathan.xu@seafile.com>  Fri, 24 Jan 2017 11:38:45 +0800
+
+libsearpc1 (3.0.8) unstable; urgency=low
+
+  * new upstream release
+
+ -- Jonathan Xu <jonathan.xu@seafile.com>  Thu, 5 Jan 2017 14:12:05 +0800
+
+libsearpc1 (3.0.7-5ubuntu1) UNRELEASED; urgency=medium
+
+  * repackaging with cleaned up orig.tar.xz archives
+  * added symbol file
+
+ -- m.eik michalke <meik.michalke@hhu.de>  Fri, 17 Jun 2016 12:09:14 +0200
+
+libsearpc1 (3.0.7-4) unstable; urgency=medium
+
+  * split package libsearpc1 and libsearpc-dev
+  * updated the debian/copyright notice so people know who's responisble for the packaging
+  * rewrote the rules file, much simpler now
+  * prep for release on github
+
+ -- m.eik michalke <meik.michalke@hhu.de>  Wed, 15 Jun 2016 22:16:03 +0200

@@ -1,0 +1,37 @@
+.paginator .btn {
+  min-width: 2.375rem;
+  font-weight: normal;
+}
+
+[data-bs-theme=dark] .paginator .btn:disabled {
+  background-color: rgba(255, 255, 255, .02);
+  border-color: rgba(255, 255, 255, .1);
+}
+
+.paginator .paginator-dropdown .btn:active,
+.paginator .paginator-dropdown .btn:focus {
+  background: var(--bs-body-bg);
+  border-color: #1991eb;
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(70, 127, 207, 0.25);
+}
+
+.paginator-dropdown .paginator-dropdown-menu {
+  min-width: auto;
+}
+
+.paginator-dropdown>.btn .sf3-font {
+  color: #666;
+}
+
+.paginator-dropdown .paginator-dropdown-menu .paginator-dropdown-item {
+  display: flex;
+  padding-left: 10px;
+  padding-right: 24px;
+}
+
+.paginator-dropdown .paginator-dropdown-menu .paginator-dropdown-item .paginator-dropdown-tick {
+  display: inline-block;
+  width: 14px;
+  margin-right: 4px;
+}

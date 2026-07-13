@@ -1,0 +1,60 @@
+Source: libsearpc1
+Section: net
+Priority: extra
+Maintainer: m.eik michalke <meik.michalke@hhu.de>
+Build-Depends:
+    debhelper (>= 7),
+    dh-python,
+    autotools-dev,
+    intltool,
+    libglib2.0-dev,
+    python3 (>= 3.5),
+    libtool,
+    libjansson-dev
+Standards-Version: 3.9.5
+Homepage: http://seafile.com
+
+Package: libsearpc1
+Section: libs
+Architecture: any
+Depends:
+    ${shlibs:Depends},
+    ${misc:Depends},
+Conflicts: seafile
+Description: SeaRPC library for Seafile client
+ SeaRPC is a simple C language RPC framework based on GObject system.
+ SeaRPC handles the serialization/deserialization part of RPC, the transport
+ part is left to users.
+
+Package: libsearpc-dev
+Section: libdevel
+Architecture: any
+Depends:
+    ${misc:Depends},
+    python3 (>= 3.5),
+    libsearpc1 (= ${binary:Version})
+Conflicts: seafile
+Description: Development files for the libsearpc1 package.
+ This package contains the development files for the libsearpc1 package.
+
+Package: libsearpc-dbg
+Section: debug
+Architecture: any
+Depends:
+    libsearpc1 (= ${binary:Version}),
+    ${misc:Depends},
+Description: Debugging symbols for the libsearpc1 package.
+ This package contains the debugging symbols for the libsearpc1 package.
+
+Package: python-searpc
+Section: python
+Multi-Arch: foreign
+Architecture: all
+Depends: ${python3:Depends},
+	 ${shlibs:Depends},
+	 ${misc:Depends}
+Description: simple and easy-to-use C language RPC framework
+ Searpc handles the serialization/deserialization part of RPC, the
+ transport part is left to users.
+ .
+ This package contains Python bindings to Searpc.

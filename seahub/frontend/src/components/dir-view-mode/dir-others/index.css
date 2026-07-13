@@ -1,0 +1,28 @@
+.dir-others .dir-others-item {
+  position: relative;
+  height: 28px;
+  padding-left: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.dir-others .dir-others-item[aria-expanded="true"], /* for 'More' */
+.dir-others .dir-others-item:hover {
+  background-color: var(--bs-nav-hover-bg);
+  border-radius: 0.25rem;
+}
+
+.dir-others .dir-others-item .dir-others-item-text {
+  font-size: 14px;
+  margin-left: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dir-others .dir-others-item .seafile-multicolor-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--bs-icon-color);
+}

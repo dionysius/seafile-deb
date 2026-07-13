@@ -1,0 +1,32 @@
+.text-file-view .cm-editor {
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  box-shadow: 0 0 6px #ccc;
+  background-color: var(--bs-body-bg);
+}
+
+.text-file-view .cm-editor {
+  height: auto;
+  min-height: 300px;
+  width: calc(100% - 40px);
+  max-width: 950px;
+}
+
+.text-file-view .cm-editor.cm-focused {
+  outline: none;
+}
+
+.text-file-view .cm-scroll {
+  min-height: 300px;
+}
+
+.text-file-view .cm-gutters {
+  min-height: 300px;
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-border-secondary-color);
+}
+
+.text-file-view .cm-content .cm-line {
+  color: var(--bs-body-color);
+  caret-color: var(--bs-body-color) !important;
+}

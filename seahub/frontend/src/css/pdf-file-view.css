@@ -1,0 +1,367 @@
+.pdf-file-view {
+  position: relative;
+  z-index: 0;
+}
+
+/* for pdf online file view */
+.pdf-file-view.file-view-content {
+  border: 0;
+}
+
+.sf-hide {
+  height: 0;
+  overflow: hidden;
+}
+
+#outerContainer,
+#mainContainer,
+#viewerContainer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+#viewerContainer {
+  padding: 10px 0 0;
+  overflow: auto;
+  margin-bottom: 33px;
+}
+
+#viewerContainer:focus {
+  outline: none;
+}
+
+#findbar {
+  top: 7px;
+  right: 10px;
+  inset-inline-start: auto;
+  background: var(--bs-body-bg);
+  padding: 8px;
+  border: 1px solid rgba(0, 40, 100, 0.12);
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  margin: 0;
+}
+
+#findbar::before {
+  border-bottom-color: rgba(0, 40, 100, 0.12);
+  inset-inline-start: auto;
+  margin-inline-start: auto;
+  right: 272px;
+}
+
+#findbar::after {
+  inset-inline-start: auto;
+  margin-inline-start: auto;
+  border-bottom-color: #fff;
+  right: 273px;
+}
+
+#findbar * {
+  float: none;
+}
+
+#findbarInputContainer,
+#findbarOptionsOneContainer,
+#findbarOptionsTwoContainer {
+  height: auto;
+}
+
+#findInput {
+  margin: 0;
+  width: 300px;
+  height: 30px;
+  font-size: .875rem;
+}
+
+input#findInput {
+  font-size: .875rem;
+}
+
+#findInput[data-status="notFound"] {
+  background: inherit;
+}
+
+#findbarMiscContainer {
+  right: 5px;
+  top: 5px;
+}
+
+#findResultsCount {
+  background: inherit;
+  font-size: .75rem;
+  line-height: 20px;
+  color: #666666;
+  padding: 0 8px;
+  margin: 0;
+}
+
+#findPrevious,
+#findNext,
+#findClearQuery {
+  font-size: .75rem!important;
+  color: #666666;
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border-radius: 3px;
+}
+
+#findPrevious {
+  transform: rotate(180deg);
+}
+
+#findClearQuery {
+  font-size: .875rem!important;
+}
+
+#findPrevious:hover,
+#findNext:hover,
+#findClearQuery:hover {
+  background: var(--bs-hover-bg);
+}
+
+#findPrevious::before,
+#findNext::before {
+  mask-image: none;
+}
+
+#findPrevious .find-label,
+#findNext .find-label {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+#findbar .toolbarLabel {
+  margin: 0 0 0 .5rem;
+  height: 30px;
+  line-height: 30px;
+  padding: 0 8px;
+  font-size: .875rem;
+  color: inherit;
+}
+
+.findbar .toolbarField[type="checkbox"]:checked + .toolbarLabel {
+  background: #e9e9e9!important;
+}
+
+#findbar .toolbarLabel:hover {
+  background: var(--bs-nav-hover-bg);
+}
+
+#printServiceDialog,
+#passwordDialog {
+  color: inherit;
+  font-size: inherit;
+}
+
+#printServiceDialog .modal-close {
+  outline: none;
+}
+
+#printServiceDialog .progress,
+#printServiceDialog .progress-bar {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.pdf-file-view dialog::backdrop {
+  background-color: rgba(0, 0, 0);
+  opacity: 0.5;
+}
+
+.pdfViewer .page {
+  position: relative;
+  background: var(--bs-body-bg);
+  border: none;
+  box-shadow: 0 0 6px #ccc;
+  margin: 0 auto 10px;
+}
+
+.page .loading-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+/* the following lines overwrite lines from web/viewer.css */
+#toolbarViewerMiddle {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+select#scaleSelect {
+  background: var(--bs-body-bg);
+  height: 24px;
+  font-size: 12px;
+}
+
+#scaleSelectContainer::after {
+  top: 4px;
+}
+
+/* errorWrapper starts */
+#errorWrapper {
+  background: #ff6e6e;
+  color: #0c0c0d;
+  left: 0;
+  position: absolute;
+  right: 0;
+  z-index: 998; /* for seahub */
+  padding: 3px 6px;
+}
+/* errorWrapper ends */
+
+/* toolbar */
+.toolbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 998; /* 1048: for seahub 'file view' */
+}
+
+#toolbarContainer {
+  box-shadow: none;
+  border-top: 1px solid #eee;
+  height: auto;
+}
+
+#loadingBar {
+  position: fixed;
+  top: 50%;
+  width: auto;
+  height: auto;
+  border: 0;
+  background: transparent;
+}
+
+input#pageNumber {
+  font-size: 12px;
+  height: 20px;
+  padding: 0 5px;
+  margin: 0 0 0 9px;
+}
+
+#numPages.toolbarLabel {
+  margin: 0;
+  padding: 0 7px;
+}
+
+/* toolbar ends */
+
+/* sidebar starts */
+#sidebarContainer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-top: none;
+  background: var(--bs-body-bg);
+}
+
+#toolbarSidebar {
+  height: auto;
+  background: var(--bs-body-bg);
+}
+
+#thumbnailView {
+  width: 100%;
+  padding: 0;
+}
+
+#sidebarHeader .title {
+  font-size: 14px;
+}
+
+#sidebarHeader .sf2-icon-x3 {
+  font-family: 'seafile-font2';
+}
+
+#sidebarHeader .close-thumbnail-panel {
+  font-size: 1rem;
+  color: #999;
+}
+
+#sidebarHeader .close-thumbnail-panel:hover {
+  color: #666;
+}
+
+#thumbnailView .thumbnail {
+  float: none;
+  max-width: unset;
+  max-height: unset;
+  width: auto;
+  height: auto;
+  padding: 10px 0;
+  border: none;
+  border-radius: unset;
+  margin: 0 1px 0 0;
+  text-align: center;
+}
+
+#thumbnailView .thumbnail.selected {
+  background: var(--bs-nav-hover-bg);
+}
+
+#thumbnailView .thumbnail .thumbnail-page-number {
+  font-size: .875rem;
+  color: #666;
+  position: absolute;
+  right: 100%;
+  bottom: 0;
+}
+
+#thumbnailView .thumbnail .thumbnailImage {
+  border: 1px solid #ddd;
+  border-radius: 3px;
+}
+
+#thumbnailView .thumbnail.selected .thumbnailImage {
+  border: 2px solid #ff9800;
+}
+
+#sidebarContent {
+  inset-block: 36px 0;
+}
+
+.splitToolbarButton > .toolbarButton {
+  float: none;
+}
+/* sidebar ends */
+
+/* overlay, passwordOverlay */
+#overlayContainer {
+  display: table;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 999; /* 1049: for seahub 'share' dialog */
+}
+
+.dirent-info .img .thumbnail {
+  float: none;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+@media print {
+  #wrapper {
+    display: none;
+  }
+}
+
+#thumbnailView,
+#outlineView,
+#attachmentsView,
+#layersView {
+  width: calc(100%);
+}

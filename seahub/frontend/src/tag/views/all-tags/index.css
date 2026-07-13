@@ -1,0 +1,31 @@
+.sf-metadata-tags-wrapper {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sf-metadata-tags-wrapper .sf-metadata-tags-main {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sf-metadata-all-tags-container {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+.sf-metadata-all-tags-tag-files {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sf-metadata-all-tags-tag-files .sf-metadata-tags-wrapper {
+  flex: 1;
+}

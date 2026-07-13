@@ -1,0 +1,79 @@
+.repo-info-bar {
+  padding: 10px;
+  margin: 10px 16px 0;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 5px;
+  color: var(--bs-body-color);
+}
+
+.used-tag-list {
+  list-style: none;
+}
+
+.used-tag-list .used-tag-item:first-child {
+  margin-left: 0;
+}
+
+.used-tag-item {
+  display: inline-block;
+  margin: auto 15px;
+}
+
+.used-tag {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.used-tag-name {
+  margin: 0 0.25rem;
+}
+
+.used-tag-files {
+  color: var(--bs-body-secondary-color);
+  font-size: 14px;
+}
+
+.used-tag-files:hover {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.file-info {
+  margin: 0 15px;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.file-info a {
+  color: var(--bs-body-color);
+}
+
+.info-icon {
+  color: var(--bs-icon-color);
+  vertical-align: -3px;
+}
+
+.readme-dialog-edit {
+  position: absolute;
+  right: 16px;
+}
+
+.readme-dialog .modal-body {
+  padding: 0 30px;
+}
+
+.repo-info-bar .repo-info-bar-migrate .btn-link {
+  font-size: 14px;
+  font-weight: normal;
+  padding: 0px 8px;
+  border: 0;
+  color: #ED7109;
+}
+
+.repo-info-bar .repo-info-bar-migrate .btn-link:active {
+  color: #ED7109;
+  background: var(--bs-body-bg);
+}

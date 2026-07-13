@@ -1,0 +1,29 @@
+{% extends 'email_base.html' %}
+
+{% load i18n seahub_tags %}
+
+
+{% block email_con %}
+
+{% autoescape off %}
+{% if owner %}
+<p style="color:#121214;font-size:14px;">{% trans "Hi," %} {{owner|email2nickname}}</p>
+
+<p style="font-size:14px;color:#434144;">
+{% blocktrans %}Virus detected in library {{ repo_name }} during regular scanning: {{ file_path }}.{% endblocktrans %}
+</p>
+
+{% else %}
+<p style="color:#121214;font-size:14px;">{% trans "Hi," %}</p>
+
+<p style="font-size:14px;color:#434144;">
+{% blocktrans %}Virus is detected on regular scanning:{% endblocktrans%}
+</p>
+{% for item in repo_name_file_list %}
+<p style="font-size:14px;color:#434144;">{{ item.repo_name }}: {{ item.file_path }}</p>
+{% endfor %}
+
+{% endif %}
+{% endautoescape %}
+
+{% endblock %}

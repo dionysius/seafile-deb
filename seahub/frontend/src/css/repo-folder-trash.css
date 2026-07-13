@@ -1,0 +1,53 @@
+body {
+  overflow: hidden;
+}
+
+#wrapper {
+  height: 100%;
+}
+
+.top-header {
+  background-color: var(--bs-header-bg);
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  padding: .5rem 1rem;
+  flex-shrink: 0;
+}
+
+.go-back {
+  color: #c0c0c0;
+  font-size: 1.75rem;
+  position: absolute;
+  left: -40px;
+  top: -5px;
+}
+
+.go-back .sf3-font-down {
+  font-size: 1.75rem !important;
+}
+
+.op-bar {
+  padding: 9px 10px;
+  background: var(--bs-bg-color);
+  border-radius: 2px;
+}
+
+.more {
+  background: var(--bs-bg-color);
+  border: 0;
+  color: #666;
+}
+
+.more:hover {
+  color: var(--bs-body-color);
+  background: var(--bs-bg-secondary-color);
+}
+
+.clean {
+  border-color: var(--bs-border-secondary-color);
+  border-radius: 2px;
+  height: 30px;
+  line-height: 28px;
+  font-weight: normal;
+  padding: 0 0.5rem;
+  min-width: 55px;
+}

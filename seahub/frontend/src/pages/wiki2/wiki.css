@@ -1,0 +1,208 @@
+body {
+  overflow: hidden;
+}
+
+.wiki2-main-panel {
+  flex: calc(100% - 300px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wiki2-main-panel.show-right-panel .wiki-page-title-wrapper,
+.wiki2-main-panel.show-right-panel .sdoc-editor-container .sdoc-article-container .article.sdoc-editor__article {
+  padding-left: 50px;
+}
+
+.wiki2-main-panel .sdoc-comment-container .comment-container-right .element-comments-count {
+  left: -100px;
+}
+
+.wiki2-main-panel .wiki2-main-panel-north {
+  height: 44px;
+  position: relative;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* sdoc-outline z-index is 102, wiki header should higher than sdoc-outline */
+  z-index: 103;
+}
+
+.wiki2-main-panel .wiki2-main-panel-north .wiki2-main-panel-north-content {
+  display: flex;
+  align-items: center;
+}
+
+.wiki2-main-panel .wiki2-main-panel-north .wiki2-main-panel-north-content .doc-info {
+  margin-left: 8px;
+}
+
+.wiki2-main-panel .wiki2-main-panel-north .wiki2-main-panel-north-content .doc-info .tip-message {
+  font-size: 12px;
+  opacity: 0.75;
+  color: #666;
+}
+
+.wiki2-main-panel .wiki2-main-panel-north .wiki2-main-panel-north-content .doc-info .tip-message .sdocfont {
+  font-size: 14px;
+}
+
+.wiki2-main-panel .wiki2-main-panel-north .wiki2-file-history-button {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 3px;
+  color: #666666;
+}
+
+.wiki2-main-panel .wiki2-main-panel-north .wiki2-file-history-button:hover {
+  background-color: var(--bs-hover-bg);
+}
+
+.main-panel-center .cur-view-content {
+  padding: 0;
+  min-width: 500px;
+}
+
+.main-panel-center .wiki-content-right-panel-wrapper,
+.main-panel-center .sdoc-content-right-panel-wrapper {
+  margin-top: -44px;
+  height: calc(100vh + 44px);
+  z-index: 103 !important;
+}
+
+.main-panel-center .sdoc-content-right-panel-wrapper .comments-panel-wrapper {
+  height: 100vh;
+}
+
+/* scroll container */
+/* wiki editor */
+.cur-view-content .sdoc-scroll-container {
+  display: flex;
+  min-height: 0;
+  overflow: auto;
+}
+
+.cur-view-content .wiki-editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  align-items: center;
+  width: 100%;
+}
+
+.wiki-editor-container .sdoc-editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+}
+
+.wiki-editor-container .sdoc-editor-container .sdoc-content-wrapper {
+  height: auto;
+}
+
+.wiki-editor-container .sdoc-editor-container .sdoc-editor-content {
+  display: flex;
+  flex-direction: column;
+  position: static;
+  min-width: 0;
+  width: 100%;
+}
+
+.sdoc-editor-container .sdoc-article-container {
+  padding-top: 0;
+  padding-bottom: 0;
+  width: 100%;
+}
+
+/* wiki editor article */
+.sdoc-editor-container .sdoc-article-container .article {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  min-height: 800px;
+  width: 100%;
+  padding: 0 142px 60px;
+  box-shadow: none;
+  border: none;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.sdoc-editor-container .sdoc-article-container .article>div {
+  caret-color: blue;
+}
+
+.sdoc-editor-container .sdoc-article-container .article .sdoc-drag-cover::before {
+  content: ' ';
+  width: 59px;
+  display: inline-block;
+  position: absolute;
+  left: -60px;
+}
+
+.sdoc-editor-container .sdoc-article-container .article .sdoc-draging {
+  border-bottom: 2px solid rgba(35, 131, 226);
+}
+
+.sdoc-editor-container .sdoc-article-container .article #sdoc-editor {
+  width: 100%;
+}
+
+.wiki2-file-history-button .freeze-document-switch .custom-switch-description {
+  margin-left: 0;
+  color: var(--bs-body-color);
+  transition: none;
+}
+
+.wiki2-file-history-button .freeze-document-switch:hover .custom-switch-description {
+  color: #fff;
+  transition: none;
+}
+
+.wiki2-file-history-button .freeze-document-switch  .custom-switch-indicator {
+  position: absolute;
+  right: 16px;
+}
+
+.wiki2-top-nav .locked {
+  width: 1rem;
+  height: 1rem;
+  top: 60%;
+  left: 50%;
+}
+
+.sdoc-side-menu-popover .sdoc-side-menu.sdoc-dropdown-menu {
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+.sdoc-side-menu-popover .sdoc-side-menu.sdoc-dropdown-menu .sdoc-dropdown-menu-item:hover {
+  background-color: var(--bs-nav-active-bg);
+}
+
+.sdoc-side-menu-popover .sdoc-side-menu.sdoc-dropdown-menu .sdoc-dropdown-menu-divider {
+  border-color: var(--bs-border-secondary-color);
+}
+
+.sdoc-dropdown-menu.sdoc-sub-dropdown-menu .popover {
+  background-color: var(--bs-body-bg);
+}
+
+.sdoc-dropdown-menu.sdoc-sub-dropdown-menu .sdoc-dropdown-menu-container .sdoc-dropdown-menu-item:hover {
+  background-color: var(--bs-tr-hover-bg);
+  color: var(--bs-body-color);
+}
+
+.sdoc-dropdown-menu.sdoc-sub-dropdown-menu .popover .sdoc-selected-table-size-custom:hover {
+  background-color: var(--bs-tr-hover-bg);
+}

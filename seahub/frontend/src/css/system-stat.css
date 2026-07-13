@@ -1,0 +1,96 @@
+.system-statistic-time-range {
+  margin: 15px 0 25px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+}
+
+.sys-stat-tool {
+  font-size: 13px;
+  color: var(--bs-body-color);
+}
+
+.sys-stat-tool .item-active {
+  background: var(--bs-nav-active-bg);
+}
+
+.system-statistic-input-container {
+  display: flex;
+  margin-left: 1rem;
+  align-items: center;
+}
+
+.system-statistic-input {
+  height: 32px;
+  width: 120px;
+}
+
+.statistic-traffic-tab {
+  display: flex;
+  font-size: 13px;
+  color: var(--bs-body-color);
+  margin-top: 10px;
+}
+
+.statistic-traffic-tab .statistic-traffic-tab-item {
+  margin-right: 10px;
+  padding: 3px 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  color: #8a948f;
+}
+
+.statistic-traffic-tab .statistic-traffic-tab-item:hover {
+  color: #eb8025;
+  border-bottom: 2px solid #eb8025;
+}
+
+.statistic-traffic-tab .statistic-traffic-tab-item.active {
+  color: #eb8025;
+  border-bottom: 2px solid #eb8025;
+}
+
+.statistic-reports-title {
+  background: var(--bs-th-bg);
+  margin-top: 15px;
+  color: var(--bs-body-color);
+  padding: 3px 10px;
+}
+
+.statistic-reports-submit {
+  margin-left: 15px;
+}
+
+.statistic-reports-wrapper {
+  display: flex;
+  align-items: center;
+  margin-top: 15px;
+}
+
+.statistic-reports-input {
+  width: 80px;
+  height: 30px;
+}
+
+.statistic-reports-tip {
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.system-statistic-connect {
+  padding: 0 5px;
+  line-height: 1;
+}
+
+.system-statistic-button {
+  margin-left: .5rem;
+  height: 32px;
+}
+
+.rc-calendar table {
+  table-layout: initial;
+}
+
+.rc-calendar tbody tr {
+  height: 1.75rem;
+}

@@ -1,0 +1,12 @@
+{% extends "help/base.html" %}
+{% load i18n %}
+
+{% block help_con %}
+<h3 class="hd">{% trans "Deleting a library" %}</h3>
+<p>{% trans "You can delete a library owned by you. A deleted library can be restored by you or Seafile server's administrator." %}</p>
+<p>{% trans "After a library is deleted, it has following effects:" %}</p>
+<ul>
+  <li>{% trans "Share of the files and folders within this library are all canceled." %}</li>
+  <li>{% trans "Desktop clients synced with this library cannot sync with it any more. But the local files on the client won't be deleted." %}</li>
+</ul>
+{% endblock %}

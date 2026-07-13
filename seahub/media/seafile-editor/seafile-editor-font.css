@@ -1,0 +1,280 @@
+@font-face {
+  font-family: "iconfont";
+  /* Project id 4375832 */
+  src: url('./seafile-editor-font/iconfont.eot?t=1753239248033');
+  /* IE9 */
+  src: url('./seafile-editor-font/iconfont.eot?t=1753239248033#iefix') format('embedded-opentype'),
+    /* IE6-IE8 */
+    url('./seafile-editor-font/iconfont.woff2?t=1753239248033') format('woff2'),
+    url('./seafile-editor-font/iconfont.woff?t=1753239248033') format('woff'),
+    url('./seafile-editor-font/iconfont.ttf?t=1753239248033') format('truetype'),
+    url('./seafile-editor-font/iconfont.svg?t=1753239248033#iconfont') format('svg');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-insert:before {
+  content: "\e6a6";
+}
+
+.icon-right-slide:before {
+  content: "\e6a7";
+}
+
+.icon-center-horizontally:before {
+  content: "\e69f";
+}
+
+.icon-star1:before {
+  content: "\e6a0";
+}
+
+.icon-drop-down:before {
+  content: "\e6a1";
+}
+
+.icon-quote:before {
+  content: "\e6a2";
+}
+
+.icon-image:before {
+  content: "\e6a3";
+}
+
+.icon-choose-column:before {
+  content: "\e6a4";
+}
+
+.icon-check-mark:before {
+  content: "\e6a5";
+}
+
+.icon-quote-left:before {
+  content: "\e68a";
+}
+
+.icon-star2:before {
+  content: "\e68b";
+}
+
+.icon-code:before {
+  content: "\e68c";
+}
+
+.icon-italic:before {
+  content: "\e68d";
+}
+
+.icon-ellipsis-v:before {
+  content: "\e68e";
+}
+
+.icon-column:before {
+  content: "\e68f";
+}
+
+.icon-code-block:before {
+  content: "\e690";
+}
+
+.icon-align-right:before {
+  content: "\e691";
+}
+
+.icon-description:before {
+  content: "\e692";
+}
+
+.icon-use-help:before {
+  content: "\e693";
+}
+
+.icon-unlink:before {
+  content: "\e694";
+}
+
+.icon-rename:before {
+  content: "\e695";
+}
+
+.icon-caret-up:before {
+  content: "\e696";
+}
+
+.icon-more:before {
+  content: "\e697";
+}
+
+.icon-check-circle:before {
+  content: "\e698";
+}
+
+.icon-close:before {
+  content: "\e699";
+}
+
+.icon-file:before {
+  content: "\e69a";
+}
+
+.icon-list-ul:before {
+  content: "\e69b";
+}
+
+.icon-exclamation-circle:before {
+  content: "\e69c";
+}
+
+.icon-bold:before {
+  content: "\e69d";
+}
+
+.icon-exclamation-triangle:before {
+  content: "\e69e";
+}
+
+.icon-underline:before {
+  content: "\e677";
+}
+
+.icon-delete:before {
+  content: "\e679";
+}
+
+.icon-user:before {
+  content: "\e67a";
+}
+
+.icon-row:before {
+  content: "\e67b";
+}
+
+.icon-link:before {
+  content: "\e67c";
+}
+
+.icon-left-alignment:before {
+  content: "\e67d";
+}
+
+.icon-text-style:before {
+  content: "\e67e";
+}
+
+.icon-table:before {
+  content: "\e680";
+}
+
+.icon-check-square:before {
+  content: "\e681";
+}
+
+.icon-delete-table:before {
+  content: "\e682";
+}
+
+.icon-fullscreen:before {
+  content: "\e685";
+}
+
+.icon-list-ol:before {
+  content: "\e686";
+}
+
+.icon-formula:before {
+  content: "\e687";
+}
+
+.icon-eye-slash:before {
+  content: "\e688";
+}
+
+.icon-clear-format:before {
+  content: "\e689";
+}
+
+.icon-outline:before {
+  content: "\e629";
+}
+
+.icon-x:before {
+  content: "\e683";
+}
+
+.icon-full-screen:before {
+  content: "\e684";
+}
+
+.icon-edit:before {
+  content: "\e64b";
+}
+
+.icon-angle-double-left:before {
+  content: "\e64d";
+}
+
+.icon-comment:before {
+  content: "\e64f";
+}
+
+.icon-enlarge:before {
+  content: "\e658";
+}
+
+.icon-bell:before {
+  content: "\e659";
+}
+
+.icon-magic:before {
+  content: "\e65a";
+}
+
+.icon-angle-double-right:before {
+  content: "\e65d";
+}
+
+.icon-pencil:before {
+  content: "\e65f";
+}
+
+.icon-plus-circle:before {
+  content: "\e664";
+}
+
+.icon-info-circle:before {
+  content: "\e66d";
+}
+
+.icon-left:before {
+  content: "\e66f";
+}
+
+.icon-plus-square:before {
+  content: "\e671";
+}
+
+.icon-shrink:before {
+  content: "\e672";
+}
+
+.icon-right:before {
+  content: "\e675";
+}
+
+.icon-eye:before {
+  content: "\e676";
+}
+
+.icon-times-circle:before {
+  content: "\e678";
+}
+
+.icon-users:before {
+  content: "\e67f";
+}

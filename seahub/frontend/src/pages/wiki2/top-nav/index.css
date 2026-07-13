@@ -1,0 +1,26 @@
+.wiki2-top-nav .wiki2-top-nav-item {
+  padding: 2px 6px;
+  max-width: 150px;
+}
+@media (min-width: 768px) {
+  .wiki2-top-nav .wiki2-top-nav-item {
+    max-width: 300px;
+  }
+}
+
+.wiki2-top-nav .item-split {
+  margin: 0 2px;
+}
+
+.wiki2-top-nav .wiki2-top-nav-item:hover {
+  background-color: var(--bs-nav-hover-bg);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.wiki2-top-nav .wiki2-top-nav-item .nav-item-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: 0;
+  margin-right: 4px;
+}

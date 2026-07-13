@@ -1,0 +1,16 @@
+.wechat-dialog-body {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wechat-dialog-message {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+}

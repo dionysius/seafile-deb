@@ -1,0 +1,69 @@
+.detail-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  line-height: 2.5rem;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  height: 48px;
+  padding: 8px 16px;
+}
+
+.detail-header .detail-control-container {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.detail-header .detail-control {
+  min-width: 0;
+  height: 24px;
+  width: 24px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.detail-header .detail-control .detail-control-icon,
+.detail-header .detail-control i {
+  font-size: 16px;
+  fill: var(--bs-icon-color);
+  color: var(--bs-icon-color);
+}
+
+.detail-header .detail-control:hover {
+  background-color: var(--bs-hover-bg)!important;
+}
+
+.detail-header .detail-control:hover i {
+  fill: var(--bs-icon-hover-color);
+}
+
+.detail-header .detail-title {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  width: 0; /* prevent strut flex layout */
+}
+
+.detail-header .detail-title .detail-header-icon-container {
+  height: 32px;
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+
+.detail-header .detail-title .detail-title-name {
+  margin-right: 8px;
+  line-height: 1.5rem;
+  vertical-align: middle;
+  font-size: 1rem;
+  color: var(--bs-body-color);
+}
+

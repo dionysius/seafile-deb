@@ -1,0 +1,300 @@
+import React, { Suspense } from 'react';
+import PropTypes from 'prop-types';
+import watermark from 'watermark-dom';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../../_i18n/i18n-sdoc-editor';
+import { seafileAPI } from '../../utils/seafile-api';
+import { gettext, siteName } from '../../utils/constants';
+import { Utils } from '../../utils/utils';
+import toaster from '../toast';
+import IconButton from '../icon-button';
+import FileInfo from './file-info';
+import FileToolbar from './file-toolbar';
+import CommentPanel from './comment-panel';
+import OnlyofficeFileToolbar from './onlyoffice-file-toolbar';
+import EmbeddedFileDetails from '../dirent-detail/embedded-file-details';
+import { MetadataMiddlewareProvider, MetadataStatusProvider } from '../../hooks';
+import Loading from '../loading';
+import WebSocketClient from '../../utils/websocket-service';
+import ResizeWidth from './resize-width';
+import LocalStorage from '../../utils/local-storage-utils';
+
+import '../../css/file-view.css';
+
+const propTypes = {
+  onSave: PropTypes.func,
+  content: PropTypes.object.isRequired,
+  isSaving: PropTypes.bool,
+  needSave: PropTypes.bool,
+  isOnlyofficeFile: PropTypes.bool,
+  documentVendor: PropTypes.string,
+  setImageScale: PropTypes.func,
+  rotateImage: PropTypes.func
+};
+
+const { isStarred, isLocked, lockedByMe,
+  repoID, fileUuid, filePath, filePerm, enableWatermark, userNickName,
+  fileName, repoEncrypted, isRepoAdmin, fileType
+} = window.app.pageOptions;
+
+const MIN_PANEL_WIDTH = 360;
+const MAX_PANEL_WIDTH = 620;
+
+class FileView extends React.Component {
+
+  constructor(props) {
+    super(props);
+    const storedIsHeaderShown = localStorage.getItem('sf_onlyoffile_file_view_header_shown');
+    this.state = {
+      isStarred: isStarred,
+      isLocked: isLocked,
+      lockedByMe: lockedByMe,
+      isCommentPanelOpen: false,
+      isHeaderShown: (storedIsHeaderShown === null) || (storedIsHeaderShown == 'true'),
+      isDetailsPanelOpen: false,
+      isCommentUpdated: false,
+      width: MIN_PANEL_WIDTH,
+    };
+
+    this.socketManager = new WebSocketClient(this.onMessageCallback, repoID);
+  }
+
+  componentDidMount() {
+    const fileIcon = Utils.getFileIconUrl(fileName);
+    document.getElementById('favicon').href = fileIcon;
+
+    const newfileType = fileName?.split('.').pop();
+    const settings = LocalStorage.getItem(`${newfileType}_detail_storage`) || {};
+    const { panelWidth } = settings;
+    const width = Math.max(
+      MIN_PANEL_WIDTH,
+      Math.min(parseInt(panelWidth, 10) || MIN_PANEL_WIDTH, MAX_PANEL_WIDTH)
+    );
+    this.setState({ width });
+  }
+
+  onMessageCallback = (data) => {
+    const { type, content } = data;
+    if (type === 'comment-update') {
+      const { repo_id, file_uuid } = content;
+      if (repoID === repo_id && file_uuid === fileUuid) {
+        if (!this.state.isCommentPanelOpen) {
+          this.setState({ isCommentUpdated: true });
+        } else {
+          this.commentPanelRef.forceUpdate();
+        }
+      }
+    }
+  };
+
+  toggleCommentPanel = () => {
+    this.setState({
+      isCommentPanelOpen: !this.state.isCommentPanelOpen,
+      isDetailsPanelOpen: false,
+      isCommentUpdated: false,
+    });
+  };
+
+  toggleDetailsPanel = () => {
+    this.setState({
+      isDetailsPanelOpen: !this.state.isDetailsPanelOpen,
+      isCommentPanelOpen: false,
+    });
+  };
+
+  toggleStar = () => {
+    if (this.state.isStarred) {
+      seafileAPI.unstarItem(repoID, filePath).then((res) => {
+        this.setState({
+          isStarred: false
+        });
+      }).catch((error) => {
+        const errorMsg = Utils.getErrorMsg(error);
+        toaster.danger(errorMsg);
+      });
+    } else {
+      seafileAPI.starItem(repoID, filePath).then((res) => {
+        this.setState({
+          isStarred: true
+        });
+      }).catch((error) => {
+        const errorMsg = Utils.getErrorMsg(error);
+        toaster.danger(errorMsg);
+      });
+    }
+  };
+
+  toggleLockFile = () => {
+    if (this.state.isLocked) {
+      seafileAPI.unlockfile(repoID, filePath).then((res) => {
+        this.setState({
+          isLocked: false,
+          lockedByMe: false
+        });
+      }).catch((error) => {
+        const errorMsg = Utils.getErrorMsg(error);
+        toaster.danger(errorMsg);
+      });
+    } else {
+      seafileAPI.lockfile(repoID, filePath).then((res) => {
+        this.setState({
+          isLocked: true,
+          lockedByMe: true
+        });
+      }).catch((error) => {
+        const errorMsg = Utils.getErrorMsg(error);
+        toaster.danger(errorMsg);
+      });
+    }
+  };
+
+  toggleHeader = () => {
+    this.setState({
+      isHeaderShown: !this.state.isHeaderShown
+    }, () => {
+      localStorage.setItem('sf_onlyoffile_file_view_header_shown', String(this.state.isHeaderShown));
+    });
+  };
+
+  setCommentPanelRef = (ref) => {
+    this.commentPanelRef = ref;
+  };
+
+  panelWrapperStyle = () => {
+    let style = {
+      width: this.state.width,
+      zIndex: 101,
+    };
+
+    if (!style.width || style.width < MIN_PANEL_WIDTH) {
+      style.width = MIN_PANEL_WIDTH;
+    } else if (style.width > MAX_PANEL_WIDTH) {
+      style.width = MAX_PANEL_WIDTH;
+    }
+
+    return style;
+  };
+
+  resizeWidth = (width) => {
+    this.setState({ width: width });
+  };
+
+  resizeWidthEnd = (width) => {
+    const newfileType = fileName?.split('.').pop();
+    const settings = LocalStorage.getItem(`${newfileType}_detail_storage`) || {};
+    LocalStorage.setItem(`${newfileType}_detail_storage`, JSON.stringify({ ...settings, panelWidth: width }));
+  };
+
+  getHeaderClassName = () => {
+    const { isOnlyofficeFile = false, documentVendor } = this.props;
+    if (!isOnlyofficeFile) return '';
+    const fileExtension = Utils.getFileExtension(fileName, true);
+    let className = `${fileExtension}-view-header`;
+    if (documentVendor) {
+      if (documentVendor === 'onlyOffice') {
+        className = 'sf-only-office ' + className;
+      } else if (documentVendor === 'collaboraOnline') {
+        className = 'sf-collabora-online ' + className;
+      }
+    }
+    return className;
+  };
+
+  render() {
+    const { isOnlyofficeFile = false } = this.props;
+    const { isDetailsPanelOpen, isHeaderShown } = this.state;
+    const repoInfo = {
+      permission: filePerm,
+      encrypted: repoEncrypted,
+      is_admin: isRepoAdmin,
+    };
+    const className = this.getHeaderClassName();
+    return (
+      <I18nextProvider i18n={ i18n }>
+        <Suspense fallback={<Loading />}>
+          <div className={`h-100 d-flex flex-column ${className}`}>
+            <div className={`file-view-header d-flex justify-content-between align-items-center d-print-none ${isOnlyofficeFile ? (isHeaderShown ? 'onlyoffice-file-view-header-shown' : 'onlyoffice-file-view-header-hidden') : ''}`}>
+              <FileInfo
+                isStarred={this.state.isStarred}
+                isLocked={this.state.isLocked}
+                toggleStar={this.toggleStar}
+                isOnlyofficeFile={isOnlyofficeFile}
+              />
+              {isOnlyofficeFile ?
+                <OnlyofficeFileToolbar
+                  isCommentUpdated={this.state.isCommentUpdated}
+                  toggleDetailsPanel={this.toggleDetailsPanel}
+                  toggleHeader={this.toggleHeader}
+                  toggleCommentPanel={this.toggleCommentPanel}
+                /> :
+                <FileToolbar
+                  isLocked={this.state.isLocked}
+                  lockedByMe={this.state.lockedByMe}
+                  isCommentUpdated={this.state.isCommentUpdated}
+                  onSave={this.props.onSave}
+                  isSaving={this.props.isSaving}
+                  needSave={this.props.needSave}
+                  toggleLockFile={this.toggleLockFile}
+                  toggleCommentPanel={this.toggleCommentPanel}
+                  toggleDetailsPanel={this.toggleDetailsPanel}
+                  setImageScale={this.props.setImageScale}
+                  rotateImage={this.props.rotateImage}
+                  lineWrapping={this.props.lineWrapping}
+                  updateLineWrapping={this.props.updateLineWrapping}
+                  setDefaultPageFitScale={this.props.setDefaultPageFitScale}
+                />
+              }
+            </div>
+            <div className={`file-view-body flex-auto d-flex ${fileType == 'PDF' ? '' : 'o-hidden'} ${(isOnlyofficeFile && !isHeaderShown) ? 'position-relative' : ''}`}>
+              {(isOnlyofficeFile && !isHeaderShown) &&
+                <IconButton
+                  id="unfold-onlyoffice-file-view-header"
+                  icon='double-arrow-down'
+                  text={gettext('Unfold')}
+                  onClick={this.toggleHeader}
+                />
+              }
+              {this.props.content}
+              {this.state.isCommentPanelOpen &&
+                <CommentPanel
+                  ref={this.setCommentPanelRef}
+                  toggleCommentPanel={this.toggleCommentPanel}
+                  participants={this.props.participants}
+                  onParticipantsChange={this.props.onParticipantsChange}
+                />
+              }
+              {isDetailsPanelOpen && (
+                <MetadataStatusProvider repoID={repoID} repoInfo={repoInfo}>
+                  <MetadataMiddlewareProvider repoID={repoID} repoInfo={repoInfo}>
+                    <div className='seafile-file-detail-right-panel-wrapper' style={this.panelWrapperStyle()}>
+                      <ResizeWidth minWidth={MIN_PANEL_WIDTH} maxWidth={MAX_PANEL_WIDTH} resizeWidth={this.resizeWidth} resizeWidthEnd={this.resizeWidthEnd} />
+                      <EmbeddedFileDetails
+                        repoID={repoID}
+                        path={filePath}
+                        dirent={{ 'name': fileName, type: 'file' }}
+                        repoInfo={repoInfo}
+                        onClose={this.toggleDetailsPanel}
+                        width={this.state.width}
+                      />
+                    </div>
+                  </MetadataMiddlewareProvider>
+                </MetadataStatusProvider>
+              )}
+            </div>
+          </div>
+        </Suspense>
+      </I18nextProvider>
+    );
+  }
+}
+
+if (enableWatermark) {
+  watermark.init({
+    watermark_txt: `${siteName} ${userNickName}`,
+    watermark_alpha: 0.075
+  });
+}
+
+FileView.propTypes = propTypes;
+
+export default FileView;

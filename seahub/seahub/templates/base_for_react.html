@@ -1,0 +1,189 @@
+{% load seahub_tags i18n static %}
+{% load render_bundle from webpack_loader %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+<title>{% block wiki_title %}{% block sub_title %}{% endblock %}{{ site_title }}{% endblock %}</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="{% trans "File, Collaboration, Team, Organization" %}" />
+{% if site_description != '' %}<meta name="description" content="{{ site_description }}" />{% endif %}
+{% block viewport %}
+{% if request.is_mobile or request.is_tablet %}
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+{% else %}
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+{% endif %}
+{% endblock %}
+{% block extra_ogp_tags %}{% endblock %}
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<meta name="color-scheme" content="dark light" />
+<link rel="icon" href="{{ MEDIA_URL }}{{ favicon_path }}" type="image/x-icon" id="favicon">
+<link rel="apple-touch-icon" href="{{ MEDIA_URL }}{{ apple_touch_icon_path }}">
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/sf_font3/iconfont.css" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seafile-ui.css?t=20251118" />
+
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seahub_react.css?t=20250806" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}seafile-editor/seafile-editor-font.css" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}sdoc-editor/sdoc-editor-font.css" />
+{% block extra_style %}{% endblock %}
+{% if branding_css != '' %}<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}{{ branding_css }}" />{% endif %}
+{% if enable_branding_css %}<link rel="stylesheet" type="text/css" href="{% url 'custom_css' %}" />{% endif %}
+</head>
+
+<body data-bs-theme="{% if request.session.dark_mode %}dark{% else %}light{% endif %}" id="{% block body_id %}base{% endblock %}">
+    <div id="wrapper" class="{{ LANGUAGE_CODE }}"></div>
+    <div id="modal-wrapper" class="{{ LANGUAGE_CODE }}"></div>
+    {% block wiki-v1-extra_content %}{% endblock %}
+
+<script type="text/javascript">
+    window.app = {
+        config: {
+            mediaUrl: '{{ MEDIA_URL }}',
+            logoPath: '{{ logo_path }}',
+            logoWidth: '{{ logo_width }}',
+            logoHeight: '{{ logo_height }}',
+            faviconPath: '{{ favicon_path }}',
+            loginBGPath: '{{ login_bg_path }}',
+            siteTitle: '{{ site_title }}',
+            siteName: '{{ site_name|escapejs }}',
+            siteRoot: '{{ SITE_ROOT }}',
+            loginUrl: '{{ LOGIN_URL }}',
+            isPro: '{{ is_pro }}',
+            isDBSqlite3: {% if is_db_sqlite3 %} true {% else %} false {% endif %},
+            lang: '{{ LANGUAGE_CODE }}',
+            fileServerRoot: '{{ FILE_SERVER_ROOT }}',
+            enableRepoAutoDel: {% if enable_repo_auto_del %} true {% else %} false {% endif %},
+            useGoFileserver: {% if USE_GO_FILESERVER %} true {% else %} false {% endif %},
+            serviceURL: '{{ service_url }}',
+            seafileVersion: '{{ seafile_version }}',
+            avatarURL: '{{ avatar_url }}',
+            cloudMode: {% if cloud_mode %} true {% else %} false {% endif %},
+            isOrgContext: {% if org is not None %} true {% else %} false {% endif %},
+            enableNotificationServer: {% if enable_notification_server %} true {% else %} false {% endif %},
+            notificationServerUrl: '{{ notification_server_url }}'
+        },
+        pageOptions: {
+            csrfToken: "{{ csrf_token }}",
+            name: "{{request.user.username|email2nickname|escapejs}}",
+            contactEmail: "{{request.user.username|email2contact_email|escapejs}}",
+            username: "{{request.user.username|escapejs}}",
+            guideEnabled: {% if guide_enabled %} true {% else %} false {% endif %},
+            trashReposExpireDays: {% if trash_repos_expire_days >= 0 %} {{ trash_repos_expire_days }} {% else %} null {% endif %},
+            canAddRepo: {% if user.permissions.can_add_repo %} true {% else %} false {% endif %},
+            canShareRepo: {% if user.permissions.can_share_repo %} true {% else %} false {% endif %},
+            canAddGroup: {% if user.permissions.can_add_group %} true {% else %} false {% endif %},
+            groupImportMembersExtraMsg: "{{group_import_members_extra_msg}}",
+            canGenerateShareLink: {% if user.permissions.can_generate_share_link %} true {% else %} false {% endif %},
+            canGenerateUploadLink: {% if user.permissions.can_generate_upload_link %} true {% else %} false {% endif %},
+            canSendShareLinkEmail: {% if user.permissions.can_send_share_link_mail %} true {% else %} false {% endif %},
+            canViewOrg:'{{ user.permissions.can_view_org }}',
+            fileAuditEnabled: {% if file_audit_enabled %} true {% else %} false {% endif %},
+            enableFileComment: {% if enableFileComment %} true {% else %} false {% endif %},
+            folderPermEnabled: {% if folder_perm_enabled %} true {% else %} false {% endif %},
+            enableResetEncryptedRepoPassword: '{{ enable_reset_encrypted_repo_password }}',
+            isEmailConfigured: '{{ is_email_configured }}',
+            enableUploadFolder: '{{ enable_upload_folder }}',
+            enableResumableFileUpload: '{{ enable_resumable_fileupload }}',
+            resumableUploadFileBlockSize: '{{ resumable_upload_file_block_size }}',
+            // storage backends
+            storages: (function () {
+              var storages = [];
+              {% for storage in storages %}
+              storages.push({
+                'id': '{{storage.storage_id|escapejs}}',
+                'name': '{{storage.storage_name|escapejs}}'
+              });
+              {% endfor %}
+              return storages;
+            })(),
+            // library template
+            libraryTemplates: (function () {
+              var libraryTemplates = [];
+              {% for template in library_templates %}
+              libraryTemplates.push("{{template}}");
+              {% endfor %}
+              return libraryTemplates;
+            })(),
+            enableRepoSnapshotLabel: {% if enable_repo_snapshot_label %} true {% else %} false {% endif %},
+            shareLinkForceUsePassword: {% if share_link_force_use_password %} true {% else %} false {% endif %},
+            shareLinkPasswordMinLength: {{ share_link_password_min_length }},
+            shareLinkPasswordStrengthLevel: {{ share_link_password_strength_level }},
+            sideNavFooterCustomHtml: "{{ side_nav_footer_custom_html|safe|escapejs }}",
+            helpLink: "{{ help_link }}",
+            aboutDialogCustomHtml: "{{ about_dialog_custom_html|safe|escapejs }}",
+            maxFileName: "{{ max_file_name }}",
+            canCreateWiki: {% if user.permissions.can_create_wiki %} true {% else %} false {% endif %},
+            canPublishWiki: {% if user.permissions.can_publish_wiki %} true {% else %} false {% endif %},
+            enableEncryptedLibrary: {% if enable_encrypted_library %} true {% else %} false {% endif %},
+            enableRepoHistorySetting: {% if enable_repo_history_setting %} true {% else %} false {% endif %},
+            enableUserCleanTrash: {% if enable_user_clean_trash %} true {% else %} false {% endif %},
+            isSystemStaff: {% if request.user.is_staff %} true {% else %} false {% endif %},
+            thumbnailSizeForOriginal: {{ thumbnail_size_for_original }},
+            thumbnailSizeForGrid: {{ thumbnail_size_for_grid }},
+            thumbnailDefaultSize: {{ thumbnail_default_size }},
+            repoPasswordMinLength: {{repo_password_min_length}},
+            canAddPublicRepo: {% if can_add_public_repo %} true {% else %} false {% endif %},
+            enableOCMViaWebdav: {% if enable_ocm_via_webdav %} true {% else %} false {% endif %},
+            enableOCM: {% if enable_ocm %} true {% else %} false {% endif %},
+            ocmRemoteServers: (function () {
+              var servers = [];
+              {% for server in ocm_remote_servers %}
+              servers.push({
+                'label': '{{server.server_name|escapejs}}',
+                'value': '{{server.server_url|escapejs}}',
+              });
+              {% endfor %}
+              return servers;
+            })(),
+            canInvitePeople: {% if enable_guest_invitation and user.permissions.can_invite_guest %} true {% else %} false {% endif %},
+            customNavItems: {% if custom_nav_items %} JSON.parse('{{ custom_nav_items | escapejs }}') {% else %} {{'[]'}} {% endif %},
+            enableShowContactEmailWhenSearchUser: {% if enable_show_contact_email_when_search_user %} true {% else %} false {% endif %},
+            enableShowLoginIDWhenSearchUser: {% if enable_show_login_id_when_search_user %} true {% else %} false {% endif %},
+            {% if max_upload_file_size > 0 %}
+            maxUploadFileSize: {{ max_upload_file_size }},
+            {% endif %}
+            {% if max_number_of_files_for_fileupload > 0 %}
+            maxNumberOfFilesForFileupload: {{ max_number_of_files_for_fileupload }},
+            {% endif %}
+            {% if request.user.is_authenticated and request.cur_note %}
+            curNoteMsg: '{{ request.cur_note.message|urlize|escapejs }}',
+            curNoteID: '{{ request.cur_note.id }}',
+            {% endif %}
+            enableTC: {% if enable_terms_and_conditions %} true {% else %} false {% endif %},
+            enableSSOToThirdpartWebsite: {% if enable_sso_to_thirdpart_website %} true {% else %} false {% endif %},
+            enableVideoThumbnail: {% if enable_video_thumbnail %} true {% else %} false {% endif %},
+            enablePDFThumbnail: {% if enable_pdf_thumbnail %} true {% else %} false {% endif %},
+            showLogoutIcon: {% if show_logout_icon %} true {% else %} false {% endif %},
+            additionalShareDialogNote: {% if additional_share_dialog_note %} {{ additional_share_dialog_note|safe }} {% else %} null {% endif %},
+            additionalAboutDialogLinks: {% if additional_about_dialog_links %} {{ additional_about_dialog_links|safe }} {% else %} null {% endif %},
+            enableOnlyoffice: {% if enable_onlyoffice %} true {% else %} false {% endif %},
+            onlyofficeEditFileExtension: {% if onlyoffice_edit_file_extension %} {{onlyoffice_edit_file_extension|safe}} {% else %} [] {% endif %},
+            onlyofficeSupportEditDocxf: {% if onlyoffice_support_edit_docxf %} true {% else %} false {% endif %},
+            onlyofficeConverterExtensions: {% if onlyoffice_converter_extensions %} {{onlyoffice_converter_extensions|safe}} {% else %} null {% endif %},
+            enableOfficeWebApp: {% if enable_office_web_app %} true {% else %} false {% endif %},
+            officeWebAppEditFileExtension: {% if office_web_app_edit_file_extension %} {{office_web_app_edit_file_extension|safe}} {% else %} [] {% endif %},
+            enableSeadoc: {% if enable_seadoc %} true {% else %} false {% endif %},
+            enableWhiteboard: {% if enable_whiteboard %} true {% else %} false {% endif %},
+            isOrgContext: {% if org is not None %} true {% else %} false {% endif %},
+            enableMetadataManagement: {% if enable_metadata_management %} true {% else %} false {% endif %},
+            enableSeafileAI: {% if enable_seafile_ai %} true {% else %} false {% endif %},
+            enableFaceRecognition: {% if enable_face_recognition %} true {% else %} false {% endif %},
+            isMultiTenancy: {% if multi_tenancy %} true {% else %} false {% endif %},
+            isSeafilePlus: {% if is_seafile_plus %} true {% else %} false {% endif %},
+            enableFileTags: {% if enable_file_tags %} true {% else %} false {% endif %},
+            enableShowAbout: {% if enable_show_about %} true {% else %} false {% endif %},
+            enableMultipleOfficeSuite: {% if user.permissions.can_choose_office_suite %} true {% else %} false {% endif %},
+            officeSuiteEditFileExtension: {% if office_suite_edit_file_extension %} {{office_suite_edit_file_extension|safe}} {% else %} null {% endif %},
+            showWechatSupportGroup: {% if show_wechat_support_group %} true {% else %} false {% endif %},
+            baiduMapKey: '{{ baidu_map_key }}',
+            googleMapKey: '{{ google_map_key }}',
+            googleMapId: '{{ google_map_id }}',
+            canUseGlobalAddressBook: {% if user.permissions.can_use_global_address_book %} true {% else %} false {% endif %}
+        }
+     };
+</script>
+<script src="{{ STATIC_URL }}scripts/i18n/{{ LANGUAGE_CODE }}/djangojs.js?v={{ seafile_version }}"></script>
+{% block extra_script %}{% endblock %}
+</body>
+</html>

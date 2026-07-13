@@ -1,0 +1,42 @@
+.cur-view-detail {
+  z-index: 7;
+}
+
+.excalidraw .context-menu-item-separator {
+  margin: 0;
+}
+
+.excalidraw .context-menu-item .context-menu-item__shortcut {
+  background-color: transparent;
+  color: #000;
+  padding: 0;
+}
+
+.excalidraw .popover {
+  filter: none;
+  --bs-popover-border-color: transparent;
+}
+
+.excalidraw .dropdown-menu {
+  display: block;
+  border: unset;
+  --bs-dropdown-border-radius: 10px;
+  --bs-dropdown-padding-x: auto;
+}
+
+.excali-container {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.excali-container .excali-tip-message {
+  position: absolute;
+  top: 16px;
+  left: 60px;
+  z-index: 2;
+  color: #999;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}

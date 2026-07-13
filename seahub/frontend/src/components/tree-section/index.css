@@ -1,0 +1,123 @@
+.tree-section {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  padding: 0 16px;
+  margin-top: 10px;
+}
+
+.tree-section .tree-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  height: 28px;
+  width: 100%;
+  border-radius: 3px;
+  border: 1px solid rgba(69, 170, 242, 0);
+}
+
+.tree-section .tree-section-header.tree-section-header-hover,
+.tree-section .tree-section-header:not(.tree-section-header-hover):hover {
+  background-color: var(--bs-nav-hover-bg);
+}
+
+.tree-section .tree-section-header .tree-section-header-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+  color: var(--bs-body-secondary-color);
+}
+
+.tree-section .tree-section-header .tree-section-header-operations {
+  height: 20px;
+  width: auto;
+  flex-shrink: 0;
+  margin-left: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.tree-section .tree-section-header .tree-section-header-operation {
+  color: #666;
+  height: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.tree-section .tree-section-header .tree-section-header-operation:hover {
+  background-color: var(--bs-hover-tertiary-bg);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.tree-section .tree-section-header-operation .dropdown {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-section .tree-section-header .tree-section-header-operation .sf3-font,
+.tree-section .tree-section-header-operation .dropdown .sf-dropdown-toggle,
+.tree-section .tree-section-header-operation.tree-section-create-operation,
+.tree-section .tree-section-header-operation .seafile-multicolor-icon {
+  margin-left: 0;
+  line-height: 1.5;
+  font-size: 16px;
+  color: #666;
+}
+
+[data-bs-theme=dark] .tree-section .tree-section-header .tree-section-header-operation .sf3-font,
+[data-bs-theme=dark] .tree-section .tree-section-header-operation .dropdown .sf-dropdown-toggle,
+[data-bs-theme=dark] .tree-section .tree-section-header-operation.tree-section-create-operation {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.tree-section .tree-section-more-operation .dropdown .sf-dropdown-toggle.sf3-font-new,
+.tree-section .tree-section-create-operation .sf3-font-new {
+  font-size: 12px;
+}
+
+.tree-section .tree-section-header .tree-section-more-operation,
+.tree-section .tree-section-header .tree-section-create-operation {
+  display: none;
+}
+
+.tree-section .tree-section-header.tree-section-header-hover .tree-section-more-operation,
+.tree-section .tree-section-header:not(.tree-section-header-hover):hover .tree-section-more-operation,
+.tree-section .tree-section-header.tree-section-header-hover .tree-section-create-operation,
+.tree-section .tree-section-header:not(.tree-section-header-hover):hover .tree-section-create-operation  {
+  display: flex;
+}
+
+.tree-section .tree-section-body .tree-view {
+  margin-left: 0px;
+  padding: 0px;
+}
+
+.tree-section .tree-section-body .right-icon {
+  width: 20px;
+  height: 20px;
+  top: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.tree-section .tree-section-body .right-icon:hover {
+  background-color: var(--bs-hover-tertiary-bg);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.tree-section .tree-section-body  .right-icon i {
+  margin-left: 0;
+}

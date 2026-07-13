@@ -1,0 +1,46 @@
+.repos-sort-menu-toggle:hover {
+  background: #e5e6e7;
+}
+
+.sf-single-selector .options-container.repos-sort-menu {
+  min-width: 215px;
+}
+
+#files-content-container td:first-child {
+  text-align: left !important;
+  padding-left: 20px;
+}
+
+#files-content-container .libraries-empty-tip-in-list-mode {
+  color: #666;
+  text-align: center;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+}
+
+#files-content-container .libraries-empty-tip-in-grid-mode {
+  color: #666;
+  text-align: center;
+  height: 56px;
+  line-height: 52px;
+  border: 2px dashed var(--bs-border-secondary-color);
+  border-radius: 4px;
+}
+
+.library-grid-item {
+  width: 48%;
+  height: 56px;
+  border-radius: 3px;
+}
+
+.library-grid-item:hover {
+  background: var(--bs-tr-hover-bg);
+}
+
+.library-grid-item .library-name {
+  color: var(--bs-body-color);
+}
+
+.library-grid-item .library-grid-item-icon {
+  margin-left: 6px;
+}

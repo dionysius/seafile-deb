@@ -1,0 +1,25 @@
+sudo: false
+language: python
+python:
+  - "2.7"
+  - "3.5"
+  - "3.6"
+compiler:
+ - gcc
+ - clang
+addons:
+  apt:
+    packages:
+      - libjansson-dev
+install:
+ - pip install future
+before_install:
+ - git clean -x -f
+ - ./autogen.sh
+script:
+ - ./configure
+ - make -j4
+ - make check -j4
+ - python pysearpc/test_pysearpc.py
+notifications:
+    email: false

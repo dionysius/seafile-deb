@@ -1,0 +1,14 @@
+.sf-metadata-people-photos-container {
+  padding: 0 !important;
+  overflow-y: hidden !important;
+}
+
+.sf-metadata-people-photos-container .seafile-multicolor-icon-btn {
+  margin-left: -4px;
+  border-radius: 3px;
+}
+
+.sf-metadata-people-photos-container .seafile-multicolor-icon-btn:hover {
+  background-color: var(--bs-hover-bg);
+  cursor: pointer;
+}

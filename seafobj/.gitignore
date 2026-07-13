@@ -1,0 +1,16 @@
+*~
+*#
+*.pyc
+.DS_Store
+*.log
+cscope.*
+*.gz
+run.sh
+build
+dist
+cover
+.coverage
+.#*
+pkg.ini
+.emacs*
+/.idea

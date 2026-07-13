@@ -1,0 +1,52 @@
+{% extends 'file_view_react.html' %}
+{% load render_bundle from webpack_loader %}
+{% load seahub_tags %}
+
+{% block extra_style %}
+{% if filetype == 'PDF' %}
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}js/pdf/web/viewer.css" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}js/pdf/web/custom.css" />
+<link rel="resource" type="application/l10n" href="{{ MEDIA_URL }}js/pdf/web/locale/locale.properties" />
+{% endif %}
+{% render_bundle 'fileView' 'css' %}
+{% endblock %}
+
+{% block extra_data %}
+{% if filetype == 'Image' %}
+// img_prev && img_next can be path or None
+previousImage: {% if img_prev %}'{{ img_prev|escapejs }}'{% else %}false{% endif %},
+nextImage: {% if img_next %}'{{ img_next|escapejs }}'{% else %}false{% endif %},
+fileExt: '{{ fileext|escapejs }}',
+thumbnailSizeForOriginal: {{ thumbnail_size_for_original }},
+thumbnailSizeForGrid: {{ thumbnail_size_for_grid }},
+thumbnailDefaultSize: {{ thumbnail_default_size }},
+{% endif %}
+
+{% if filetype == 'Video' %}
+enableVideoThumbnail: {% if enable_video_thumbnail %} true {% else %} false {% endif %},
+{% endif %}
+
+{% if filetype == 'PDF' %}
+enablePDFThumbnail: {% if enable_pdf_thumbnail %} true {% else %} false {% endif %},
+canEditPDF: {% if can_edit_pdf %} true {% else %} false {% endif %},
+{% endif %}
+
+{% if filetype == 'XMind' %}
+xmindImageSrc: '{{ xmind_image_src|escapejs }}',
+{% endif %}
+rawPath: '{{ raw_path|escapejs }}',
+fileDownloadURL: {% if file_download_url %}'{{ file_download_url|escapejs }}'{% else %}''{% endif %},
+fileExt: {% if fileext %}'{{fileext|escapejs }}'{% else %}''{% endif %},
+{% endblock %}
+
+{% block render_bundle %}
+{% render_bundle 'fileView' 'js' %}
+{% if filetype == 'PDF' %}
+<script type="text/javascript">
+  var SEAFILE_FILE_URL = '{{ raw_path|escapejs }}';
+  var SEAFILE_PDFJS_DIR = '{{MEDIA_URL}}js/pdf';
+</script>
+<script type="text/javascript" src="{{MEDIA_URL}}js/pdf/build/pdf.js"></script>
+<script type="text/javascript" src="{{MEDIA_URL}}js/pdf/web/viewer.js"></script>
+{% endif %}
+{% endblock %}

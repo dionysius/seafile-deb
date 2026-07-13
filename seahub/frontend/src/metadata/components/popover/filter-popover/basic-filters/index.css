@@ -1,0 +1,106 @@
+.sf-metadata-basic-filters-select.seafile-customize-select {
+  width: fit-content;
+  max-width: 100%;
+  background-image: none;
+  border: none;
+  padding: 0 6px;
+  margin-left: -6px;
+  height: 28px;
+}
+
+.sf-metadata-basic-filters-select.seafile-customize-select:hover,
+.sf-metadata-basic-filters-select.seafile-customize-select.highlighted:hover {
+  background: var(--bs-hover-bg);
+}
+
+.sf-metadata-basic-filters-select.seafile-customize-select .selected-option {
+  background-color: transparent;
+}
+
+.sf-metadata-basic-filters-select.seafile-customize-select .selected-option .sf3-font-down,
+.sf-metadata-basic-filters-select.sf-metadata-basic-filter-tags-select .sf3-font-down {
+  margin-left: 0;
+}
+
+.sf-metadata-basic-filters-select.seafile-customize-select.focus {
+  border-color: unset;
+  box-shadow: none;
+}
+
+.sf-metadata-basic-filters-select.highlighted .selected-option .selected-option-show,
+.sf-metadata-basic-filters-select.highlighted .selected-option .sf3-font-down {
+  color: #ed7109 !important;
+}
+
+.sf-metadata-basic-filters-select.seafile-customize-select .selected-option .selected-option-show {
+  width: 100%;
+}
+
+.sf-metadata-basic-filters-select .selected-option-show,
+.sf-metadata-basic-filters-select .select-placeholder {
+  margin-right: 4px;
+}
+
+.sf-metadata-basic-filters-select .selected-option .custom-select-dropdown-icon {
+  margin-left: 0;
+}
+
+.select-basic-filter-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.select-basic-filter-option .select-basic-filter-option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-basic-filter-option .select-basic-filter-option-check-icon {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.seafile-select-option.seafile-select-option-active .seafile-multicolor-icon-check-mark {
+  fill: #fff;
+}
+
+.filter-group-basic .sf-metadata-filters-list {
+  min-height: unset;
+  display: flex;
+}
+
+.sf-metadata-table-view-basic-filter-file-type-select .seafile-select-option {
+  padding: 0.25rem 1rem;
+}
+
+.sf-metadata-table-view-basic-filter-file-type-select .select-basic-filter-option .select-basic-filter-option-checkbox {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.sf-metadata-table-view-basic-filter-file-type-select .select-basic-filter-option .select-basic-filter-option-checkbox,
+.sf-metadata-table-view-basic-filter-file-type-select .select-basic-filter-option .select-basic-filter-option-checkbox input {
+  cursor: inherit;
+}
+
+.sf-metadata-basic-filters-select .select-basic-filter-display-name:hover {
+  cursor: pointer;
+}
+
+.sf-metadata-basic-filter-tags-select .tag-options-container {
+  width: auto;
+  height: auto;
+  position: absolute;
+  top: 28px;
+  left: -340px;
+  z-index: 10001;
+}

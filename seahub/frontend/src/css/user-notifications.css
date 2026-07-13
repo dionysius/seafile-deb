@@ -1,0 +1,167 @@
+.notification-list-dialog {
+  width: calc(100% - 20rem);
+  max-width: calc(100% - 1rem);
+  height: calc(100% - 56px);
+}
+
+.notification-list-dialog .notification-list-content {
+  height: 100%;
+}
+
+.notification-header-close {
+  display: flex;
+}
+
+.notification-header-close .seahub-modal-btn {
+  padding: 14px 12px;
+}
+
+.notification-list-content .notification-modal-body {
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  min-height: 27rem;
+  overflow: hidden;
+  padding: 0;
+}
+
+.notification-list-content .notification-modal-body .notice-dialog-side {
+  border-right: 1px solid var(--bs-border-secondary-color);
+  display: flex;
+  flex: 0 0 20%;
+  padding: 12px 8px;
+}
+
+.notification-list-content .notification-modal-body .notice-dialog-side .nav-item {
+  position: relative;
+}
+
+.notification-list-content .notification-modal-body .notice-dialog-side .nav-item .nav-link {
+  border: none;
+}
+
+.notification-list-content .notification-modal-body .notice-dialog-side .nav-item .nav-link:hover {
+  background-color: var(--bs-nav-hover-bg);
+}
+
+.notification-list-content .notification-modal-body .notice-dialog-side .nav-item .nav-link.active {
+  background-color: var(--bs-nav-active-bg);
+  color: var(--bs-body-color);
+}
+
+.notification-list-content .notification-modal-body .notice-dialog-side .nav-item .nav-link.active::before {
+  content: '';
+  position: absolute;
+  display: block;
+  width: 3px;
+  height: 26px;
+  left: -5px;
+  top: 2px;
+  background-color: #ff9800;
+  border-radius: 2px;
+  z-index: 2;
+}
+
+.notification-list-content .notification-modal-body .notice-dialog-main {
+  display: flex;
+  flex: 0 0 80%;
+  overflow: inherit;
+}
+
+.notification-modal-body .notification-dialog-body {
+  overflow: auto;
+  padding: 1rem;
+  height: 100%;
+}
+
+.notification-dialog-body table {
+  width: 100%;
+  table-layout: fixed;
+  overflow-y: auto;
+}
+
+.notification-modal-body .notification-dialog-body .paginator {
+  height: 38px;
+}
+
+.notification-dialog-body table thead tr {
+  height: 2.1875rem;
+}
+
+.notification-dialog-body table th {
+  padding: 0.3125rem 0.1875rem;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  text-align: left;
+  font-weight: normal;
+  line-height: 1.6;
+  color: #9c9c9c;
+}
+
+.notification-dialog-body table tbody tr:hover {
+  background: var(--bs-tr-hover-bg);
+  cursor: pointer;
+}
+
+.notification-dialog-body table td {
+  padding: 0.5rem 0.1875rem;
+  border-bottom: none;
+  color: var(--bs-body-color);
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.notification-dialog-body table td ul {
+  list-style: none;
+}
+
+.notification-dialog-body .notification-user-name {
+  font-weight: normal;
+}
+
+.notification-dialog-body .notification-item .avatar {
+  width: 24px;
+  height: 24px;
+}
+
+.notification-dialog-body .notification-item .notification-point {
+  top: calc(50% - 4px);
+}
+
+@media (max-width: 768px) {
+
+  .notification-list-dialog {
+    width: 100%;
+    max-width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  .notification-list-content .notification-modal-body {
+    display: block;
+  }
+
+  .notification-list-content .notification-modal-body .notice-dialog-side {
+    display: block;
+    padding: 0;
+  }
+
+  .notification-list-content .notification-item .notification-user-name {
+    display: none;
+  }
+
+  .notification-list-content .notice-dialog-main {
+    height: 100%;
+  }
+
+  .notification-list-content .notice-dialog-side>ul {
+    flex-direction: row !important;
+  }
+
+  .notification-list-content .notice-dialog-side>ul>li {
+    width: 50% !important;
+  }
+
+  .notification-list-content .notice-dialog-side>ul>li .nav-link:before {
+    display: none;
+  }
+}

@@ -1,0 +1,13 @@
+.excali-container.in-sdoc {
+  pointer-events: none;
+}
+
+.excali-container.in-sdoc .App-menu,
+.excali-container.in-sdoc .App-bottom-bar {
+  display: none !important;
+}
+
+.excali-container.full-screen .App-menu.App-menu_top,
+.excali-container.full-screen .App-menu.App-menu_bottom .layer-ui__wrapper__footer-right {
+  display: none !important;
+}

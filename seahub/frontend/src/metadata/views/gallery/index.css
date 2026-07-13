@@ -1,0 +1,105 @@
+.sf-metadata-gallery-scroll-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sf-metadata-gallery-container {
+  flex: 1 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  justify-content: left;
+  align-items: center;
+}
+
+.metadata-gallery-date-group {
+  width: 100%;
+  position: relative;
+}
+
+.metadata-gallery-date-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 500;
+  z-index: 1;
+  user-select: none;
+  padding-top: 8px;
+}
+
+.metadata-gallery-date-tag.hover {
+  cursor: pointer;
+}
+
+.metadata-gallery-date-tag-arrow {
+  font-size: 1rem !important;
+  margin-left: 6px;
+}
+
+.metadata-gallery-main {
+  flex: 1;
+  width: 100%;
+  padding: 0 calc(100% / 9);
+}
+
+.sf-metadata-gallery-container-all .metadata-gallery-main {
+  padding: 0 16px;
+}
+
+.metadata-gallery-image-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.metadata-gallery-image-item:focus {
+  outline: none;
+}
+
+.metadata-gallery-year-image-list .metadata-gallery-image-item,
+.metadata-gallery-month-image-list .metadata-gallery-image-item {
+  border-radius: 6px;
+  box-shadow: 0 3px 6px 2px rgba(0, 0, 0, 0.2);
+}
+
+.metadata-gallery-image-item-selected {
+  border: 2px solid #ff9800;
+}
+
+.metadata-gallery-grid-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s ease-in-out;
+  user-select: none;
+}
+
+.metadata-gallery-grid-image:hover {
+  transform: scale(1.05);
+}
+
+.sf-metadata-gallery-loading-more {
+  height: 30px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.selection-box {
+  position: absolute;
+  background-color: rgba(0, 120, 215, 0.3);
+  border: 1px solid rgba(0, 120, 215, 0.8);
+}

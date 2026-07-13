@@ -1,0 +1,45 @@
+.file-details-collapse {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.file-details-collapse .file-details-collapse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  width: 100%;
+  border-radius: 3px;
+}
+
+.file-details-collapse .file-details-collapse-header .file-details-collapse-header-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+  color: var(--bs-body-secondary-color);
+  font-size: 14px;
+}
+
+.file-details-collapse .file-details-collapse-header .file-details-collapse-header-operation {
+  height: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.file-details-collapse .file-details-collapse-header .file-details-collapse-header-operation:hover {
+  background-color: var(--bs-hover-bg);
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.file-details-collapse .file-details-collapse-header .sf3-font-down {
+  color: #666666;
+}

@@ -1,0 +1,41 @@
+.sdoc-content-right-panel .cur-view-detail {
+  border-left: none;
+  height: calc(100vh - 93px);
+  /* 100vh - toolbar height*/
+}
+
+.sdoc-content-right-panel .cur-view-detail .detail-header {
+  border-bottom-color: #EAECEF;
+  height: 46px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  line-height: 1.5;
+}
+
+.sdoc-content-right-panel .detail-header .seafile-multicolor-icon-set-up,
+.sdoc-content-right-panel .detail-header .seafile-multicolor-icon-ai {
+  fill: #999;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.sdoc-content-right-panel .detail-header .detail-control:hover .seafile-multicolor-icon-set-up,
+.sdoc-content-right-panel .detail-header .detail-control:hover .seafile-multicolor-icon-ai {
+  fill: #5a5a5a;
+}
+
+.sdoc-content-right-panel .detail-header .sdoc-sm-close {
+  color: #999;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.sdoc-content-right-panel .detail-header .detail-control:hover .sdoc-sm-close {
+  color: #5a5a5a;
+}
+
+.sdoc-content-right-panel-wrapper .sf-metadata-ai-dropdown-menu .dropdown-menu .dropdown-item:hover {
+  background-color: #f5f5f5;
+  cursor: pointer;
+  color: #212529;
+}

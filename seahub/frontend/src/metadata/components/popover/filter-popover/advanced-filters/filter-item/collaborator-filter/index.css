@@ -1,0 +1,12 @@
+.sf-metadata-selector-collaborator.seafile-customize-select .seafile-select-option {
+  line-height: 20px;
+  padding: 5px 10px 5px 10px !important;
+}
+
+.sf-metadata-selector-collaborator.seafile-customize-select .selected-option-show {
+  text-overflow: clip;
+}
+
+.sf-metadata-selector-collaborator.seafile-customize-select .seafile-select-option .collaborator .collaborator-name {
+  color: var(--bs-body-color);
+}

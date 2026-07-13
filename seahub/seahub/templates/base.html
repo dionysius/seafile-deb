@@ -1,0 +1,200 @@
+{% load seahub_tags i18n static %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+<title>{% block sub_title %}{% endblock %}{{ site_title }}</title>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="{% trans "File, Collaboration, Team, Organization" %}" />
+{% if site_description != '' %}<meta name="description" content="{{ site_description }}" />{% endif %}
+{% block viewport %}
+{% if request.is_mobile or request.is_tablet %}
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+{% else %}
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+{% endif %}
+{% endblock %}
+<meta http-equiv="x-ua-compatible" content="ie=edge" />
+<link rel="icon" href="{{ MEDIA_URL }}{{ favicon_path }}" type="image/x-icon">
+<link rel="apple-touch-icon" href="{{ MEDIA_URL }}{{ apple_touch_icon_path }}">
+{% block extra_base_style %}
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}/css/seafile-ui.css?t=20251118" />
+{% endblock %}
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seahub.css?t=20251013" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/sf_font3/iconfont.css" />
+{% block extra_style %}{% endblock %}
+{% if branding_css != '' %}<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}{{ branding_css }}" />{% endif %}
+{% if enable_branding_css %}<link rel="stylesheet" type="text/css" href="{% url 'custom_css' %}" />{% endif %}
+</head>
+<body data-bs-theme="{% if request.session.dark_mode %}dark{% else %}light{% endif %}" id="{% block body_id %}base{% endblock %}">
+    <div id="wrapper" class="{{ LANGUAGE_CODE }} d-flex fd-col h100">
+        {% block info_bar_message %}
+        {% if request.user.is_authenticated and request.cur_note %}
+        <div id="info-bar">
+            <p id="info-bar-info">{{ request.cur_note.message|urlize }}</p>
+            <span class="close sf2-icon-x1 op-icon" data="{{ request.cur_note.id }}" title="{% trans "Close" %}"></span>
+        </div>
+        {% endif %}
+        {% endblock info_bar_message %}
+
+        <div id="header" class="{% block header_css_class %}d-flex{% endblock %}">
+            <a href="{{ SITE_ROOT }}" id="logo" aria-label="{{ site_title }}" title="{{ site_title }}">
+                <img src="{{ MEDIA_URL }}{{ logo_path }}" title="{{ site_title }}" alt="logo" width="{{logo_width}}" height="{{logo_height}}" />
+            </a>
+            {% block side-panel-menu %}
+            {% endblock side-panel-menu %}
+
+            {% block header_right %}
+            {% if not request.user.is_authenticated %}
+            {# for non-logged-in user #}
+            <div id="lang">
+                <a href="#" id="lang-context" data-lang="{{ LANGUAGE_CODE }}">{{ LANGUAGE_CODE|language_name_local|capfirst }} <span class="sf3-font sf3-font-down" aria-hidden="true"></span></a>
+                <div id="lang-context-selector" class="sf-popover hide" aria-label="{% trans "Language" %}" tabindex="0">
+                    <ul class="sf-popover-con">
+                        {% for LANG in LANGUAGES %}
+                        <li>
+                            <a href="{% url 'i18n' %}?lang={{ LANG.0 }}" aria-label="{{ LANG.1 }}" role="button">{{ LANG.1 }}</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            {% endblock %}
+        </div>
+
+        <div id="main" class="container-fluid w100 flex-auto {% block main_class %}ov-auto{% endblock %}">{# since #wrapper is `d-flex`, 'w100' is necessary here. #}
+            {% block main_content %}
+            <div class="row">
+                <div id="main-panel" class="w100 ovhd">
+                    {% block main_panel %}{% endblock %}
+                </div>
+            </div>
+            {% endblock %}
+        </div>
+
+        {% if messages %}
+        <ul class="messages hide">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">
+                {% if 'safe' in message.tags %}
+                    {{ message|safe }}
+                {% else %}
+                    {{ message }}
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% block extra-hidden-dom %}
+        {% endblock %}
+</div><!-- wrapper -->
+<script type="text/javascript">
+var SEAFILE_GLOBAL = {
+    csrfCookieName: '{{ CSRF_COOKIE_NAME }}'
+};
+var app = {
+    ui : {
+        currentDropdown: false,
+        currentHighlightedItem: false,
+        freezeItemHightlight: false
+    }
+}
+</script>
+<script type="text/javascript" src="{% static "scripts/lib/jquery.min.js" %}" id="jquery"></script>{# 'id="jquery"' is for pdf file view with pdf2html #}
+<script type="text/javascript" src="{{ MEDIA_URL }}js/base.js?t=1536127546642"></script>
+<script type="text/javascript">
+function prepareAjaxErrorMsg(xhr) {
+    var error_msg;
+    if (xhr.responseText) {
+        var parsed_resp = JSON.parse(xhr.responseText);
+        // use `HTMLescape` for msgs which contain variable like 'path'
+        error_msg = HTMLescape(parsed_resp.error ||
+                parsed_resp.error_msg || parsed_resp.detail);
+    } else {
+        error_msg = gettext("Failed. Please check the network.");
+    }
+    return error_msg;
+}
+function ajaxErrorHandler(xhr, textStatus, errorThrown) {
+    var error_msg = prepareAjaxErrorMsg(xhr);
+    feedback(error_msg, 'error');
+}
+{% if request.user.is_authenticated %}
+{% if request.cur_note %}
+$('#info-bar .close').on('click', function() {
+    $('#info-bar').addClass('hide');
+    if (navigator.cookieEnabled) {
+        var date = new Date(),
+            cookies = document.cookie.split('; '),
+            info_id_exist = false,
+            new_info_id = $(this).attr('data') + '_';
+        date.setTime(date.getTime() + 14*24*60*60*1000);
+        new_info_id += '; expires=' + date.toGMTString() + '; path=' + '{{ SITE_ROOT }}';
+        for (var i = 0, len = cookies.length; i < len; i++) {
+            if (cookies[i].split('=')[0] == 'info_id') {
+                info_id_exist = true;
+                document.cookie = 'info_id=' + cookies[i].split('=')[1] + new_info_id;
+                break;
+            }
+        }
+        if (!info_id_exist) {
+            document.cookie = 'info_id=' + new_info_id;
+        }
+    }
+});
+{% endif %}
+
+{% else %} {# for non-logged-in user #}
+(function() {
+    var lang_context = $('#lang-context'),
+        lang_selector = $('#lang-context-selector');
+
+    // for pages without '#lang', such as 'help' pages
+    if ($('#lang').length == 0) {
+        return;
+    }
+
+    lang_context.parent().css({'position':'relative'});
+
+    if ($('#header').is(':visible')) { // for login page
+        lang_selector.css({
+            'top': lang_context.position().top + lang_context.height() + 5,
+            'right': 0
+        });
+    }
+
+    var setLangSelectorMaxHeight = function() {
+        if ($('#header').is(':visible')) { // for login page
+            $('.sf-popover-con', lang_selector).css({
+                'max-height': $(window).height() - lang_selector.offset().top - 12
+            });
+        }
+    };
+    $(window).on('resize', function() {
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+    });
+
+    lang_context.on('click', function() {
+        lang_selector.toggleClass('hide');
+        if (lang_selector.is(':visible')) {
+            setLangSelectorMaxHeight();
+        }
+        return false;
+    });
+
+    $(document).on('click', function(e) {
+        var element = e.target || e.srcElement;
+        if (element.id != 'lang-context-selector' && element.id != 'lang-context') {
+            lang_selector.addClass('hide');
+        }
+    });
+})();
+{% endif %}
+</script>
+{% block extra_script %}{% endblock %}
+</body>
+</html>

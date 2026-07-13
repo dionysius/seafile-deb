@@ -1,0 +1,62 @@
+body {
+  overflow: hidden;
+}
+
+#wrapper {
+  height: 100%;
+}
+
+.top-header {
+  background-color: var(--bs-header-bg);
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  padding: .5rem 1rem;
+  flex-shrink: 0;
+}
+
+.details {
+  font-size: 12px;
+  color: var(--bs-body-secondary-color);
+  text-decoration: underline;
+  margin-left: .25rem;
+}
+
+.commit-label {
+  padding: 1px 5px;
+  margin: 0 2px;
+  background: #eee;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.go-back {
+  color: #c0c0c0;
+  font-size: 1.75rem;
+  position: absolute;
+  left: -40px;
+  top: -5px;
+}
+
+.go-back .sf3-font-down {
+  font-size: 1.75rem !important;
+}
+
+/* for the dialog */
+.repo-snapshot-tip {
+  font-size: .875rem;
+  color: var(--bs-body-secondary-color);
+}
+
+#repo-history-dialog.modal-dialog {
+  max-height: calc(100% - 3.5rem);
+  overflow: hidden;
+  height: calc(100% - 3.5rem);
+}
+
+#repo-history-dialog .modal-content {
+  max-height: 100%;
+  overflow: hidden;
+}
+
+#repo-history-dialog .modal-body {
+  overflow: auto;
+}

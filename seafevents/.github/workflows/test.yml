@@ -1,0 +1,54 @@
+name: Seafevents Test CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - "10.0"
+      - "9.0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: apt install
+        run: |
+          sudo apt-get update --fix-missing
+          sudo apt-get install -y libevent-dev libcurl4-openssl-dev libglib2.0-dev
+          sudo apt-get install -y uuid-dev intltool libsqlite3-dev build-essential
+          sudo apt-get install -y libarchive-dev libtool libjansson-dev valac
+          sudo apt-get install -y libfuse-dev cmake re2c flex autoconf automake
+          sudo apt-get install -y libssl-dev libldap2-dev libsasl2-dev libonig-dev libxml2 libxml2-dev libjwt-dev libhiredis-dev
+
+      - name: clone and build
+        run: |
+          git clone --depth=1 --branch=master https://github.com/haiwen/seafobj /tmp/seafobj
+          git clone --depth=1 --branch=master https://github.com/haiwen/seahub /tmp/seahub
+          git clone --depth=1 --branch=master https://github.com/haiwen/seafile-test-deploy /tmp/seafile-test-deploy
+          cd /tmp/seafile-test-deploy && ./bootstrap.sh
+
+      - name: pip install
+        run: |
+          cd /tmp/seafobj && pip install -r requirements.txt
+          cd /tmp/seahub && pip install -r requirements.txt
+          cd $GITHUB_WORKSPACE && pip install -r test-requirements.txt
+
+      - name: create test database
+        run: |
+          sudo systemctl start mysql
+          mysqladmin -u root -proot create seafevents_test;
+
+      - name: run pytest
+        run: |
+          export PYTHONPATH=/usr/local/lib/python3.12/site-packages:/usr/local/lib/python3.12/dist-packages:/usr/lib/python3.12/site-packages:/usr/lib/python3.12/dist-packages:/tmp/libsearpc:/tmp/ccnet-server/python:/tmp/seafile-server/python:/tmp/seafobj:$PYTHONPATH
+          export CCNET_CONF_DIR=/tmp/ccnet SEAFILE_CONF_DIR=/tmp/seafile-data
+          export SEAHUB_DIR=/tmp/seahub
+          export SEAFILE_CENTRAL_CONF_DIR=/tmp/seafile-data
+          cd tests && pytest -sv events

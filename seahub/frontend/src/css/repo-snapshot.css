@@ -1,0 +1,47 @@
+body {
+  overflow: hidden;
+}
+
+#wrapper {
+  height: 100%;
+}
+
+.top-header {
+  background-color: var(--bs-header-bg);
+  border-bottom: 1px solid #eee;
+  padding: .5rem 1rem;
+  flex-shrink: 0;
+}
+
+.go-back {
+  color: #c0c0c0;
+  font-size: 1.75rem;
+  position: absolute;
+  left: -40px;
+  top: -5px;
+}
+
+.go-back .sf3-font-down {
+  font-size: 1.75rem !important;
+}
+
+.op-bar {
+  padding: 9px 10px;
+  background: #f0f0f0;
+  border-radius: 2px;
+}
+
+.op-bar-btn {
+  border-color: #ccc;
+  border-radius: 2px;
+  height: 30px;
+  line-height: 28px;
+  font-weight: normal;
+  padding: 0 0.5rem;
+  min-width: 55px;
+}
+
+.heading-commit-time {
+  font-weight: normal;
+  font-size: 60%;
+}
