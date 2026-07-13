@@ -233,15 +233,19 @@ override_dh_auto_install:
 	{ echo '[project]'; echo 'name = "seahub-deps"'; echo 'version = "0"'; \
 	  echo 'requires-python = ">=3.11"'; echo 'dependencies = ['; \
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
-	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|$$)' | sed 's/.*/  "&",/'; \
+	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|pillow-heif|$$)' | sed 's/.*/  "&",/'; \
 	  echo '  "pyOpenSSL>=24",'; \
 	  echo '  "whitenoise>=6",'; \
+	  echo '  "pillow-heif>=1.1",'; \
 	  echo ']'; } > $(TMPDEB)$(HUBPREFIX)/pyproject.toml
 # pyOpenSSL is a transitive dep (pysaml2, capped <24.3); without a floor uv resolves an
 # ancient 22.x that references X509 flags cryptography 46 removed. Pin the floor so the
 # resolved pyOpenSSL (24.2) matches the modern cryptography.
 # whitenoise is added by the packaging (not upstream): seahub serves its own collected
 # static assets from gunicorn, so the self-contained default needs no external web server.
+# pillow-heif: upstream pins ==1.0.*, which has no wheel for the newest Python and whose
+# source no longer builds against current libheif; >=1.1 ships prebuilt wheels (bundling
+# libheif) for both target Pythons, so it installs without a compiler or libheif-dev.
 	cd $(TMPDEB)$(HUBPREFIX) && $(UV) lock --python python3
 	$(UV) venv --relocatable --python python3 $(TMPDEB)$(HUBPREFIX)/venv
 	cd $(TMPDEB)$(HUBPREFIX) && UV_PROJECT_ENVIRONMENT=$(TMPDEB)$(HUBPREFIX)/venv \
