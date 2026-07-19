@@ -1,3 +1,9 @@
+seafile-server (13.0.25-1~alpha3) unstable; urgency=medium
+
+  * debian: compute daemon and venv-wheel shlibdeps in one run
+
+ -- dionysius <dragon.dionysius@gmail.com>  Sun, 19 Jul 2026 14:58:08 +0200
+
 seafile-server (13.0.25-1~alpha2) unstable; urgency=medium
 
   * debian: patch the missing fsck include instead of demoting compiler errors
