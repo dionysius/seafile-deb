@@ -1,10 +1,11 @@
-# The go components are statically linked by design.
+# go components are statically linked
 statically-linked-binary [usr/lib/seafile/bin/fileserver]
 statically-linked-binary [usr/lib/seafile/bin/notification-server]
 
-# Private, unversioned shared libraries in the application's own directory; they
-# are resolved via LD_LIBRARY_PATH set in the systemd unit, not the linker cache.
-ldconfig-symlink-missing-for-shlib [usr/lib/seafile/lib/*]
-
-# The daemons are managed through the systemd service, not invoked by hand.
+# the daemons are run via systemd, not invoked by hand
 no-manual-page [usr/lib/seafile/bin/*]
+
+# venv wheels bundle their own private shared objects
+unstripped-binary-or-object [usr/lib/seahub/venv/*]
+package-installs-python-bytecode [usr/lib/seahub/venv/*]
+embedded-library [usr/lib/seahub/venv/*]

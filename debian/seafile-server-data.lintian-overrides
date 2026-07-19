@@ -1,0 +1,4 @@
+# vendored upstream components and prebuilt frontend assets, shipped as-is
+package-contains-vcs-control-file [usr/lib/seahub/*]
+embedded-javascript-library * [usr/lib/seahub/*]
+source-contains-prebuilt-javascript-object [usr/lib/seahub/*]

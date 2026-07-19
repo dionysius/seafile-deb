@@ -1,2 +1,0 @@
-# central config dir is created by seafile-server; ensure it exists for ucf here too
-etc/seafile

@@ -1,0 +1,3 @@
+# upstream ships no man pages
+no-manual-page [usr/bin/seaf-fuse]
+no-manual-page [usr/lib/seafile/bin/seaf-fuse]

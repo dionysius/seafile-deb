@@ -1,3 +1,0 @@
-/usr/share/seahub/seahub_settings.py /etc/seafile/seahub_settings.py
-/usr/share/seahub/gunicorn.conf.py /etc/seafile/gunicorn.conf.py
-/usr/share/seahub/seahub.default /etc/default/seahub

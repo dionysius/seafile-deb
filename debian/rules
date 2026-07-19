@@ -1,100 +1,67 @@
 #!/usr/bin/make -f
 
 include /usr/share/dpkg/default.mk
-include /usr/share/dpkg/architecture.mk
 
-# seafile-server's C (and libevhtp's bundled oniguruma) predate gcc-14/15's stricter
-# defaults: implicit function declarations, implicit int, int-conversion and incompatible
-# pointer types became hard errors, and C23 (gcc-15's default) makes an empty () parameter
-# list mean (void), which breaks oniguruma's unprototyped function-pointer calls. Pin the C
-# standard to gnu17 (gcc-14's default, which upstream/debian build with) and demote the
-# error-promoted warnings. dpkg exports CFLAGS, which the libevhtp cmake sub-build inherits.
-export DEB_CFLAGS_MAINT_APPEND = -std=gnu17 -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion -Wno-error=incompatible-pointer-types
-include /usr/share/dpkg/buildflags.mk
+# the bundled libevhtp (K&R-style API, oniguruma) does not compile under C23 (gcc >= 15)
+export DEB_CFLAGS_MAINT_APPEND = -std=gnu17
 
 export DH_VERBOSE = 1
 MAKEFLAGS += --no-print-directory
 
 # common locations
 TMPDEB = $(CURDIR)/debian/tmp
-# self-contained install prefix for the daemons (relocatable, opt-style layout like
-# upstream's seafile-server/seafile/); the controller finds its siblings relative to bin/
+# self-contained daemon prefix
 SEAFPREFIX = /usr/lib/seafile
-# seahub application tree (Django app + seafobj/seafdav/seafevents + uv)
+# seahub application tree
 HUBPREFIX = /usr/lib/seahub
-# throwaway prefix for libevhtp: statically linked into seaf-server, not shipped
+# throwaway prefix for the statically linked libevhtp
 STAGING = $(CURDIR)/debian/staging
-# libsearpc build staging: seafile-server builds against it from here (survives
-# dh_prep, unlike debian/tmp). The packaged copy is installed into debian/tmp during
-# the install phase so it stays fresh and idempotent.
-SEARPC = $(CURDIR)/debian/searpc/usr
 
-# steps mostly imitate upstream's community build recipe, so changes there may need
-# to be reflected here:
-# - https://github.com/haiwen/seafile-docker/blob/master/build/seafile_13.0/seafile-build.sh
-# - https://github.com/haiwen/seafile-docker/blob/master/build/seafile_13.0/seafile-build.py
+# steps imitate upstream's community build recipe:
+# https://github.com/haiwen/seafile-docker/tree/master/build/seafile_13.0
 
-# uv builds seahub's python dependencies at build time (debian has not packaged it)
+# uv (not packaged in debian) builds seahub's python deps
 UV_VERSION = 0.11.26
 UV_SHA256_x86_64 = 6426a73c3837e6e2483ee344cbc00f36394d179afcba6183cb77437e67db4af0
 UV_SHA256_aarch64 = befa1a59c91e96eb601b0fd9a97c03dd666f17baba644b2b4db9c59a767e387e
 UV = $(CURDIR)/debian/.buildbin/uv
-# use the distribution python (so the venv matches the runtime interpreter) and copy
-# wheels into the venv instead of hardlinking to the cache (the cache is thrown away)
+# the venv must match the runtime interpreter; cache inside the build tree (not the
+# builder's home), real copies since that cache is thrown away
 export UV_PYTHON_PREFERENCE = only-system
 export UV_LINK_MODE = copy
+export UV_CACHE_DIR = $(CURDIR)/debian/.uvcache
 
-# mariadb_config feeds ./configure --with-mysql for the MySQL/MariaDB backend
-# (the SQLite backend is always built and is the packaged default at runtime)
+# keep npm's cache inside the build tree (not the builder's home)
+export npm_config_cache = $(CURDIR)/debian/.npmcache
+
+# --with-mysql helper; the sqlite backend is always built and is the default
 MARIADB_CONFIG := $(or $(wildcard /usr/bin/mariadb_config),/usr/bin/mysql_config)
 
-# Go toolchain: keep caches inside the build tree, cgo enabled for the db drivers
+# go: caches inside the build tree, no toolchain downloads
 export GOFLAGS = -mod=mod -trimpath
 export GOCACHE = $(CURDIR)/debian/.gocache
 export GOMODCACHE = $(CURDIR)/debian/.gomodcache
 export GOTOOLCHAIN = local
-export GOOS = linux
-export GOARCH = $(DEB_HOST_ARCH)
-ifeq ($(DEB_HOST_ARCH),armhf)
-	export GOARCH = arm
-endif
-ifeq ($(DEB_HOST_ARCH),i386)
-	export GOARCH = 386
-endif
-ifeq ($(DEB_HOST_ARCH),ppc64el)
-	export GOARCH = ppc64le
-endif
 
-# make the freshly built libsearpc, libevhtp and searpc-codegen discoverable while
-# configuring and building seafile-server
-export CPPFLAGS += -I$(SEARPC)/include -I$(STAGING)/include
-export LDFLAGS += -L$(SEARPC)/lib/$(DEB_HOST_MULTIARCH) -L$(STAGING)/lib
-export PKG_CONFIG_PATH := $(SEARPC)/lib/$(DEB_HOST_MULTIARCH)/pkgconfig:$(STAGING)/lib/pkgconfig:$(PKG_CONFIG_PATH)
-export PATH := $(SEARPC)/bin:$(CURDIR)/debian/.buildbin:$(PATH)
-# pysearpc (needed by searpc-codegen) lands in one of these depending on the interpreter
-export PYTHONPATH := $(SEARPC)/lib/python3/dist-packages:$(SEARPC)/lib/python3/site-packages
+# make the staged libevhtp discoverable
+export CPPFLAGS += -I$(STAGING)/include
+export LDFLAGS += -L$(STAGING)/lib
+export PKG_CONFIG_PATH := $(STAGING)/lib/pkgconfig:$(PKG_CONFIG_PATH)
+export PATH := $(CURDIR)/debian/.buildbin:$(PATH)
 
-# forward the parallel build option
-ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-	JOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
-else
-	JOBS = 1
-endif
+JOBS = $(or $(DEB_BUILD_OPTION_PARALLEL),1)
 
-# Detect systemd major version for service file templating.
-# On bookworm systemd.pc ships with the systemd package; on newer distros it moved to systemd-dev.
-# TODO: once bookworm is phased out, add systemd-dev to Build-Depends and drop the dpkg-query fallback.
-SYSTEMD_MAJOR := $(shell pkgconf --modversion systemd 2>/dev/null)
-ifeq ($(SYSTEMD_MAJOR),)
-SYSTEMD_MAJOR := $(shell dpkg-query -W -f='$${Version}' libsystemd0 2>/dev/null | cut -d. -f1)
-endif
+# systemd major version for service file templating (systemd.pc from systemd-dev)
+SYSTEMD_MAJOR := $(shell pkgconf --modversion systemd)
 
-# cross-build: point configure/pkg-config and cgo at the host toolchain
-ifneq ($(DEB_BUILD_ARCH),$(DEB_HOST_ARCH))
-	CONFFLAGS += --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE)
-	export PKG_CONFIG = $(DEB_HOST_GNU_TYPE)-pkgconf
-	export CC = $(DEB_HOST_GNU_TYPE)-gcc
-endif
+# python install dir: upstream expects the versionless lib/python3/site-packages layout
+PYSEAF = $(SEAFPREFIX)/lib/python3/site-packages
+
+# statically linked go binaries: record the go toolchain source in Built-Using
+BUILT_USING = $(shell dpkg-query -f '$${source:Package} (= $${source:Version})' -W $$(dpkg-query -S "$$(go env GOROOT)/bin/go" | cut -d: -f1))
+# seahub's venv is compiled for the distribution python; pin the runtime to that minor
+PY3_MINOR = $(shell python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
+PY3_NEXT = $(shell python3 -c 'import sys; print("%d.%d" % (sys.version_info[0], sys.version_info[1] + 1))')
 
 %:
 	dh $@
@@ -102,140 +69,93 @@ endif
 override_dh_auto_clean:
 # go marks its module cache read-only, so make it writable before removing
 	chmod -R u+w debian/.gocache debian/.gomodcache 2>/dev/null || true
-	rm -rf $(STAGING) debian/searpc debian/.gocache debian/.gomodcache debian/.buildbin
+	rm -rf $(STAGING) debian/.gocache debian/.gomodcache debian/.buildbin debian/.uvcache debian/.npmcache
 	[ ! -f Makefile ] || $(MAKE) distclean || true
-	[ ! -f libsearpc/Makefile ] || $(MAKE) -C libsearpc distclean || true
 	rm -f fileserver/fileserver notification-server/notification-server
-	rm -f debian/seafile-server.seafile-migrate.service debian/seafile-server.seaf-server.service debian/seafile-server.seaf-fileserver.service debian/seahub.seahub.service debian/uv.tar.gz
+	rm -f debian/seafile-server.seafile-migrate.service debian/seafile-server.seaf-server.service debian/seafile-server.seaf-fileserver.service debian/seafile-server.seahub.service debian/seafile-fuse.seaf-fuse.service debian/seafile-server.seaf-notification.service debian/uv.tar.gz
 	rm -rf seahub/frontend/node_modules seahub/frontend/build seahub/frontend/webpack-stats.json seahub/media/assets
 
-override_dh_auto_configure:
+override_dh_auto_configure-arch:
 	mkdir -p $(STAGING) debian/.buildbin
+# upstream invokes searpc-codegen.py; debian ships it as searpc-codegen
+	ln -sf /usr/bin/searpc-codegen debian/.buildbin/searpc-codegen.py
 
-# libevhtp (static, SSL disabled - upstream uses libevent+openssl directly).
-# CMAKE_POLICY_VERSION_MINIMUM: libevhtp pins cmake_minimum_required(2.8), which CMake 4
-# (on newer distros) rejects outright; this makes it configure anyway.
+# libevhtp (static, SSL unused); cmake 4 rejects its cmake_minimum_required(2.8)
 	cd libevhtp && cmake -DEVHTP_DISABLE_SSL=ON -DEVHTP_BUILD_SHARED=OFF \
 		-DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
 		-DCMAKE_INSTALL_PREFIX=$(STAGING) -DCMAKE_INSTALL_LIBDIR=lib .
 	$(MAKE) -C libevhtp -j$(JOBS)
 	$(MAKE) -C libevhtp install
 
-# libsearpc (shared library + pysearpc + searpc-codegen), configured with the final
-# system paths (so the packaged .so gets the correct rpath) but installed into the
-# build staging dir; the packaged copy is installed into debian/tmp at install time
-	cd libsearpc && ./autogen.sh && ./configure --prefix=/usr \
-		--libdir=/usr/lib/$(DEB_HOST_MULTIARCH) --disable-static $(CONFFLAGS)
-	$(MAKE) -C libsearpc -j$(JOBS)
-	$(MAKE) -C libsearpc install DESTDIR=$(CURDIR)/debian/searpc
-
-# seafile-server (main tarball, unpacked at the source root)
+# seafile-server (the source root)
 	./autogen.sh
-	./configure --prefix=$(SEAFPREFIX) --with-mysql=$(MARIADB_CONFIG) $(CONFFLAGS)
+	./configure --prefix=$(SEAFPREFIX) --with-mysql=$(MARIADB_CONFIG)
 
-override_dh_auto_build:
+override_dh_auto_configure-indep:
+# Build-Depends cannot express "nodejs with npm" (nodesource bundles it, debian splits it)
+	@command -v npm >/dev/null || { \
+		echo "ERROR: npm not found. Install nodejs from nodesource (bundles npm)"; \
+		echo "or your distribution's npm package."; exit 1; }
+
+override_dh_auto_build-arch:
 	$(MAKE) -j$(JOBS)
 
-# the two go components live in their own module dirs and are built separately
+# go components, each its own module
 	cd fileserver && go build -o fileserver .
 	cd notification-server && go build -o notification-server .
 
-# seahub frontend (webpack bundles consumed by django_webpack_loader at runtime).
-# Needs a recent node (react 18 + webpack 5); pin node 22 LTS via nodesource in CI.
-# npm ci installs devDependencies (build tooling); CI=false keeps warnings non-fatal;
-# the create-react-app build script sets NODE_ENV=production itself. Source maps are
-# disabled (not shipped, and their generation is memory-hungry). Skipped if already
-# built (dh_auto_clean removes the output, so a clean build always rebuilds).
-	if [ ! -d seahub/frontend/build/frontend ]; then \
-		cd seahub/frontend && npm ci --no-audit --no-fund && \
-		CI=false GENERATE_SOURCEMAP=false NODE_OPTIONS=--max-old-space-size=4096 npm run build; \
-	fi
-
-# obtain uv (build-only; used to lock and compile seahub's python deps below)
-# ref: https://github.com/astral-sh/uv/releases/download/0.9.13/uv-x86_64-unknown-linux-gnu.tar.gz
+# fetch uv (build-only)
 	curl -sSL https://github.com/astral-sh/uv/releases/download/$(UV_VERSION)/uv-$(DEB_BUILD_GNU_CPU)-unknown-$(DEB_BUILD_ARCH_OS)-$(DEB_BUILD_ARCH_LIBC).tar.gz -o debian/uv.tar.gz
 	echo "$(UV_SHA256_$(DEB_BUILD_GNU_CPU)) debian/uv.tar.gz" | sha256sum -c -
 	mkdir -p debian/.buildbin
 	tar --strip-components=1 -C debian/.buildbin -xzf debian/uv.tar.gz uv-$(DEB_BUILD_GNU_CPU)-unknown-$(DEB_BUILD_ARCH_OS)-$(DEB_BUILD_ARCH_LIBC)/uv
 
+# seahub frontend (webpack). CI=false keeps warnings non-fatal; source maps are
+# unused and memory-hungry. Skipped if already built (dh_auto_clean removes the output).
+override_dh_auto_build-indep:
+	if [ ! -d seahub/frontend/build/frontend ]; then \
+		cd seahub/frontend && npm ci --no-audit --no-fund && \
+		CI=false GENERATE_SOURCEMAP=false NODE_OPTIONS=--max-old-space-size=4096 npm run build; \
+	fi
+
 override_dh_auto_test:
 	:
 
-# the go binaries carry compressed DWARF sections that dwz cannot process; exclude
-# them (and the prebuilt uv) from debug-info compression
+# dwz cannot process the go binaries' compressed DWARF nor the prebuilt venv wheels
 override_dh_dwz:
 	dh_dwz -Xfileserver -Xnotification-server -Xseahub/venv
 
-# the venv ships prebuilt third-party wheels whose bundled .so files aren't ours to strip;
-# newer binutils objcopy also rejects some of them ("no .dynamic section")
+# prebuilt third-party wheels are not ours to strip (objcopy also chokes on some)
 override_dh_strip:
 	dh_strip -Xseahub/venv
 
-override_dh_auto_install:
-# install libsearpc into debian/tmp for the libsearpc package (fresh each run)
-	$(MAKE) -C libsearpc install DESTDIR=$(TMPDEB)
-
-	$(MAKE) install DESTDIR=$(TMPDEB)
+override_dh_auto_install-arch:
+	$(MAKE) install DESTDIR=$(TMPDEB) pythondir=$(PYSEAF) pyexecdir=$(PYSEAF)
 
 # drop the go binaries next to the C daemons
 	install -m 0755 fileserver/fileserver $(TMPDEB)$(SEAFPREFIX)/bin/fileserver
 	install -m 0755 notification-server/notification-server $(TMPDEB)$(SEAFPREFIX)/bin/notification-server
 
-# third-party license inventory of the go modules linked into the go components
+# third-party license inventory of the linked go modules
 	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server
 	debian/helpers/third-party-go.sh fileserver notification-server \
-		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES.txt.gz
+		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-go.txt.gz
 
-# database migration: the base schema (seafile-server's scripts/sql), the per-version
-# upgrade scripts (seahub's scripts/upgrade), the migrate dispatcher, and the installed
-# version baked in for the migrate stamp comparison
+# migration assets: base schema, per-version upgrade scripts, dispatcher, version stamp
 	cp -a scripts/sql $(TMPDEB)$(SEAFPREFIX)/sql
 	cp -a seahub/scripts/upgrade $(TMPDEB)$(SEAFPREFIX)/upgrade
 	install -m 0755 debian/install/scripts/seafile-migrate $(TMPDEB)$(SEAFPREFIX)/bin/seafile-migrate
 	install -m 0755 debian/install/scripts/seafile-db-upgrade $(TMPDEB)$(SEAFPREFIX)/bin/seafile-db-upgrade
 	echo "$(DEB_VERSION_UPSTREAM)" > $(TMPDEB)$(SEAFPREFIX)/version
 
-# strip the leaked RUNPATH (libtool baked in the libsearpc build staging path);
-# libsearpc resolves from the system path and libseafile via LD_LIBRARY_PATH in the unit
-	find $(TMPDEB)$(SEAFPREFIX)/bin $(TMPDEB)$(SEAFPREFIX)/lib -type f -exec chrpath -d {} + 2>/dev/null || true
-
-# normalise the python site-packages path for the seaserv module (upstream ships
-# lib/python3/site-packages; autotools installs it under the interpreter version)
-	set -e; for base in $(TMPDEB)$(SEAFPREFIX)/lib $(TMPDEB)$(SEAFPREFIX)/lib64; do \
-		for sp in $$base/python3.*/site-packages; do \
-			[ -d "$$sp" ] || continue; \
-			mkdir -p $$base/python3/site-packages; \
-			cp -a "$$sp"/. $$base/python3/site-packages/; \
-			rm -rf "$$(dirname "$$sp")"; \
-		done; \
-	done
-
-# normalise the pysearpc module location (libsearpc installs it under whichever
-# python dir automake detected) so the libsearpc.install glob is deterministic
-	set -e; ps=$$(find $(TMPDEB)/usr/lib -maxdepth 4 -type d -name pysearpc 2>/dev/null | head -1); \
-	if [ -n "$$ps" ] && [ "$$ps" != "$(TMPDEB)/usr/lib/python3/dist-packages/pysearpc" ]; then \
-		mkdir -p $(TMPDEB)/usr/lib/python3/dist-packages; \
-		mv "$$ps" $(TMPDEB)/usr/lib/python3/dist-packages/; \
-	fi
-
-# not needed at runtime: static/dev artefacts of the seafile daemons
+# static/dev artefacts and the upstream supervisor; systemd runs the daemons directly
 	rm -rf $(TMPDEB)$(SEAFPREFIX)/include
 	find $(TMPDEB)$(SEAFPREFIX) -name '*.la' -delete
+	rm -f $(TMPDEB)$(SEAFPREFIX)/bin/seafile-controller
 
-# seahub application tree, mirroring upstream's layout (seafile-build.py):
-# seafdav/seafobj/objwrapper ride inside seahub/thirdpart, seafevents alongside.
+# synthesize a project from the merged upstream requirements (minus the bundled
+# components), lock it and compile a relocatable venv - nothing to resolve at runtime
 	mkdir -p $(TMPDEB)$(HUBPREFIX)
-	cp -a seahub $(TMPDEB)$(HUBPREFIX)/seahub
-	cp -a seafevents $(TMPDEB)$(HUBPREFIX)/seafevents
-	cp -a seafdav/wsgidav $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/wsgidav
-	cp -a seafobj/seafobj $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/seafobj
-	cp -a seafobj/objwrapper $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/objwrapper
-
-# seahub's third-party python dependencies: synthesize a project from the merged
-# upstream requirements (minus the components already bundled above), lock it for
-# this architecture, and compile everything into a relocatable venv against the
-# system -dev libraries. Shipped ready to run: no uv, no compilation, no network at
-# runtime. Dependency changes require a new debian revision to relock.
 	{ echo '[project]'; echo 'name = "seahub-deps"'; echo 'version = "0"'; \
 	  echo 'requires-python = ">=3.11"'; echo 'dependencies = ['; \
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
@@ -244,59 +164,74 @@ override_dh_auto_install:
 	  echo '  "whitenoise>=6",'; \
 	  echo '  "pillow-heif>=1.1",'; \
 	  echo ']'; } > $(TMPDEB)$(HUBPREFIX)/pyproject.toml
-# pyOpenSSL is a transitive dep (pysaml2, capped <24.3); without a floor uv resolves an
-# ancient 22.x that references X509 flags cryptography 46 removed. Pin the floor so the
-# resolved pyOpenSSL (24.2) matches the modern cryptography.
-# whitenoise is added by the packaging (not upstream): seahub serves its own collected
-# static assets from gunicorn, so the self-contained default needs no external web server.
-# pillow-heif: upstream pins ==1.0.*, which has no wheel for the newest Python and whose
-# source no longer builds against current libheif; >=1.1 ships prebuilt wheels (bundling
-# libheif) for both target Pythons, so it installs without a compiler or libheif-dev.
+# pyOpenSSL floor: uv otherwise resolves a 22.x incompatible with current cryptography
+# whitenoise (packaging addition): gunicorn serves the collected static itself
+# pillow-heif floor: upstream's ==1.0.* pin neither ships wheels nor builds for current pythons
 	cd $(TMPDEB)$(HUBPREFIX) && $(UV) lock --python python3
 	$(UV) venv --relocatable --python python3 $(TMPDEB)$(HUBPREFIX)/venv
 	cd $(TMPDEB)$(HUBPREFIX) && UV_PROJECT_ENVIRONMENT=$(TMPDEB)$(HUBPREFIX)/venv \
 		$(UV) sync --frozen --no-dev --inexact
-# the venv stays self-contained (no --system-site-packages, which would leak conflicting
-# system packages); pysearpc is small and pure-python, so bundle a copy into the venv.
-# seaserv/seafile come from seafile-server via PYTHONPATH set in the units.
-	cp -a $(TMPDEB)/usr/lib/python3/dist-packages/pysearpc \
+# self-contained venv (system site-packages would leak conflicts); bundle the
+# pure-python pysearpc, seaserv comes via PYTHONPATH in the units
+	cp -a /usr/lib/python3/dist-packages/pysearpc \
 		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/
 
 # third-party license inventory of the compiled venv
-	mkdir -p $(TMPDEB)/usr/share/doc/seahub
 	$(TMPDEB)$(HUBPREFIX)/venv/bin/python debian/helpers/third-party-licenses.py \
-		| gzip -9n > $(TMPDEB)/usr/share/doc/seahub/THIRD-PARTY-LICENSES.txt.gz
+		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-python.txt.gz
 
-# seahub's migration step, invoked by the shared seafile-migrate unit when present
+# seahub's migration step, invoked by the seafile-migrate unit
 	install -D -m 0755 debian/install/scripts/seahub-migrate $(TMPDEB)$(HUBPREFIX)/bin/seahub-migrate
 
-# strip build-only cruft from the shipped app tree
-	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src
-	find $(TMPDEB)$(HUBPREFIX) -name '.git*' -prune -exec rm -rf {} + 2>/dev/null || true
-	find $(TMPDEB)$(HUBPREFIX) -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+# build-only leftovers
+	find $(TMPDEB)$(HUBPREFIX)/venv -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
 
-override_dh_installsystemd:
+# seahub tree in upstream's layout: seafdav/seafobj/objwrapper inside thirdpart,
+# seafevents alongside (arch-independent, ships in seafile-server-data)
+override_dh_auto_install-indep:
+	mkdir -p $(TMPDEB)$(HUBPREFIX)
+	cp -a seahub $(TMPDEB)$(HUBPREFIX)/seahub
+	cp -a seafevents $(TMPDEB)$(HUBPREFIX)/seafevents
+	cp -a seafdav/wsgidav $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/wsgidav
+	cp -a seafobj/seafobj $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/seafobj
+	cp -a seafobj/objwrapper $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/objwrapper
+
+# build-only leftovers
+	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src
+	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '.git*' -prune -exec rm -rf {} + 2>/dev/null || true
+	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+
+execute_after_dh_install-arch:
+# seafile-server.install takes the whole daemon tree; seaf-fuse ships in seafile-fuse
+	rm debian/seafile-server/usr/lib/seafile/bin/seaf-fuse
+
+override_dh_installsystemd-arch:
 	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start seafile-migrate.service
 	dh_installsystemd -pseafile-server --name=seaf-server --no-start --restart-after-upgrade seaf-server.service
-# the go file server is optional (MySQL/MariaDB backend only); install but don't enable
+# the go file server is optional (mysql backend only)
 	dh_installsystemd -pseafile-server --name=seaf-fileserver --no-enable --no-start --restart-after-upgrade seaf-fileserver.service
-	dh_installsystemd -pseahub --name=seahub --no-start --restart-after-upgrade seahub.service
+	dh_installsystemd -pseafile-server --name=seahub --no-start --restart-after-upgrade seahub.service
+# the fuse mount is optional
+	dh_installsystemd -pseafile-fuse --name=seaf-fuse --no-enable --no-start --restart-after-upgrade seaf-fuse.service
+# the notification server is optional (mysql backend only)
+	dh_installsystemd -pseafile-server --name=seaf-notification --no-enable --no-start --restart-after-upgrade seaf-notification.service
 
-execute_before_dh_installsystemd:
+execute_before_dh_installsystemd-arch:
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-migrate.service.fypp debian/seafile-server.seafile-migrate.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-server.service.fypp debian/seafile-server.seaf-server.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-fileserver.service.fypp debian/seafile-server.seaf-fileserver.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seahub.service.fypp debian/seahub.seahub.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seahub.service.fypp debian/seafile-server.seahub.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-fuse.service.fypp debian/seafile-fuse.seaf-fuse.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-notification.service.fypp debian/seafile-server.seaf-notification.service
 
-override_dh_shlibdeps:
-# seaf-server et al. resolve their private libseafile.so via LD_LIBRARY_PATH (set in
-# the systemd unit); libsearpc resolves from the normal system path
-	dh_shlibdeps -pseafile-server -l$(TMPDEB)$(SEAFPREFIX)/lib
-	dh_shlibdeps -plibsearpc
-# seahub's venv is self-contained: most wheels bundle their own private shared objects
-# (pillow, numpy, ...) which dpkg-shlibdeps cannot resolve, so skip the venv. Then
-# compute deps only from the source-compiled wheels that link system libraries
-# (mysqlclient, python-ldap), so their runtime library packages resolve per-distro.
-	dh_shlibdeps -pseahub -Xseahub/venv
-	find debian/seahub$(HUBPREFIX)/venv \( -name '_mysql*.so' -o -name '_ldap*.so' \) -print0 \
-		| xargs -0 --no-run-if-empty dpkg-shlibdeps -Tdebian/seahub.substvars
+override_dh_shlibdeps-arch:
+# most venv wheels bundle private .so files dpkg-shlibdeps cannot resolve; compute
+# deps only from the source-compiled wheels that link system libraries
+	dh_shlibdeps -pseafile-server -Xseahub/venv
+	find debian/seafile-server$(HUBPREFIX)/venv \( -name '_mysql*.so' -o -name '_ldap*.so' \) -print0 \
+		| xargs -0 --no-run-if-empty dpkg-shlibdeps -Tdebian/seafile-server.substvars
+	dh_shlibdeps -pseafile-fuse
+
+override_dh_gencontrol:
+	dh_gencontrol -- -Vmisc:Built-Using='$(BUILT_USING)' \
+		-V'python3:Depends=python3 (>= $(PY3_MINOR)), python3 (<< $(PY3_NEXT))'

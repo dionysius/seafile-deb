@@ -1,5 +1,0 @@
-usr/lib/seahub
-debian/install/system/seahub_settings.py usr/share/seahub
-debian/install/system/gunicorn.conf.py usr/share/seahub
-debian/install/system/seahub.default usr/share/seahub
-usr/share/doc/seahub/THIRD-PARTY-LICENSES.txt.gz
