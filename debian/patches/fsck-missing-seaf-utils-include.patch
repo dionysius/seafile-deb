@@ -1,0 +1,17 @@
+Description: fsck: include seaf-utils.h for seaf_delete_repo_tokens
+ fsck.c calls seaf_delete_repo_tokens without its declaration; gcc >= 14
+ rejects implicit function declarations as an error.
+Author: dionysius <dragon.dionysius@gmail.com>
+Forwarded: not-needed
+Applied-Upstream: https://github.com/haiwen/seafile-server/commit/a04c027917c0f5efbb12bec563ec5469c7d3eb86
+Comment: drop once a release tag contains the upstream commit
+--- a/server/gc/fsck.c
++++ b/server/gc/fsck.c
+@@ -4,6 +4,7 @@
+
+ #include "seafile-session.h"
+ #include "log.h"
++#include "seaf-utils.h"
+ #include "utils.h"
+
+ #include "fsck.h"
