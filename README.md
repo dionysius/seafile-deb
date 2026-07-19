@@ -9,10 +9,11 @@ Debian packages for running [Seafile Community Edition](https://www.seafile.com)
 
 This single source package builds the whole server-side stack. Its main upstream is [seafile-server](https://github.com/haiwen/seafile-server); the other pieces are pulled in by tag as source components and compiled together. It produces these binary packages:
 
-- **seafile** — metapackage pulling in the full stack (seafile-server + seahub).
-- **seafile-server** — the compiled daemons: `seaf-server`, `seafile-controller`, the go `fileserver` and `notification-server`, `seaf-fuse`, and the `seaserv` Python library.
-- **seahub** — the Django web frontend with its background tasks (seafevents) and WebDAV (seafdav); its Python dependencies are managed with [uv](https://docs.astral.sh/uv/).
-- **libsearpc** — the RPC library (`libsearpc` + `pysearpc`) shared by the daemons and seahub.
+- **seafile-server** — the complete server: the compiled daemons (`seaf-server`, the go `fileserver` and `notification-server`) and the Seahub web frontend with its background tasks (seafevents) and WebDAV (seafdav); Seahub's Python dependencies ship as a bundled virtualenv resolved with [uv](https://docs.astral.sh/uv/) at build time. For a headless server, disable the seahub service.
+- **seafile-server-data** — the architecture-independent Seahub application (Django app, prebuilt frontend assets, seafevents, seafdav).
+- **seafile-fuse** — optional read-only FUSE filesystem (`seaf-fuse`) presenting the libraries in the object store as regular files.
+
+The RPC library ([libsearpc](https://github.com/haiwen/libsearpc)) comes from the distribution (`libsearpc1t64`, `python3-searpc`).
 
 The desktop and command line clients ([seaf-cli](https://github.com/haiwen/seafile), [seafile-client](https://github.com/haiwen/seafile-client), [SeaDrive](https://github.com/haiwen/seadrive-fuse)) and [SeaDoc](https://github.com/haiwen/sdoc-server) have their own independent version streams and are packaged separately, not from this repository.
 
@@ -23,14 +24,14 @@ The easiest way to install is using the apt repository on [apt.crunchy.run/seafi
 ```bash
 sudo apt install curl
 curl -fsSL https://apt.crunchy.run/seafile/install.sh | sudo bash -
-sudo apt install seafile
+sudo apt install seafile-server
 ```
 
 Alternatively, download prebuilt packages from the [releases section](https://github.com/dionysius/seafile-deb/releases) and verify signatures with the [signing-key](signing-key.pub). Packages are automatically built in [Github Actions](https://github.com/dionysius/seafile-deb/actions).
 
 ## Configuration
 
-After installation, configure the server by editing `/etc/seafile/seafile.env` (secrets, database, cache, hostname, feature toggles) and `/etc/seafile/seafile.conf`. A random `JWT_PRIVATE_KEY` is generated on first install. Restart afterwards with `systemctl restart seafile`.
+After installation, configure the server by editing `/etc/seafile/seafile.env` (secrets, database, cache, hostname, feature toggles) and `/etc/seafile/seafile.conf`. A random `JWT_PRIVATE_KEY` is generated on first install. Restart afterwards with `systemctl restart seaf-server seahub`.
 
 By default the SQLite backend is used and needs no external service. For the MySQL/MariaDB backend, set the `SEAFILE_MYSQL_DB_*` variables in `seafile.env` and switch `seafile.conf` to the mysql backend. See the [Seafile manual](https://manual.seafile.com/13.0/) for the full configuration reference.
 

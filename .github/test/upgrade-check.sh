@@ -1,7 +1,7 @@
 #!/bin/bash
 # Exercise the seafile-migrate UPGRADE paths after a fresh install has already booted: fake the
 # recorded version stamp to an older version and reboot the stack, so the migrate one-shot takes
-# its minor- and major-upgrade branches (backup, schema handling, django migrate) instead of the
+# its minor- and major-upgrade branches (schema handling, django migrate) instead of the
 # init branch. Self-contained — reuses the installed artifacts, no second package version needed.
 # Re-runs boot-check.sh after each simulated upgrade as the health gate. Exits non-zero on failure.
 #
