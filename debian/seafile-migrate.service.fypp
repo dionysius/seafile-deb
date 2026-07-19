@@ -16,7 +16,6 @@ After=network.target
 EnvironmentFile=-%E/default/seafile-server
 EnvironmentFile=%E/seafile/seafile.env
 Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-Environment=LD_LIBRARY_PATH=/usr/lib/seafile/lib
 Environment=PYTHONPATH=/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
@@ -31,10 +30,10 @@ WorkingDirectory=/var/lib/seafile
 ## Permissions and directories
 User=seafile
 Group=seafile
-ConfigurationDirectory=seafile
-ConfigurationDirectoryMode=0750
-# migration writes the databases, the version stamp and the pre-upgrade backups
-StateDirectory=seafile seafile/seafile-data seafile/ccnet seafile/seahub-data seafile/backups
+ConfigurationDirectory=seafile::ro
+ConfigurationDirectoryMode=0500
+# migration writes the databases and the version stamp
+StateDirectory=seafile seafile/seafile-data seafile/ccnet seafile/seahub-data
 StateDirectoryMode=0750
 UMask=0027
 
@@ -49,16 +48,8 @@ ProtectClock=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
-#:if SYSTEMD_MAJOR >= 257
 ProtectControlGroups=strict
-#:else
-ProtectControlGroups=true
-#:endif
-#:if SYSTEMD_MAJOR >= 257
 PrivateTmp=disconnected
-#:else
-PrivateTmp=true
-#:endif
 # Upgrade scripts run python; leave W^X off.
 MemoryDenyWriteExecute=false
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

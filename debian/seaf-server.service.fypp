@@ -29,9 +29,8 @@ Requires=seafile-migrate.service
 EnvironmentFile=-%E/default/seafile-server
 # Seafile configuration and secrets (DB, cache, JWT_PRIVATE_KEY, hostname, feature toggles).
 EnvironmentFile=%E/seafile/seafile.env
-# Locate the compiled daemons and their private shared libraries and python modules.
+# Locate the compiled daemons and their python modules.
 Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-Environment=LD_LIBRARY_PATH=/usr/lib/seafile/lib
 Environment=PYTHONPATH=/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
@@ -54,9 +53,9 @@ RestartSec=5s
 ## Permissions and directories
 User=seafile
 Group=seafile
-# /etc/seafile - central config; the service reads seafile.conf and seafile.env from here.
-ConfigurationDirectory=seafile
-ConfigurationDirectoryMode=0750
+# /etc/seafile - central config, mounted read-only (permissions managed by tmpfiles).
+ConfigurationDirectory=seafile::ro
+ConfigurationDirectoryMode=0500
 # /var/lib/seafile - object store (seafile-data), ccnet and other state.
 StateDirectory=seafile seafile/seafile-data seafile/ccnet
 StateDirectoryMode=0750
@@ -93,11 +92,7 @@ ProtectProc=noaccess
 ProcSubset=pid
 
 # Namespace isolation
-#:if SYSTEMD_MAJOR >= 257
 PrivateTmp=disconnected
-#:else
-PrivateTmp=true
-#:endif
 PrivateDevices=true
 PrivateIPC=true
 #:if SYSTEMD_MAJOR >= 258
@@ -109,17 +104,11 @@ ProtectClock=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
-#:if SYSTEMD_MAJOR >= 257
 ProtectControlGroups=strict
-#:else
-ProtectControlGroups=true
-#:endif
 
 # Execution restrictions
 MemoryDenyWriteExecute=true
-#:if SYSTEMD_MAJOR >= 255
 SetLoginEnvironment=false
-#:endif
 
 # System call and network filtering
 SystemCallFilter=@system-service

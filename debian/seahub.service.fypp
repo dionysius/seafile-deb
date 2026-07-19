@@ -21,7 +21,6 @@ EnvironmentFile=%E/seafile/seafile.env
 # Locate the seahub app, the bundled python components, the seaserv module and the
 # central config (so seahub_settings.py is importable).
 Environment=PYTHONPATH=/usr/lib/seahub/seahub:/usr/lib/seahub/seahub/thirdpart:/usr/lib/seahub:/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
-Environment=LD_LIBRARY_PATH=/usr/lib/seafile/lib
 Environment=DJANGO_SETTINGS_MODULE=seahub.settings
 Environment=SEAHUB_DIR=/usr/lib/seahub/seahub
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
@@ -40,12 +39,11 @@ RestartSec=5s
 ## Permissions and directories
 User=seafile
 Group=seafile
-# central config, shared state (owned by seafile-server) and a private cache for uv.
-ConfigurationDirectory=seafile
+# central config and shared state (owned by seafile-server).
+ConfigurationDirectory=seafile::ro
+ConfigurationDirectoryMode=0500
 StateDirectory=seafile seafile/seahub-data
 StateDirectoryMode=0750
-CacheDirectory=seahub
-CacheDirectoryMode=0750
 RuntimeDirectory=seahub
 UMask=0027
 
@@ -67,11 +65,7 @@ ProtectProc=noaccess
 ProcSubset=pid
 
 # Namespace isolation
-#:if SYSTEMD_MAJOR >= 257
 PrivateTmp=disconnected
-#:else
-PrivateTmp=true
-#:endif
 PrivateDevices=true
 PrivateIPC=true
 #:if SYSTEMD_MAJOR >= 258
@@ -83,18 +77,12 @@ ProtectClock=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectKernelLogs=true
-#:if SYSTEMD_MAJOR >= 257
 ProtectControlGroups=strict
-#:else
-ProtectControlGroups=true
-#:endif
 
 # Execution restrictions
 # Python and native wheels need writable+executable memory.
 MemoryDenyWriteExecute=false
-#:if SYSTEMD_MAJOR >= 255
 SetLoginEnvironment=false
-#:endif
 
 # System call and network filtering
 SystemCallFilter=@system-service

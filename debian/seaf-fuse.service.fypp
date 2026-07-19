@@ -1,0 +1,61 @@
+# Please consider only editing this file through systemd drop-in files
+# (e.g. `systemctl edit seaf-fuse`). This will enable you to get updates
+# to this file automatically, without your overrides being lost.
+
+# Refer to the manpage `systemd.unit` for detailed documentation on each option.
+[Unit]
+Description=Seafile FUSE filesystem (seaf-fuse)
+Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
+# The databases must be initialised before the object store is presented.
+After=seafile-migrate.service
+Requires=seafile-migrate.service
+
+# Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
+[Service]
+## Service execution environment
+# Runtime environment configuration (mountpoint, extra fuse options).
+EnvironmentFile=-%E/default/seafile-fuse
+# Seafile configuration and secrets (database backend).
+EnvironmentFile=%E/seafile/seafile.env
+Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
+Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
+# Where the libraries are presented. The default mountpoint is created by
+# StateDirectory below; adjust both when changing it.
+Environment=SEAFILE_MOUNTPOINT=/var/lib/seafile/seafile-fuse
+# Extra fuse options. Only the mounting user (seafile) can access the mount by
+# default; set "-o allow_other" here (requires user_allow_other in /etc/fuse.conf)
+# to expose it to other users.
+Environment=SEAFILE_FUSE_OPTS=
+# Foreground (-f); systemd supervises it directly. Logs to stdout (-l -).
+Type=exec
+ExecStart=/usr/lib/seafile/bin/seaf-fuse -f \
+  -F /etc/seafile \
+  -c /var/lib/seafile/ccnet \
+  -d /var/lib/seafile/seafile-data \
+  -l - \
+  $SEAFILE_FUSE_OPTS ${SEAFILE_MOUNTPOINT}
+# Clean up a stale mountpoint after unclean exits.
+ExecStopPost=-/usr/bin/fusermount -uz ${SEAFILE_MOUNTPOINT}
+WorkingDirectory=/var/lib/seafile
+Restart=on-failure
+RestartSec=5s
+
+## Permissions and directories
+User=seafile
+Group=seafile
+# /etc/seafile - central config, mounted read-only (permissions managed by tmpfiles).
+ConfigurationDirectory=seafile::ro
+ConfigurationDirectoryMode=0500
+# The object store (read) and the default mountpoint.
+StateDirectory=seafile seafile/seafile-data seafile/seafile-fuse
+StateDirectoryMode=0750
+UMask=0027
+
+## Sandboxing and isolation
+# Not sandboxed: mounting as an unprivileged user runs the setuid fusermount
+# helper (incompatible with NoNewPrivileges and every option implying it), and
+# the mount must propagate to the host (incompatible with filesystem
+# namespacing options like ProtectSystem or PrivateTmp).
+
+[Install]
+WantedBy=multi-user.target
