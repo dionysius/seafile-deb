@@ -1,3 +1,2 @@
-# needs to exist for manually invoking ucf with --three-way; ucf doesn't create
-# directories, and systemd-tmpfiles runs too late for postinst
+# ucf needs the directory to exist; permissions come from tmpfiles
 etc/seafile

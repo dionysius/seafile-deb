@@ -1,7 +1,6 @@
 #!/bin/bash
-# Apply seahub's database migrations. Invoked by seafile-migrate when seahub is
-# installed. Idempotent: Django tracks applied migrations in the database, so this
-# is a no-op once up to date. Runs from the shipped venv.
+# Apply seahub's database migrations (django, idempotent) and collect the static
+# files. Invoked by seafile-migrate; runs from the shipped venv.
 set -euo pipefail
 
 HUB=/usr/lib/seahub
@@ -21,7 +20,7 @@ fi
 cd "$HUB/seahub"
 echo "seahub-migrate: applying database migrations"
 "$VENV/bin/python" manage.py migrate --noinput
-# Collect static files (and build the staticfiles manifest) into the writable
-# STATIC_ROOT; a reverse proxy (nginx) serves them under STATIC_URL.
+# Collect the static files (with manifest) into the writable STATIC_ROOT;
+# whitenoise serves them from gunicorn.
 echo "seahub-migrate: collecting static files"
 "$VENV/bin/python" manage.py collectstatic --noinput -i admin

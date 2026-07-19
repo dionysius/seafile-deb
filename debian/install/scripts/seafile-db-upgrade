@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-# Apply upstream's ccnet + seafile schema deltas for one seafile version against this
-# package's database paths, reusing the updater classes from the installed db_update_helper.py.
+# Apply upstream's ccnet + seafile schema deltas for one version, reusing the updater
+# classes from the installed db_update_helper.py.
 #
-# Only ccnet and seafile are touched. seahub (and seafevents) schema is owned by django and
-# applied by seahub-migrate, so running upstream's seahub.sql here would double-apply it.
-#
-# The backend is passed explicitly (sqlite3|mysql) rather than auto-detected: upstream's own
-# detector always builds a MySQL info from env defaults, so it is effectively mysql-only and
-# misreads this layout. Paths come from the environment db_update_helper reads at import:
-#   CCNET_CONF_DIR, SEAFILE_DATA_DIR, SEAFILE_CENTRAL_CONF_DIR (+ SEAFILE_MYSQL_DB_* for mysql).
+# Only ccnet and seafile: seahub/seafevents schema is owned by django (seahub-migrate),
+# running upstream's seahub.sql here would double-apply it. The backend is passed
+# explicitly - upstream's auto-detection is effectively mysql-only. Paths come from the
+# environment db_update_helper reads at import: CCNET_CONF_DIR, SEAFILE_DATA_DIR,
+# SEAFILE_CENTRAL_CONF_DIR (+ SEAFILE_MYSQL_DB_* for mysql).
 #
 # Usage: seafile-db-upgrade <version> <sqlite3|mysql>
 import glob
