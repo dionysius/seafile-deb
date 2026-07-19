@@ -225,11 +225,11 @@ execute_before_dh_installsystemd-arch:
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-notification.service.fypp debian/seafile-server.seaf-notification.service
 
 override_dh_shlibdeps-arch:
-# most venv wheels bundle private .so files dpkg-shlibdeps cannot resolve; compute
-# deps only from the source-compiled wheels that link system libraries
-	dh_shlibdeps -pseafile-server -Xseahub/venv
-	find debian/seafile-server$(HUBPREFIX)/venv \( -name '_mysql*.so' -o -name '_ldap*.so' \) -print0 \
-		| xargs -0 --no-run-if-empty dpkg-shlibdeps -Tdebian/seafile-server.substvars
+# most venv wheels bundle private .so files dpkg-shlibdeps cannot resolve: skip the
+# venv, but feed the source-compiled wheels that link system libraries into the same
+# run (a second dpkg-shlibdeps run replaces shlibs:Depends instead of extending it)
+	dh_shlibdeps -pseafile-server -Xseahub/venv -- \
+		$$(find debian/seafile-server$(HUBPREFIX)/venv \( -name '_mysql*.so' -o -name '_ldap*.so' \) -printf '-e%p ')
 	dh_shlibdeps -pseafile-fuse
 
 override_dh_gencontrol:
