@@ -72,7 +72,7 @@ override_dh_auto_clean:
 	rm -rf $(STAGING) debian/.gocache debian/.gomodcache debian/.buildbin debian/.uvcache debian/.npmcache
 	[ ! -f Makefile ] || $(MAKE) distclean || true
 	rm -f fileserver/fileserver notification-server/notification-server
-	rm -f debian/seafile-server.seafile-migrate.service debian/seafile-server.seaf-server.service debian/seafile-server.seaf-fileserver.service debian/seafile-server.seahub.service debian/seafile-fuse.seaf-fuse.service debian/seafile-server.seaf-notification.service debian/uv.tar.gz
+	rm -f debian/seafile-server.seafile.service debian/seafile-server.seafile-migrate.service debian/seafile-server.seafile-fileserver.service debian/seafile-server.seahub.service debian/seafile-fuse.seafile-fuse.service debian/seafile-server.seafile-notification.service debian/uv.tar.gz
 	rm -rf seahub/frontend/node_modules seahub/frontend/build seahub/frontend/webpack-stats.json seahub/media/assets
 
 override_dh_auto_configure-arch:
@@ -207,22 +207,22 @@ execute_after_dh_install-arch:
 
 override_dh_installsystemd-arch:
 	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start seafile-migrate.service
-	dh_installsystemd -pseafile-server --name=seaf-server --no-start --restart-after-upgrade seaf-server.service
+	dh_installsystemd -pseafile-server --name=seafile --no-start --restart-after-upgrade seafile.service
 # the go file server is optional (mysql backend only)
-	dh_installsystemd -pseafile-server --name=seaf-fileserver --no-enable --no-start --restart-after-upgrade seaf-fileserver.service
+	dh_installsystemd -pseafile-server --name=seafile-fileserver --no-enable --no-start --restart-after-upgrade seafile-fileserver.service
 	dh_installsystemd -pseafile-server --name=seahub --no-start --restart-after-upgrade seahub.service
 # the fuse mount is optional
-	dh_installsystemd -pseafile-fuse --name=seaf-fuse --no-enable --no-start --restart-after-upgrade seaf-fuse.service
+	dh_installsystemd -pseafile-fuse --name=seafile-fuse --no-enable --no-start --restart-after-upgrade seafile-fuse.service
 # the notification server is optional (mysql backend only)
-	dh_installsystemd -pseafile-server --name=seaf-notification --no-enable --no-start --restart-after-upgrade seaf-notification.service
+	dh_installsystemd -pseafile-server --name=seafile-notification --no-enable --no-start --restart-after-upgrade seafile-notification.service
 
 execute_before_dh_installsystemd-arch:
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-migrate.service.fypp debian/seafile-server.seafile-migrate.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-server.service.fypp debian/seafile-server.seaf-server.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-fileserver.service.fypp debian/seafile-server.seaf-fileserver.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile.service.fypp debian/seafile-server.seafile.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-fileserver.service.fypp debian/seafile-server.seafile-fileserver.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seahub.service.fypp debian/seafile-server.seahub.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-fuse.service.fypp debian/seafile-fuse.seaf-fuse.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-notification.service.fypp debian/seafile-server.seaf-notification.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-fuse.service.fypp debian/seafile-fuse.seafile-fuse.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-notification.service.fypp debian/seafile-server.seafile-notification.service
 
 override_dh_shlibdeps-arch:
 # most venv wheels bundle private .so files dpkg-shlibdeps cannot resolve: skip the

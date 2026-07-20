@@ -1,5 +1,5 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seaf-notification`). This will enable you to get updates
+# (e.g. `systemctl edit seafile-notification`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
@@ -9,7 +9,7 @@ Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-de
 # Receives events from seaf-server and the file server over HTTP and pushes them
 # to clients via websockets. Requires the MySQL/MariaDB backend and the
 # [notification] section in seafile.conf.
-After=network.target seaf-server.service
+After=network.target seafile.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
@@ -17,7 +17,7 @@ After=network.target seaf-server.service
 EnvironmentFile=-%E/default/seafile-server
 EnvironmentFile=%E/seafile/seafile.env
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-# Log to stdout so the journal captures everything (journalctl -u seaf-notification).
+# Log to stdout so the journal captures everything (journalctl -u seafile-notification).
 Environment=SEAFILE_LOG_TO_STDOUT=true
 # The notification server runs in the foreground; systemd supervises it directly.
 Type=exec
@@ -38,7 +38,7 @@ UMask=0027
 LimitNOFILE=1048576
 
 ## Sandboxing and isolation
-# An overview is available using `systemd-analyze security seaf-notification`.
+# An overview is available using `systemd-analyze security seafile-notification`.
 AmbientCapabilities=
 CapabilityBoundingSet=
 # Uncomment these to allow the notification server to bind to ports in the range 0-1024.

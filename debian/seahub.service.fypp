@@ -6,10 +6,12 @@
 [Unit]
 Description=Seahub (Seafile web frontend)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-After=network.target seaf-server.service seafile-migrate.service redis-server.service
-# Seahub talks to seaf-server over the RPC pipe (so the server must be up) and its
-# database is migrated by the shared migrate unit before it starts.
-Requires=seaf-server.service seafile-migrate.service
+After=network.target seafile.service seafile-migrate.service redis-server.service
+# Seahub talks to seaf-server over the RPC pipe; Wants pulls the core daemon in
+# on start without propagating stop/restart. The migrate gate is hard: no start
+# on a failed migration.
+Wants=seafile.service
+Requires=seafile-migrate.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]

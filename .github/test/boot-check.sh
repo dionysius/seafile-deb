@@ -1,6 +1,6 @@
 #!/bin/bash
 # Gate on a functional first boot of the seafile stack: the seafile-migrate one-shot must have
-# succeeded, seaf-server and seahub must be active, each must log its healthy startup line in
+# succeeded, seafile and seahub must be active, each must log its healthy startup line in
 # journald, and seahub must answer HTTP 200 on its login page — which exercises the whole chain
 # (database init/migrate, seaf-server RPC, cache, static manifest). Waits up to WAIT for readiness,
 # prints logs on failure, exits non-zero on failure (the
@@ -31,7 +31,7 @@ has_msg() { journalctl -u "$1" --no-pager 2>/dev/null | grep -qF "$2"; }
 info "Wait for seahub to answer at $URL (timeout ${WAIT}s)"
 i=0; code=000
 while [ "$i" -lt "$WAIT" ]; do
-  for s in seafile-migrate seaf-server seahub; do
+  for s in seafile-migrate seafile seahub; do
     systemctl is-failed --quiet "$s.service" && { echo "  $s entered failed state"; break 2; }
   done
   code=$(http_code); [ "$code" = 200 ] && break
@@ -46,7 +46,7 @@ else mark="❌"; echo "MIGRATE FAIL (Result=$mig)"; rc=1; fi
 rows+=("| \`seafile-migrate\` | one-shot Result=success | $mark |")
 
 info "Service active state"
-for s in seaf-server seahub; do
+for s in seafile seahub; do
   if systemctl is-active --quiet "$s.service"; then mark="✅"; echo "SVC OK $s active"
   else mark="❌"; echo "SVC FAIL $s active"; rc=1; fi
   rows+=("| \`$s\` | active | $mark |")
@@ -61,7 +61,7 @@ check_log() {
   rows+=("| \`$unit\` | log: \`$msg\` | $mark |")
 }
 check_log seafile-migrate.service "seafile-migrate: done"   # our migrate one-shot completed
-check_log seaf-server.service     "Use database"            # seaf-server initialised its DB backend
+check_log seafile.service         "Use database"            # seaf-server initialised its DB backend
 check_log seahub.service          "Listening at:"           # gunicorn bound and serving
 
 info "HTTP login page"
@@ -70,7 +70,7 @@ else mark="❌"; echo "HTTP FAIL $code"; rc=1; fi
 rows+=("| seahub | GET /accounts/login/ = 200 | $mark |")
 
 if [ "$rc" != 0 ]; then
-  for s in seafile-migrate seaf-server seahub; do
+  for s in seafile-migrate seafile seahub; do
     echo "--- status + last 60 journal lines: $s ---"
     systemctl status "$s.service" --no-pager -l 2>&1 | head -20 || true
     journalctl -u "$s.service" --no-pager -n 60 2>&1 || true
@@ -78,7 +78,7 @@ if [ "$rc" != 0 ]; then
 fi
 
 info "Summary"
-[ "$rc" -eq 0 ] && verdict="✅ boot: migrate succeeded, seaf-server + seahub active, login page 200" \
+[ "$rc" -eq 0 ] && verdict="✅ boot: migrate succeeded, seafile + seahub active, login page 200" \
                 || verdict="❌ boot: see failures above"
 [ "$OUT" = /dev/stdout ] || mkdir -p "$(dirname "$OUT")"
 {

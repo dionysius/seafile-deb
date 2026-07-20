@@ -1,5 +1,5 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seaf-fuse`). This will enable you to get updates
+# (e.g. `systemctl edit seafile-fuse`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.

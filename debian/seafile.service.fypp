@@ -1,5 +1,5 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seaf-server`). This will enable you to get updates
+# (e.g. `systemctl edit seafile`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
@@ -34,7 +34,7 @@ Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/
 Environment=PYTHONPATH=/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
-# Log to stdout so the journal captures everything (journalctl -u seaf-server).
+# Log to stdout so the journal captures everything (journalctl -u seafile).
 Environment=SEAFILE_LOG_TO_STDOUT=true
 # Service execution. seaf-server runs in the foreground (-f); systemd supervises it
 # directly. -p is the RPC pipe directory shared with the file server and seahub.
@@ -71,7 +71,7 @@ UMask=0027
 LimitNOFILE=1048576
 
 ## Sandboxing and isolation
-# An overview is available using `systemd-analyze security seaf-server`.
+# An overview is available using `systemd-analyze security seafile`.
 
 ## Capabilities
 AmbientCapabilities=

@@ -46,7 +46,7 @@ else
 fi
 echo "--- installed ---"; dpkg -l 'seafile*' 'libsearpc*' | awk '/^ii/{print $2, $3}'
 
-info "Start services (seahub and seaf-server pull in the seafile-migrate one-shot)"
-systemctl start seaf-server.service seahub.service || true
+info "Start services (seahub and seafile pull in the seafile-migrate one-shot)"
+systemctl start seafile.service seahub.service || true
 
 info "DONE"

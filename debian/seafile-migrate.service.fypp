@@ -20,8 +20,8 @@ Environment=PYTHONPATH=/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
 Environment=CCNET_CONF_DIR=/var/lib/seafile/ccnet
-# Run once and exit; NO RemainAfterExit, so seaf-server's Requires= re-runs it on
-# every start (including the post-upgrade restart). The script itself decides via
+# Run once and exit; NO RemainAfterExit, so seafile.service's Requires= re-runs it
+# on every start (including the post-upgrade restart). The script itself decides via
 # the version stamp whether there is any work to do.
 Type=oneshot
 ExecStart=/usr/lib/seafile/bin/seafile-migrate

@@ -31,7 +31,7 @@ Alternatively, download prebuilt packages from the [releases section](https://gi
 
 ## Configuration
 
-After installation, configure the server by editing `/etc/seafile/seafile.env` (secrets, database, cache, hostname, feature toggles) and `/etc/seafile/seafile.conf`. A random `JWT_PRIVATE_KEY` is generated on first install. Restart afterwards with `systemctl restart seaf-server seahub`.
+After installation, configure the server by editing `/etc/seafile/seafile.env` (secrets, database, cache, hostname, feature toggles) and `/etc/seafile/seafile.conf`. A random `JWT_PRIVATE_KEY` is generated on first install. Restart afterwards with `systemctl restart seafile seahub`, including any optional units you enabled (e.g. `seafile-fileserver`, `seafile-notification`).
 
 By default the SQLite backend is used and needs no external service. For the MySQL/MariaDB backend, set the `SEAFILE_MYSQL_DB_*` variables in `seafile.env` and switch `seafile.conf` to the mysql backend. See the [Seafile manual](https://manual.seafile.com/13.0/) for the full configuration reference.
 

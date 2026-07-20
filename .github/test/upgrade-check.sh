@@ -31,7 +31,7 @@ rc=0; rows=()
 simulate() {
   local label="$1" fake="$2"
   info "Upgrade path: $label ($fake -> $installed)"
-  systemctl stop seahub.service seaf-server.service 2>/dev/null
+  systemctl stop seahub.service seafile.service 2>/dev/null
   echo "$fake" > "$STAMP"
   systemctl start seahub.service 2>&1 || true
   sleep 5

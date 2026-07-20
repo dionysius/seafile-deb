@@ -1,15 +1,15 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seaf-fileserver`). This will enable you to get updates
+# (e.g. `systemctl edit seafile-fileserver`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
 [Unit]
 Description=Seafile file server (HTTP upload/download)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-After=network.target seaf-server.service
-# The file server talks to seaf-server over the RPC pipe and shares its lifecycle.
-Requires=seaf-server.service
-BindsTo=seaf-server.service
+After=network.target seafile.service
+# The file server talks to seaf-server over the RPC pipe; Wants pulls the core
+# daemon in on start without propagating stop/restart.
+Wants=seafile.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
@@ -19,7 +19,7 @@ EnvironmentFile=%E/seafile/seafile.env
 Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
-# Log to stdout so the journal captures everything (journalctl -u seaf-fileserver).
+# Log to stdout so the journal captures everything (journalctl -u seafile-fileserver).
 Environment=SEAFILE_LOG_TO_STDOUT=true
 # The go file server runs in the foreground; systemd supervises it directly.
 Type=exec
@@ -35,7 +35,7 @@ RestartSec=5s
 User=seafile
 Group=seafile
 # Read config from /etc/seafile and read/write the object store; the RPC pipe dir is
-# created and owned by seaf-server (this unit is bound to it).
+# created and owned by seaf-server.
 ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
 StateDirectory=seafile seafile/seafile-data
@@ -46,7 +46,7 @@ UMask=0027
 LimitNOFILE=1048576
 
 ## Sandboxing and isolation
-# An overview is available using `systemd-analyze security seaf-fileserver`.
+# An overview is available using `systemd-analyze security seafile-fileserver`.
 AmbientCapabilities=
 CapabilityBoundingSet=
 # Uncomment these to allow the file server to bind to ports in the range 0-1024.
