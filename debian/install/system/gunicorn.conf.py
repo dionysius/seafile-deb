@@ -5,7 +5,7 @@ import os
 daemon = False
 workers = int(os.environ.get('SEAHUB_WORKERS', '3'))
 
-# Listen locally; put a reverse proxy (nginx) in front for TLS and static files.
+# Listen locally; the reverse proxy in front routes clients here.
 bind = '127.0.0.1:8000'
 
 # Long timeout for uploads/downloads proxied through seahub.
