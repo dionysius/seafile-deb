@@ -12,6 +12,9 @@ bind = '127.0.0.1:8000'
 timeout = 1200
 limit_request_line = 8190
 
+# Proxy headers passed through into WSGI vars; REMOTE_USER enables proxy-based SSO.
+forwarder_headers = 'SCRIPT_NAME,PATH_INFO,REMOTE_USER'
+
 # Log to stdout/stderr so journald captures it.
 accesslog = '-'
 errorlog = '-'
