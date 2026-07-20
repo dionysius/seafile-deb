@@ -23,6 +23,9 @@ Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
 Environment=SEAFILE_LOG_TO_STDOUT=true
 # The go file server runs in the foreground; systemd supervises it directly.
 Type=exec
+# Runs only while seafile.env opts in; when false, seaf-server's built-in
+# fileserver owns [fileserver] host:port instead.
+ExecCondition=/bin/sh -ec '[ "$ENABLE_GO_FILESERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/fileserver \
   -F /etc/seafile \
   -d /var/lib/seafile/seafile-data \

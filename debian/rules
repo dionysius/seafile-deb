@@ -207,12 +207,12 @@ override_dh_installsystemd-arch:
 	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start seafile-migrate.service
 	dh_installsystemd -pseafile-server --name=seafile --no-start --restart-after-upgrade seafile.service
 # the go file server is optional (mysql backend only)
-	dh_installsystemd -pseafile-server --name=seafile-fileserver --no-enable --no-start --restart-after-upgrade seafile-fileserver.service
+	dh_installsystemd -pseafile-server --name=seafile-fileserver --no-start --restart-after-upgrade seafile-fileserver.service
 	dh_installsystemd -pseafile-server --name=seahub --no-start --restart-after-upgrade seahub.service
 # the fuse mount is optional
 	dh_installsystemd -pseafile-fuse --name=seafile-fuse --no-enable --no-start --restart-after-upgrade seafile-fuse.service
 # the notification server is optional (mysql backend only)
-	dh_installsystemd -pseafile-server --name=seafile-notification --no-enable --no-start --restart-after-upgrade seafile-notification.service
+	dh_installsystemd -pseafile-server --name=seafile-notification --no-start --restart-after-upgrade seafile-notification.service
 
 execute_before_dh_installsystemd-arch:
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-migrate.service.fypp debian/seafile-server.seafile-migrate.service

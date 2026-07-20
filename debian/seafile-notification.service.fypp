@@ -7,8 +7,7 @@
 Description=Seafile real-time notification server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 # Receives events from seaf-server and the file server over HTTP and pushes them
-# to clients via websockets. Requires the MySQL/MariaDB backend and the
-# [notification] section in seafile.conf.
+# to clients via websockets.
 After=network.target seafile.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
@@ -21,6 +20,8 @@ Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 Environment=SEAFILE_LOG_TO_STDOUT=true
 # The notification server runs in the foreground; systemd supervises it directly.
 Type=exec
+# Runs only while seafile.env opts in.
+ExecCondition=/bin/sh -ec '[ "$ENABLE_NOTIFICATION_SERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/notification-server -c /etc/seafile
 WorkingDirectory=/var/lib/seafile
 Restart=on-failure
