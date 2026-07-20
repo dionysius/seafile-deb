@@ -1,5 +1,5 @@
 # gunicorn configuration for seahub. Reference:
-# https://manual.seafile.com/13.0/config/gunicorn/
+# https://gunicorn.org/reference/settings/
 
 daemon = False
 workers = 5
