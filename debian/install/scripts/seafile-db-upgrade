@@ -3,13 +3,11 @@
 # classes from the installed db_update_helper.py.
 #
 # Only ccnet and seafile: seahub/seafevents schema is owned by django (seahub-migrate),
-# running upstream's seahub.sql here would double-apply it. The backend is passed
-# explicitly - upstream's auto-detection is effectively mysql-only. Paths come from the
-# environment db_update_helper reads at import: CCNET_CONF_DIR, SEAFILE_DATA_DIR,
-# SEAFILE_CENTRAL_CONF_DIR (+ SEAFILE_MYSQL_DB_* for mysql).
+# running upstream's seahub.sql here would double-apply it. Paths and connection come
+# from the environment db_update_helper reads at import: CCNET_CONF_DIR,
+# SEAFILE_DATA_DIR, SEAFILE_CENTRAL_CONF_DIR, SEAFILE_MYSQL_DB_*.
 #
-# Usage: seafile-db-upgrade <version> <sqlite3|mysql>
-import glob
+# Usage: seafile-db-upgrade <version>
 import os
 import sys
 
@@ -17,24 +15,19 @@ UPGRADE_DIR = '/usr/lib/seafile/upgrade'
 
 
 def main():
-    if len(sys.argv) != 3:
-        sys.exit('usage: seafile-db-upgrade <version> <sqlite3|mysql>')
-    version, backend = sys.argv[1], sys.argv[2]
+    if len(sys.argv) != 2:
+        sys.exit('usage: seafile-db-upgrade <version>')
+    version = sys.argv[1]
 
     sys.path.insert(0, UPGRADE_DIR)
     import db_update_helper as h  # reads the *_DIR paths from the environment at import time
 
-    if backend == 'sqlite3':
-        updater = h.SQLiteDBUpdater(version)
-    elif backend == 'mysql':
-        if not getattr(h, 'HAS_PYMYSQL', False):
-            sys.exit('mysql backend requested but python pymysql is not available')
-        updater = h.MySQLDBUpdater(version,
-                                   h.DBUpdater.get_ccnet_mysql_info(version),
-                                   h.DBUpdater.get_seafile_mysql_info(version),
-                                   h.DBUpdater.get_seahub_mysql_info())
-    else:
-        sys.exit('unknown backend %r (expected sqlite3 or mysql)' % backend)
+    if not getattr(h, 'HAS_PYMYSQL', False):
+        sys.exit('python pymysql is not available')
+    updater = h.MySQLDBUpdater(version,
+                               h.DBUpdater.get_ccnet_mysql_info(version),
+                               h.DBUpdater.get_seafile_mysql_info(version),
+                               h.DBUpdater.get_seahub_mysql_info())
 
     sql_dir = updater.sql_dir
     applied = []
@@ -42,17 +35,13 @@ def main():
     if os.path.exists(ccnet_sql):
         updater.update_ccnet_sql(ccnet_sql)
         applied.append('ccnet.sql')
-    # sqlite ships some ccnet deltas per split db file under a ccnet/ subdir
-    for path in sorted(glob.glob(os.path.join(sql_dir, 'ccnet', '*.sql'))):
-        updater.update_ccnet_sql(path)
-        applied.append('ccnet/' + os.path.basename(path))
     seafile_sql = os.path.join(sql_dir, 'seafile.sql')
     if os.path.exists(seafile_sql):
         updater.update_seafile_sql(seafile_sql)
         applied.append('seafile.sql')
 
-    print('seafile-db-upgrade %s (%s): applied %s'
-          % (version, backend, ', '.join(applied) if applied else '(no ccnet/seafile deltas)'))
+    print('seafile-db-upgrade %s: applied %s'
+          % (version, ', '.join(applied) if applied else '(no ccnet/seafile deltas)'))
 
 
 if __name__ == '__main__':

@@ -22,49 +22,21 @@ STAMP="$STATEDIR/current_version"
 
 INSTALLED=$(cat "$INSTALLDIR/version")
 
-# Load the seafile environment (database backend selection, credentials).
+# Load the seafile environment (database credentials).
 if [ -f "$CONFDIR/seafile.env" ]; then
     set -a; . "$CONFDIR/seafile.env"; set +a
 fi
 
-# Backend is mysql if seafile.conf says so or the MySQL connection is configured,
-# otherwise the default sqlite.
-backend=sqlite
-if grep -qsiE '^[[:space:]]*type[[:space:]]*=[[:space:]]*mysql' "$CONFDIR/seafile.conf" \
-   || [ -n "${SEAFILE_MYSQL_DB_HOST:-}" ]; then
-    backend=mysql
-fi
-
 log() { echo "seafile-migrate: $*"; }
 
-# --- sqlite helpers ---------------------------------------------------------
-
-sqlite_dbs() {
-    # component-name db-path schema-file (relative to sql/sqlite)
-    echo "groupmgr $CCNET/GroupMgr/groupmgr.db groupmgr.sql"
-    echo "config   $CCNET/misc/config.db       config.sql"
-    echo "org      $CCNET/OrgMgr/orgmgr.db      org.sql"
-    echo "user     $CCNET/PeerMgr/usermgr.db    user.sql"
-    echo "seafile  $DATA/seafile.db             seafile.sql"
-}
-
-init_sqlite() {
-    mkdir -p "$CCNET/GroupMgr" "$CCNET/misc" "$CCNET/OrgMgr" "$CCNET/PeerMgr" "$DATA"
-    sqlite_dbs | while read -r name db sql; do
-        log "creating $name database"
-        python3 -c 'import sqlite3, sys
-con = sqlite3.connect(sys.argv[1])
-con.executescript(open(sys.argv[2]).read())
-con.close()' "$db" "$INSTALLDIR/sql/sqlite/$sql"
-    done
-}
-
-sqlite_initialised() {
-    # consider the data initialised if the main seafile database has tables
-    [ -f "$DATA/seafile.db" ] && python3 -c 'import sqlite3, sys
-raise SystemExit(0 if sqlite3.connect(sys.argv[1]).execute(
-    "select 1 from sqlite_master where type = ?", ("table",)).fetchone() else 1)' "$DATA/seafile.db" 2>/dev/null
-}
+# The MySQL/MariaDB connection is mandatory; the whole service stack gates on this
+# unit, so an unconfigured install stops here with one actionable message.
+if [ -z "${SEAFILE_MYSQL_DB_PASSWORD:-}" ]; then
+    log "ERROR: SEAFILE_MYSQL_DB_PASSWORD is not set in $CONFDIR/seafile.env."
+    log "Create the databases and user, fill in the SEAFILE_MYSQL_DB_* variables,"
+    log "then restart seafile. See https://github.com/dionysius/seafile-deb/wiki"
+    exit 1
+fi
 
 # --- mysql helpers ----------------------------------------------------------
 
@@ -96,7 +68,7 @@ init_mysql() {
     log "loading seafile schema into $seafile_db"
     mysql_py "$seafile_db" load "$INSTALLDIR/sql/mysql/seafile.sql"
     # NOTE: the databases and the seafile user/grants must already exist; create
-    # them out of band (see the manual) - this script only loads the schema.
+    # them out of band (see the wiki) - this script only loads the schema.
 }
 
 mysql_initialised() {
@@ -116,16 +88,15 @@ run_upgrade_scripts() {
         return 0
     fi
     # apply the ccnet/seafile schema deltas (sql/<ver>) for every major boundary crossed
-    local be sqlroot vdir vmm applied=0
-    [ "$backend" = mysql ] && be=mysql || be=sqlite3
+    local sqlroot vdir vmm applied=0
     sqlroot="$INSTALLDIR/upgrade/sql"
     for vdir in $(ls "$sqlroot" 2>/dev/null | sort -V); do
         vmm=$(major_minor "$vdir")
         dpkg --compare-versions "$vmm" gt "$(major_minor "$from")" || continue
         dpkg --compare-versions "$vmm" le "$(major_minor "$to")" || continue
-        log "applying server schema deltas for $vdir ($be)"
+        log "applying server schema deltas for $vdir"
         if ! CCNET_CONF_DIR="$CCNET" SEAFILE_DATA_DIR="$DATA" SEAFILE_CENTRAL_CONF_DIR="$CONFDIR" \
-                "$INSTALLDIR/bin/seafile-db-upgrade" "$vdir" "$be"; then
+                "$INSTALLDIR/bin/seafile-db-upgrade" "$vdir"; then
             log "ERROR: applying schema deltas for $vdir failed; restore from your backup."
             exit 1
         fi
@@ -137,11 +108,11 @@ run_upgrade_scripts() {
 # server (ccnet + seafile) database initialisation/upgrade
 migrate_server() {
     if [ ! -f "$STAMP" ]; then
-        if "${backend}_initialised"; then
-            log "existing $backend data found without a version stamp; adopting as $INSTALLED"
+        if mysql_initialised; then
+            log "existing data found without a version stamp; adopting as $INSTALLED"
         else
-            log "initialising $backend databases for $INSTALLED"
-            "init_$backend"
+            log "initialising databases for $INSTALLED"
+            init_mysql
             # seaf-server expects an (empty) default library template directory
             mkdir -p "$DATA/library-template"
         fi

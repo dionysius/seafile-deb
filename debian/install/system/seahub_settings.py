@@ -8,16 +8,6 @@ import os
 # Django secret key. Generated on first install; keep it stable and private.
 SECRET_KEY = ""
 
-# Database backend. Default is SQLite (seahub.db under the data directory). For the
-# MySQL/MariaDB backend switch ENGINE to django.db.backends.mysql and fill in the
-# connection from the SEAFILE_MYSQL_DB_* environment variables.
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': '/var/lib/seafile/seahub.db',
-    }
-}
-
 # Public address clients use to reach the server.
 _proto = os.environ.get('SEAFILE_SERVER_PROTOCOL', 'http')
 _host = os.environ.get('SEAFILE_SERVER_HOSTNAME', 'localhost')

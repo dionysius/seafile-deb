@@ -7,7 +7,7 @@
 Description=Seafile database initialisation and upgrade
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 After=network.target
-# When using the MySQL/MariaDB backend on this host, order after it:
+# If the MySQL/MariaDB server runs on this system, order after it:
 #After=mariadb.service
 #Requires=mariadb.service
 
@@ -38,8 +38,8 @@ StateDirectoryMode=0750
 UMask=0027
 
 ## Sandboxing and isolation
-# Looser than the daemons: migration forks shell/python upgrade scripts and the
-# sqlite3/mysqldump tools, so it needs a broader profile than seaf-server.
+# Looser than the daemons: migration forks shell/python upgrade scripts, so it
+# needs a broader profile than seaf-server.
 NoNewPrivileges=true
 RestrictSUIDSGID=true
 ProtectSystem=strict

@@ -15,10 +15,7 @@ Requires=seafile-migrate.service
 # If you want to expose the server to the network directly, you may find the following useful:
 #After=network-online.target
 
-# The default database backend, SQLite, does not require any external services.
-# When using the MySQL/MariaDB backend - if running on this system - specify it as a
-# dependency, such that Seafile is only started after (`After=`) the DB has
-# successfully (`Requires=`) started:
+# If the MySQL/MariaDB server runs on this system, order after it:
 #After=mariadb.service
 #Requires=mariadb.service
 

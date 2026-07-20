@@ -59,6 +59,7 @@ Depends: python3-pymysql,
          ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends},
+Suggests: default-mysql-server | virtual-mysql-server,
 Built-Using: ${misc:Built-Using},
 Description: Open source cloud storage and file sync server
  Seafile is a self-hosted file sync and share solution with high performance

@@ -34,7 +34,7 @@ export UV_CACHE_DIR = $(CURDIR)/debian/.uvcache
 # keep npm's cache inside the build tree
 export npm_config_cache = $(CURDIR)/debian/.npmcache
 
-# --with-mysql helper; the sqlite backend is always built and is the default
+# --with-mysql helper
 MARIADB_CONFIG := $(or $(wildcard /usr/bin/mariadb_config),/usr/bin/mysql_config)
 
 # go: caches inside the build tree, no toolchain downloads
