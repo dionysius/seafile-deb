@@ -25,13 +25,13 @@ UV_VERSION = 0.11.26
 UV_SHA256_x86_64 = 6426a73c3837e6e2483ee344cbc00f36394d179afcba6183cb77437e67db4af0
 UV_SHA256_aarch64 = befa1a59c91e96eb601b0fd9a97c03dd666f17baba644b2b4db9c59a767e387e
 UV = $(CURDIR)/debian/.buildbin/uv
-# the venv must match the runtime interpreter; cache inside the build tree (not the
-# builder's home), real copies since that cache is thrown away
+# the venv must match the runtime interpreter; cache inside the build tree, real
+# copies since that cache is thrown away
 export UV_PYTHON_PREFERENCE = only-system
 export UV_LINK_MODE = copy
 export UV_CACHE_DIR = $(CURDIR)/debian/.uvcache
 
-# keep npm's cache inside the build tree (not the builder's home)
+# keep npm's cache inside the build tree
 export npm_config_cache = $(CURDIR)/debian/.npmcache
 
 # --with-mysql helper; the sqlite backend is always built and is the default

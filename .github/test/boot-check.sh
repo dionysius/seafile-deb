@@ -5,7 +5,7 @@
 # (database init/migrate, seaf-server RPC, cache, static manifest). Waits up to WAIT for readiness,
 # prints logs on failure, exits non-zero on failure (the
 # release gate). prepare.sh already started the services; this never starts anything. Runs IN PLACE
-# as root, requires systemd, reads journald — ephemeral testbed only, never a user's live install.
+# as root, requires systemd, reads journald — ephemeral testbed only.
 #
 # Usage:  boot-check.sh [--out FILE]    # --out: append the result table to FILE (default: stdout)
 # Env:    WAIT   seconds to wait for readiness (default 120)

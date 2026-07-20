@@ -5,7 +5,7 @@
 # init branch. Self-contained — reuses the installed artifacts, no second package version needed.
 # Re-runs boot-check.sh after each simulated upgrade as the health gate. Exits non-zero on failure.
 #
-# Runs IN PLACE as root, requires systemd — ephemeral testbed only, never a user's live install.
+# Runs IN PLACE as root, requires systemd — ephemeral testbed only.
 #
 # Usage:  upgrade-check.sh [--out FILE]
 set -u

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Prepare an ephemeral system to smoke-test the seafile stack, then start the services.
 #
-# DESTRUCTIVE - installs packages. Meant for an ephemeral CI container/VM, never a real install.
+# DESTRUCTIVE - installs packages. Meant for an ephemeral CI container/VM.
 #
 # Install source (first argument):
 #   * artifacts <DIR>  -> install the freshly-built .deb files in <DIR> (the CI pipeline)
