@@ -1,9 +1,9 @@
 # gunicorn configuration for seahub. Reference:
 # https://manual.seafile.com/13.0/config/gunicorn/
-import os
 
 daemon = False
-workers = int(os.environ.get('SEAHUB_WORKERS', '3'))
+workers = 5
+threads = 4
 
 # Listen locally; the reverse proxy in front routes clients here.
 bind = '127.0.0.1:8000'
