@@ -32,19 +32,5 @@ MEDIA_ROOT = '/var/lib/seafile/seahub-data/'
 # where seafile-migrate runs collectstatic (which also builds the staticfiles manifest).
 STATIC_ROOT = '/var/lib/seafile/seahub-data/assets/'
 
-# WhiteNoise serves the collected static assets (/media/assets/) from within gunicorn
-# with immutable caching and gzip/brotli precompression, so the default needs no web
-# server for static. Dynamic media (avatars, custom logos) stays on seahub's built-in
-# SERVE_STATIC. EXTRA_ prefix because seahub's settings loader only appends lists; this
-# lands WhiteNoise where the static_view it supersedes already sat.
-EXTRA_MIDDLEWARE = ['whitenoise.middleware.WhiteNoiseMiddleware']
-
-# Content-hashed names plus the precompressed variants WhiteNoise serves; subclass of
-# the ManifestStaticFilesStorage seahub defaults to.
-STORAGES = {
-    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
-}
-
 # Optional cache (redis/memcached) configured via environment; left at the local
 # default here.

@@ -161,11 +161,9 @@ override_dh_auto_install-arch:
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
 	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|pillow-heif|$$)' | sed 's/.*/  "&",/'; \
 	  echo '  "pyOpenSSL>=24",'; \
-	  echo '  "whitenoise>=6",'; \
 	  echo '  "pillow-heif>=1.1",'; \
 	  echo ']'; } > $(TMPDEB)$(HUBPREFIX)/pyproject.toml
 # pyOpenSSL floor: uv otherwise resolves a 22.x incompatible with current cryptography
-# whitenoise (packaging addition): gunicorn serves the collected static itself
 # pillow-heif floor: upstream's ==1.0.* pin neither ships wheels nor builds for current pythons
 	cd $(TMPDEB)$(HUBPREFIX) && $(UV) lock --python python3
 	$(UV) venv --relocatable --python python3 $(TMPDEB)$(HUBPREFIX)/venv
