@@ -1,8 +1,0 @@
-# Default settings for seafile-server. This file is sourced by the seafile systemd
-# service. Intended for runtime environment configuration.
-#
-# Do not set seafile variables here - use /etc/seafile/seafile.env instead.
-# Variables here are exposed via systemd's D-Bus interface.
-
-# Timezone (TZ identifier), used for scheduled tasks and timestamps.
-TZ=Etc/UTC

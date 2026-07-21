@@ -13,11 +13,8 @@ After=network.target seafile.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-EnvironmentFile=-%E/default/seafile-server
+# Seafile configuration and secrets (DB, JWT_PRIVATE_KEY, listen address, feature toggle).
 EnvironmentFile=%E/seafile/seafile.env
-Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-# Log to stdout so the journal captures everything (journalctl -u seafile-notification).
-Environment=SEAFILE_LOG_TO_STDOUT=true
 # The notification server runs in the foreground; systemd supervises it directly.
 Type=exec
 # Runs only while seafile.env opts in.

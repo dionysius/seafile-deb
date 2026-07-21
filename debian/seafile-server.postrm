@@ -2,8 +2,8 @@
 set -e
 
 if [ "$1" = "purge" ]; then
-  for f in /etc/seafile/seafile.env /etc/seafile/seafile.conf /etc/default/seafile-server \
-           /etc/seafile/seahub_settings.py /etc/seafile/gunicorn.conf.py /etc/default/seahub; do
+  for f in /etc/seafile/seafile.env /etc/seafile/seafile.conf \
+           /etc/seafile/seahub_settings.py /etc/seafile/gunicorn.conf.py; do
     ucf --purge "$f" || true
     ucfr --purge seafile-server "$f" || true
     rm -f "$f" || true

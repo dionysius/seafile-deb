@@ -13,12 +13,8 @@ Requires=seafile-migrate.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-# Runtime environment configuration (mountpoint, extra fuse options).
-EnvironmentFile=-%E/default/seafile-fuse
 # Seafile configuration and secrets (database backend).
 EnvironmentFile=%E/seafile/seafile.env
-Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
 # Where the libraries are presented. The default mountpoint is created by
 # StateDirectory below; adjust both when changing it.
 Environment=SEAFILE_MOUNTPOINT=/var/lib/seafile/seafile-fuse

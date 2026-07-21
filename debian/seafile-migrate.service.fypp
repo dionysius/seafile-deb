@@ -12,14 +12,7 @@ After=network.target
 #Requires=mariadb.service
 
 [Service]
-## Service execution environment
-EnvironmentFile=-%E/default/seafile-server
-EnvironmentFile=%E/seafile/seafile.env
-Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-Environment=PYTHONPATH=/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
-Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
-Environment=CCNET_CONF_DIR=/var/lib/seafile/ccnet
+# The script sources seafile.env and sets up the environment for its helpers itself.
 # Run once and exit; NO RemainAfterExit, so seafile.service's Requires= re-runs it
 # on every start (including the post-upgrade restart). The script itself decides via
 # the version stamp whether there is any work to do.

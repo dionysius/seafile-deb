@@ -1,5 +1,0 @@
-# Default settings for seahub. Sourced by the seahub systemd service.
-# Do not set seafile variables here - use /etc/seafile/seafile.env instead.
-
-# Timezone (TZ identifier).
-TZ=Etc/UTC

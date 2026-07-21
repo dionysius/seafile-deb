@@ -4,12 +4,10 @@ set -e
 if [ "$1" = "configure" ]; then
   ucf --three-way /usr/share/seafile-server/seafile.env /etc/seafile/seafile.env
   ucf --three-way /usr/share/seafile-server/seafile.conf /etc/seafile/seafile.conf
-  ucf --three-way /usr/share/seafile-server/seafile-server.default /etc/default/seafile-server
   ucf --three-way /usr/share/seafile-server/seahub_settings.py /etc/seafile/seahub_settings.py
   ucf --three-way /usr/share/seafile-server/gunicorn.conf.py /etc/seafile/gunicorn.conf.py
-  ucf --three-way /usr/share/seafile-server/seahub.default /etc/default/seahub
-  for f in /etc/seafile/seafile.env /etc/seafile/seafile.conf /etc/default/seafile-server \
-           /etc/seafile/seahub_settings.py /etc/seafile/gunicorn.conf.py /etc/default/seahub; do
+  for f in /etc/seafile/seafile.env /etc/seafile/seafile.conf \
+           /etc/seafile/seahub_settings.py /etc/seafile/gunicorn.conf.py; do
     ucfr seafile-server "$f"
   done
 

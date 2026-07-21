@@ -7,11 +7,10 @@ HUB=/usr/lib/seahub
 VENV="$HUB/venv"
 
 export DJANGO_SETTINGS_MODULE=seahub.settings
+# seaserv requires the conf and data dirs at import
 export SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 export SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
-export CCNET_CONF_DIR=/var/lib/seafile/ccnet
-export SEAHUB_DIR="$HUB/seahub"
-export PYTHONPATH="$HUB/seahub:$HUB/seahub/thirdpart:$HUB:/usr/lib/seafile/lib/python3/site-packages:/etc/seafile"
+export PYTHONPATH="$HUB/seahub:$HUB/seahub/thirdpart:$HUB:/usr/lib/seafile/lib/python3/site-packages"
 
 if [ -f /etc/seafile/seafile.env ]; then
     set -a; . /etc/seafile/seafile.env; set +a

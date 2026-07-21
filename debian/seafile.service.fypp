@@ -22,17 +22,8 @@ Requires=seafile-migrate.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-# Runtime environment configuration (non-seafile variables).
-EnvironmentFile=-%E/default/seafile-server
 # Seafile configuration and secrets (DB, cache, JWT_PRIVATE_KEY, hostname, feature toggles).
 EnvironmentFile=%E/seafile/seafile.env
-# Locate the compiled daemons and their python modules.
-Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-Environment=PYTHONPATH=/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
-Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
-# Log to stdout so the journal captures everything (journalctl -u seafile).
-Environment=SEAFILE_LOG_TO_STDOUT=true
 # Service execution. seaf-server runs in the foreground (-f); systemd supervises it
 # directly. -p is the RPC pipe directory shared with the file server and seahub.
 Type=exec

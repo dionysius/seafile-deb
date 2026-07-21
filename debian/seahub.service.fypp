@@ -16,18 +16,16 @@ Requires=seafile-migrate.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-# Runtime environment configuration (gunicorn workers, non-seafile variables).
-EnvironmentFile=-%E/default/seahub
 # Seafile configuration and secrets (DB, cache, JWT_PRIVATE_KEY, hostname).
 EnvironmentFile=%E/seafile/seafile.env
-# Locate the seahub app, the bundled python components, the seaserv module and the
-# central config (so seahub_settings.py is importable).
-Environment=PYTHONPATH=/usr/lib/seahub/seahub:/usr/lib/seahub/seahub/thirdpart:/usr/lib/seahub:/usr/lib/seafile/lib/python3/site-packages:/etc/seafile
+# Locate the seahub app, its bundled thirdpart components, seafevents and the
+# seaserv/pysearpc modules.
+Environment=PYTHONPATH=/usr/lib/seahub/seahub:/usr/lib/seahub/seahub/thirdpart:/usr/lib/seahub:/usr/lib/seafile/lib/python3/site-packages
 Environment=DJANGO_SETTINGS_MODULE=seahub.settings
-Environment=SEAHUB_DIR=/usr/lib/seahub/seahub
+# seaserv requires the conf and data dirs at import; the pipe path locates
+# seaf-server's RPC socket.
 Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
 Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
-Environment=CCNET_CONF_DIR=/var/lib/seafile/ccnet
 Environment=SEAFILE_RPC_PIPE_PATH=/run/seafile
 WorkingDirectory=/usr/lib/seahub/seahub
 Type=exec

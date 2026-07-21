@@ -14,13 +14,8 @@ Wants=seafile.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-EnvironmentFile=-%E/default/seafile-server
+# Seafile configuration and secrets (DB, cache, JWT_PRIVATE_KEY, feature toggles).
 EnvironmentFile=%E/seafile/seafile.env
-Environment=PATH=/usr/lib/seafile/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-Environment=SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
-# Log to stdout so the journal captures everything (journalctl -u seafile-fileserver).
-Environment=SEAFILE_LOG_TO_STDOUT=true
 # The go file server runs in the foreground; systemd supervises it directly.
 Type=exec
 # Runs only while seafile.env opts in; when false, seaf-server's built-in
