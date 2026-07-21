@@ -86,7 +86,7 @@ STATIC_ROOT = '/var/lib/seafile/seahub-data/assets/'
 #SHARE_LINK_PASSWORD_MIN_LENGTH = 10
 #ENABLE_SHARE_TO_ALL_GROUPS = False
 
-### Rarely needed ###
+### Other options ###
 # Terms shown and required on first login.
 #ENABLE_TERMS_AND_CONDITIONS = False
 # Disable the web UI settings storage so only this file applies.
