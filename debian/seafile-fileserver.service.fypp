@@ -42,6 +42,13 @@ UMask=0027
 
 ## Connection and process limits
 LimitNOFILE=1048576
+#TasksMax=256
+# Customize limits to your setup and expected usage spikes. Memory scales with
+# the fs-object cache (fs_cache_limit in seafile.conf, ~1G effective by default)
+# plus per-transfer buffers.
+#CPUQuota=400%
+#MemoryHigh=2G
+#MemoryMax=3G
 
 ## Sandboxing and isolation
 # An overview is available using `systemd-analyze security seafile-fileserver`.

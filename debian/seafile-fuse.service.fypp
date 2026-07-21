@@ -47,6 +47,14 @@ StateDirectory=seafile seafile/seafile-data seafile/seafile-fuse
 StateDirectoryMode=0750
 UMask=0027
 
+## Connection and process limits
+LimitNOFILE=1048576
+#TasksMax=128
+# Customize limits to your setup and expected usage spikes.
+#CPUQuota=200%
+#MemoryHigh=1G
+#MemoryMax=2G
+
 ## Sandboxing and isolation
 # Not sandboxed: mounting as an unprivileged user runs the setuid fusermount
 # helper (incompatible with NoNewPrivileges and every option implying it), and

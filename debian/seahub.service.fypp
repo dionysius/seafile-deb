@@ -48,7 +48,13 @@ RuntimeDirectory=seahub
 UMask=0027
 
 ## Connection and process limits
-LimitNOFILE=1048576
+# Memory and tasks scale with the gunicorn workers and threads (gunicorn.conf.py);
+# each worker holds a full django instance (roughly 150-300M).
+#TasksMax=128
+# Customize limits to your setup and expected usage spikes.
+#CPUQuota=400%
+#MemoryHigh=2G
+#MemoryMax=2.5G
 
 ## Sandboxing and isolation
 # An overview is available using `systemd-analyze security seahub`.
