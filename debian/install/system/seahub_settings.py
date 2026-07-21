@@ -7,7 +7,8 @@
 # Many of these can also be changed in the admin web UI (System Admin > Settings),
 # which stores them in the database and overrides this file.
 
-# Django secret key. Generated on first install; keep it stable and private.
+# Django secret key. Generate one, e.g. `openssl rand -hex 32`; keep it stable
+# and private.
 SECRET_KEY = ""
 
 # User-uploaded content (avatars, thumbnails).

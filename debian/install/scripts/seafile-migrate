@@ -29,12 +29,18 @@ fi
 
 log() { echo "seafile-migrate: $*"; }
 
-# The MySQL/MariaDB connection is mandatory; the whole service stack gates on this
-# unit, so an unconfigured install stops here with one actionable message.
-if [ -z "${SEAFILE_MYSQL_DB_PASSWORD:-}" ]; then
-    log "ERROR: SEAFILE_MYSQL_DB_PASSWORD is not set in $CONFDIR/seafile.env."
-    log "Create the databases and user, fill in the SEAFILE_MYSQL_DB_* variables,"
-    log "then restart seafile. See https://github.com/dionysius/seafile-deb/wiki"
+# The DB connection and secrets are mandatory and have no defaults; the whole
+# service stack gates on this unit, so an unconfigured install stops here with
+# one actionable message.
+missing=""
+[ -n "${SEAFILE_MYSQL_DB_PASSWORD:-}" ] || missing="$missing SEAFILE_MYSQL_DB_PASSWORD (seafile.env)"
+[ -n "${JWT_PRIVATE_KEY:-}" ] || missing="$missing JWT_PRIVATE_KEY (seafile.env)"
+grep -q '^SECRET_KEY = ""' "$CONFDIR/seahub_settings.py" 2>/dev/null && missing="$missing SECRET_KEY (seahub_settings.py)"
+if [ -n "$missing" ]; then
+    log "ERROR: not configured yet:$missing"
+    log "Create the databases and user, fill in the SEAFILE_MYSQL_DB_* variables and"
+    log "generate the secrets (openssl rand -hex 32), then restart seafile."
+    log "See https://github.com/dionysius/seafile-deb/wiki"
     exit 1
 fi
 
