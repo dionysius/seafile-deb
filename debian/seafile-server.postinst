@@ -1,29 +1,13 @@
 #!/bin/sh
 set -e
 
+# Always provide --three-way for ucf comparison (unable to configure, rest of dh_ucf still valid and
+# it should not prompt twice for the same file since the original is cached by ucf)
 if [ "$1" = "configure" ]; then
   ucf --three-way /usr/share/seafile-server/seafile.env /etc/seafile/seafile.env
   ucf --three-way /usr/share/seafile-server/seafile.conf /etc/seafile/seafile.conf
   ucf --three-way /usr/share/seafile-server/seahub_settings.py /etc/seafile/seahub_settings.py
   ucf --three-way /usr/share/seafile-server/gunicorn.conf.py /etc/seafile/gunicorn.conf.py
-  for f in /etc/seafile/seafile.env /etc/seafile/seafile.conf \
-           /etc/seafile/seahub_settings.py /etc/seafile/gunicorn.conf.py; do
-    ucfr seafile-server "$f"
-  done
-
-  # generate the shared JWT signing key on first install
-  envf=/etc/seafile/seafile.env
-  if [ -f "$envf" ] && grep -q '^JWT_PRIVATE_KEY=$' "$envf"; then
-    key=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')
-    sed -i "s|^JWT_PRIVATE_KEY=\$|JWT_PRIVATE_KEY=$key|" "$envf"
-  fi
-
-  # generate the django secret key on first install
-  settings=/etc/seafile/seahub_settings.py
-  if [ -f "$settings" ] && grep -q '^SECRET_KEY = ""$' "$settings"; then
-    key=$(od -An -N37 -tx1 /dev/urandom | tr -d ' \n')
-    sed -i "s|^SECRET_KEY = \"\"\$|SECRET_KEY = \"$key\"|" "$settings"
-  fi
 fi
 
 #DEBHELPER#

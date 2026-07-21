@@ -1,15 +1,9 @@
 #!/bin/sh
 set -e
 
+#DEBHELPER#
+
 if [ "$1" = "purge" ]; then
-  for f in /etc/seafile/seafile.env /etc/seafile/seafile.conf \
-           /etc/seafile/seahub_settings.py /etc/seafile/gunicorn.conf.py; do
-    ucf --purge "$f" || true
-    ucfr --purge seafile-server "$f" || true
-    rm -f "$f" || true
-  done
   rmdir /etc/seafile 2>/dev/null || true
   # /var/lib/seafile holds user data; deliberately not removed
 fi
-
-#DEBHELPER#
