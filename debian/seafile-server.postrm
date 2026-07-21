@@ -1,9 +1,0 @@
-#!/bin/sh
-set -e
-
-#DEBHELPER#
-
-if [ "$1" = "purge" ]; then
-  rmdir /etc/seafile 2>/dev/null || true
-  # /var/lib/seafile holds user data; deliberately not removed
-fi
