@@ -15,23 +15,22 @@ Requires=seafile-migrate.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# Where the libraries are presented. The default mountpoint is created by
-# StateDirectory below; adjust both when changing it.
-Environment=SEAFILE_MOUNTPOINT=/var/lib/seafile/seafile-fuse
 # Extra fuse options. Only the mounting user (seafile) can access the mount by
-# default; set "-o allow_other" here (requires user_allow_other in /etc/fuse.conf)
+# default; set "-o allow_other" (requires user_allow_other in /etc/fuse.conf)
 # to expose it to other users.
 Environment=SEAFILE_FUSE_OPTS=
 # Runs in the foreground (-f); systemd supervises it directly. Logs to stdout (-l -).
+# The libraries are presented at the seafile-fuse state directory (%S = /var/lib);
+# adjust ExecStart, ExecStopPost and StateDirectory together when changing it.
 Type=exec
 ExecStart=/usr/lib/seafile/bin/seaf-fuse -f \
   -F /etc/seafile \
   -c /var/lib/seafile/ccnet \
   -d /var/lib/seafile/seafile-data \
   -l - \
-  $SEAFILE_FUSE_OPTS ${SEAFILE_MOUNTPOINT}
+  $SEAFILE_FUSE_OPTS %S/seafile/seafile-fuse
 # Clean up a stale mountpoint after unclean exits.
-ExecStopPost=-/usr/bin/fusermount -uz ${SEAFILE_MOUNTPOINT}
+ExecStopPost=-/usr/bin/fusermount -uz %S/seafile/seafile-fuse
 WorkingDirectory=/var/lib/seafile
 Restart=on-failure
 RestartSec=5s
