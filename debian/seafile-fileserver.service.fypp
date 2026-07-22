@@ -22,9 +22,9 @@ Type=exec
 # fileserver owns [fileserver] host:port instead.
 ExecCondition=/bin/sh -ec '[ "$ENABLE_GO_FILESERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/fileserver \
-  -F /etc/seafile \
-  -d /var/lib/seafile/seafile-data \
-  -p /run/seafile
+  -F %E/seafile \
+  -d ${SEAFILE_DATA_DIR} \
+  -p %t/seafile
 WorkingDirectory=/var/lib/seafile
 Restart=on-failure
 RestartSec=5s

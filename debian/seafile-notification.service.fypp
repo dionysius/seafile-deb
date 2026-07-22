@@ -19,7 +19,7 @@ EnvironmentFile=%E/seafile/seafile.env
 Type=exec
 # Runs only while seafile.env opts in.
 ExecCondition=/bin/sh -ec '[ "$ENABLE_NOTIFICATION_SERVER" = true ]'
-ExecStart=/usr/lib/seafile/bin/notification-server -c /etc/seafile
+ExecStart=/usr/lib/seafile/bin/notification-server -c %E/seafile
 WorkingDirectory=/var/lib/seafile
 Restart=on-failure
 RestartSec=5s

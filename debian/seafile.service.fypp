@@ -28,10 +28,10 @@ EnvironmentFile=%E/seafile/seafile.env
 # pipe directory shared with the file server and seahub.
 Type=exec
 ExecStart=/usr/lib/seafile/bin/seaf-server \
-  -F /etc/seafile \
-  -c /var/lib/seafile/ccnet \
-  -d /var/lib/seafile/seafile-data \
-  -p /run/seafile \
+  -F %E/seafile \
+  -c %S/seafile/ccnet \
+  -d ${SEAFILE_DATA_DIR} \
+  -p %t/seafile \
   -f
 WorkingDirectory=/var/lib/seafile
 # Restart on failure

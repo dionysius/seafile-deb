@@ -24,9 +24,9 @@ Environment=SEAFILE_FUSE_OPTS=
 # adjust ExecStart, ExecStopPost and StateDirectory together when changing it.
 Type=exec
 ExecStart=/usr/lib/seafile/bin/seaf-fuse -f \
-  -F /etc/seafile \
-  -c /var/lib/seafile/ccnet \
-  -d /var/lib/seafile/seafile-data \
+  -F %E/seafile \
+  -c %S/seafile/ccnet \
+  -d ${SEAFILE_DATA_DIR} \
   -l - \
   $SEAFILE_FUSE_OPTS %S/seafile/seafile-fuse
 # Clean up a stale mountpoint after unclean exits.

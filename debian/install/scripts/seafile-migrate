@@ -17,12 +17,11 @@ INSTALLDIR=/usr/lib/seafile
 STATEDIR=/var/lib/seafile
 CONFDIR=/etc/seafile
 CCNET="$STATEDIR/ccnet"
-DATA="$STATEDIR/seafile-data"
 STAMP="$STATEDIR/current_version"
 
 INSTALLED=$(cat "$INSTALLDIR/version")
 
-# Load the seafile environment (database credentials).
+# Load the seafile environment (database credentials, data dir).
 if [ -f "$CONFDIR/seafile.env" ]; then
     set -a; . "$CONFDIR/seafile.env"; set +a
 fi
@@ -33,6 +32,7 @@ log() { echo "seafile-migrate: $*"; }
 # service stack gates on this unit, so an unconfigured install stops here with
 # one actionable message.
 missing=""
+[ -n "${SEAFILE_DATA_DIR:-}" ] || missing="$missing SEAFILE_DATA_DIR (seafile.env)"
 [ -n "${SEAFILE_MYSQL_DB_PASSWORD:-}" ] || missing="$missing SEAFILE_MYSQL_DB_PASSWORD (seafile.env)"
 [ -n "${JWT_PRIVATE_KEY:-}" ] || missing="$missing JWT_PRIVATE_KEY (seafile.env)"
 grep -q '^SECRET_KEY = ""' "$CONFDIR/seahub_settings.py" 2>/dev/null && missing="$missing SECRET_KEY (seahub_settings.py)"
@@ -101,7 +101,7 @@ run_upgrade_scripts() {
         dpkg --compare-versions "$vmm" gt "$(major_minor "$from")" || continue
         dpkg --compare-versions "$vmm" le "$(major_minor "$to")" || continue
         log "applying server schema deltas for $vdir"
-        if ! CCNET_CONF_DIR="$CCNET" SEAFILE_DATA_DIR="$DATA" SEAFILE_CENTRAL_CONF_DIR="$CONFDIR" \
+        if ! CCNET_CONF_DIR="$CCNET" SEAFILE_CENTRAL_CONF_DIR="$CONFDIR" \
                 "$INSTALLDIR/bin/seafile-db-upgrade" "$vdir"; then
             log "ERROR: applying schema deltas for $vdir failed; restore from your backup."
             exit 1
@@ -120,7 +120,7 @@ migrate_server() {
             log "initialising databases for $INSTALLED"
             init_mysql
             # seaf-server expects an (empty) default library template directory
-            mkdir -p "$DATA/library-template"
+            mkdir -p "$SEAFILE_DATA_DIR/library-template"
         fi
         echo "$INSTALLED" > "$STAMP"
         return 0

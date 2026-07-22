@@ -7,14 +7,13 @@ HUB=/usr/lib/seahub
 VENV="$HUB/venv"
 
 export DJANGO_SETTINGS_MODULE=seahub.settings
-# seaserv requires the conf and data dirs at import
+# seaserv requires the conf dir at import (the data dir comes from seafile.env)
 export SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-export SEAFILE_DATA_DIR=/var/lib/seafile/seafile-data
 export PYTHONPATH="$HUB/seahub:$HUB/seahub/thirdpart:$HUB:/usr/lib/seafile/lib/python3/site-packages"
 
-if [ -f /etc/seafile/seafile.env ]; then
-    set -a; . /etc/seafile/seafile.env; set +a
-fi
+set -a
+. /etc/seafile/seafile.env
+set +a
 
 cd "$HUB/seahub"
 echo "seahub-migrate: applying database migrations"
