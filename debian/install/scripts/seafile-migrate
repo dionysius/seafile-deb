@@ -3,7 +3,9 @@
 #
 # State model:
 #   - the installed version is baked into /usr/lib/seafile/version at build time
-#   - the on-disk data version is a stamp file at /var/lib/seafile/current_version
+#   - the on-disk data version is a stamp file at $SEAFILE_DATA_DIR/current_version
+#     (same location and semantics as upstream's docker deployment, so the stamp
+#     travels with the object store on relocation, restore or docker migration)
 #   - no stamp + no data  -> initialise the schema
 #   - no stamp + data     -> adopt the existing data (just write the stamp)
 #   - installed == stamp  -> nothing to do
@@ -17,7 +19,6 @@ INSTALLDIR=/usr/lib/seafile
 STATEDIR=/var/lib/seafile
 CONFDIR=/etc/seafile
 CCNET="$STATEDIR/ccnet"
-STAMP="$STATEDIR/current_version"
 
 INSTALLED=$(cat "$INSTALLDIR/version")
 
@@ -43,6 +44,7 @@ if [ -n "$missing" ]; then
     log "See https://github.com/dionysius/seafile-deb/wiki"
     exit 1
 fi
+STAMP="$SEAFILE_DATA_DIR/current_version"
 
 # --- mysql helpers ----------------------------------------------------------
 
