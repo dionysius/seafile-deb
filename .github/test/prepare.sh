@@ -46,6 +46,26 @@ else
 fi
 echo "--- installed ---"; dpkg -l 'seafile*' 'libsearpc*' | awk '/^ii/{print $2, $3}'
 
+info "Provision the database and secrets (normally done by the admin, see the wiki)"
+apt-get install -y -qq mariadb-server openssl
+systemctl start mariadb.service
+DBPW=$(openssl rand -hex 16)
+mysql <<SQL
+CREATE DATABASE ccnet_db CHARACTER SET utf8mb4;
+CREATE DATABASE seafile_db CHARACTER SET utf8mb4;
+CREATE DATABASE seahub_db CHARACTER SET utf8mb4;
+CREATE USER 'seafile'@'127.0.0.1' IDENTIFIED BY '$DBPW';
+GRANT ALL PRIVILEGES ON ccnet_db.* TO 'seafile'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON seafile_db.* TO 'seafile'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON seahub_db.* TO 'seafile'@'127.0.0.1';
+FLUSH PRIVILEGES;
+SQL
+sed -i \
+  -e "s|^SEAFILE_MYSQL_DB_PASSWORD=$|SEAFILE_MYSQL_DB_PASSWORD=$DBPW|" \
+  -e "s|^JWT_PRIVATE_KEY=$|JWT_PRIVATE_KEY=$(openssl rand -hex 32)|" \
+  /etc/seafile/seafile.env
+sed -i "s|^SECRET_KEY = \"\"|SECRET_KEY = \"$(openssl rand -hex 32)\"|" /etc/seafile/seahub_settings.py
+
 info "Start services (seahub and seafile pull in the seafile-migrate one-shot)"
 systemctl start seafile.service seahub.service || true
 

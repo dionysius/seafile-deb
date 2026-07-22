@@ -11,7 +11,8 @@
 set -u
 OUT="${OUT:-/dev/stdout}"
 HERE=$(cd "$(dirname "$0")" && pwd)
-STAMP=/var/lib/seafile/current_version
+# the stamp lives in the configured data dir
+STAMP="$(set -a; . /etc/seafile/seafile.env; echo "$SEAFILE_DATA_DIR/current_version")"
 info()  { printf '\n========== %s ==========\n' "$1"; }
 error() { local code="$1"; shift; echo "$*" >&2; exit "$code"; }
 while [ $# -gt 0 ]; do
