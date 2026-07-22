@@ -13,7 +13,7 @@ Requires=seafile-migrate.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-# Seafile configuration and secrets (database backend).
+# Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
 # Where the libraries are presented. The default mountpoint is created by
 # StateDirectory below; adjust both when changing it.
@@ -22,7 +22,7 @@ Environment=SEAFILE_MOUNTPOINT=/var/lib/seafile/seafile-fuse
 # default; set "-o allow_other" here (requires user_allow_other in /etc/fuse.conf)
 # to expose it to other users.
 Environment=SEAFILE_FUSE_OPTS=
-# Foreground (-f); systemd supervises it directly. Logs to stdout (-l -).
+# Runs in the foreground (-f); systemd supervises it directly. Logs to stdout (-l -).
 Type=exec
 ExecStart=/usr/lib/seafile/bin/seaf-fuse -f \
   -F /etc/seafile \

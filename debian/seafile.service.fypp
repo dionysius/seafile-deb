@@ -22,10 +22,10 @@ Requires=seafile-migrate.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-# Seafile configuration and secrets (DB, cache, JWT_PRIVATE_KEY, hostname, feature toggles).
+# Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# Service execution. seaf-server runs in the foreground (-f); systemd supervises it
-# directly. -p is the RPC pipe directory shared with the file server and seahub.
+# Runs in the foreground (-f); systemd supervises it directly. -p is the RPC
+# pipe directory shared with the file server and seahub.
 Type=exec
 ExecStart=/usr/lib/seafile/bin/seaf-server \
   -F /etc/seafile \
@@ -57,7 +57,7 @@ UMask=0027
 
 ## Connection and process limits
 LimitNOFILE=1048576
-# seaf-server runs a fixed 50-thread RPC pool plus DB pool and worker threads.
+# Sized for the fixed 50-thread RPC pool plus the DB pool and worker threads.
 #TasksMax=256
 # Customize limits to your setup and expected usage spikes.
 #CPUQuota=200%
@@ -65,12 +65,12 @@ LimitNOFILE=1048576
 #MemoryMax=2G
 
 ## Sandboxing and isolation
-# An overview is available using `systemd-analyze security seafile`.
+# An overview is available using `systemd-analyze security <service>`.
 
 ## Capabilities
 AmbientCapabilities=
 CapabilityBoundingSet=
-# Uncomment these to allow seaf-server to bind to ports in the range 0-1024.
+# Uncomment these to allow binding to ports in the range 0-1024.
 #AmbientCapabilities=CAP_NET_BIND_SERVICE
 #CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 

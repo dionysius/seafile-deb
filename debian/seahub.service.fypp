@@ -16,7 +16,7 @@ Requires=seafile-migrate.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-# Seafile configuration and secrets (DB, cache, JWT_PRIVATE_KEY, hostname).
+# Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
 # Locate the seahub app, its bundled thirdpart components, seafevents and the
 # seaserv/pysearpc modules.
@@ -57,7 +57,7 @@ UMask=0027
 #MemoryMax=2.5G
 
 ## Sandboxing and isolation
-# An overview is available using `systemd-analyze security seahub`.
+# An overview is available using `systemd-analyze security <service>`.
 AmbientCapabilities=
 CapabilityBoundingSet=
 NoNewPrivileges=true

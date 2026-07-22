@@ -14,9 +14,9 @@ Wants=seafile.service
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
-# Seafile configuration and secrets (DB, cache, JWT_PRIVATE_KEY, feature toggles).
+# Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# The go file server runs in the foreground; systemd supervises it directly.
+# Runs in the foreground; systemd supervises it directly.
 Type=exec
 # Runs only while seafile.env opts in; when false, seaf-server's built-in
 # fileserver owns [fileserver] host:port instead.
@@ -51,10 +51,10 @@ LimitNOFILE=1048576
 #MemoryMax=3G
 
 ## Sandboxing and isolation
-# An overview is available using `systemd-analyze security seafile-fileserver`.
+# An overview is available using `systemd-analyze security <service>`.
 AmbientCapabilities=
 CapabilityBoundingSet=
-# Uncomment these to allow the file server to bind to ports in the range 0-1024.
+# Uncomment these to allow binding to ports in the range 0-1024.
 #AmbientCapabilities=CAP_NET_BIND_SERVICE
 #CapabilityBoundingSet=CAP_NET_BIND_SERVICE
 
