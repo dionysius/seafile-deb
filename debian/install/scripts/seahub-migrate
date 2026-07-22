@@ -6,11 +6,8 @@ set -euo pipefail
 HUB=/usr/lib/seahub
 VENV="$HUB/venv"
 
-export DJANGO_SETTINGS_MODULE=seahub.settings
-# seaserv requires the conf dir at import (the data dir comes from seafile.env)
-export SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-export PYTHONPATH="$HUB/seahub:$HUB/seahub/thirdpart:$HUB:/usr/lib/seafile/lib/python3/site-packages"
-
+# The seafile environment provides both the seahub runtime environment (install
+# layout, Seahub section) and the admin configuration.
 set -a
 . /etc/seafile/seafile.env
 set +a

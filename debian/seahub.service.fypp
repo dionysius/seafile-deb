@@ -18,14 +18,6 @@ Requires=seafile-migrate.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# Locate the seahub app, its bundled thirdpart components, seafevents and the
-# seaserv/pysearpc modules.
-Environment=PYTHONPATH=/usr/lib/seahub/seahub:/usr/lib/seahub/seahub/thirdpart:/usr/lib/seahub:/usr/lib/seafile/lib/python3/site-packages
-Environment=DJANGO_SETTINGS_MODULE=seahub.settings
-# seaserv requires the conf dir at import (the data dir comes from the service
-# configuration file); the pipe path locates seaf-server's RPC socket.
-Environment=SEAFILE_CENTRAL_CONF_DIR=/etc/seafile
-Environment=SEAFILE_RPC_PIPE_PATH=/run/seafile
 WorkingDirectory=/usr/lib/seahub/seahub
 Type=exec
 # The python dependencies ship pre-compiled in the venv; migrations run in the
