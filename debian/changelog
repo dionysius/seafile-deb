@@ -1,5 +1,6 @@
-seafile-server (13.0.25-1~alpha5) unstable; urgency=medium
+seafile-server (13.0.25-1~alpha6) unstable; urgency=medium
 
+  * add seahub dir to seafile.env
   * rename units to a seafile- prefix (core: seafile, seahub keeps its name), decouple units via Wants (no stop/restart cascade)
   * drop whitenoise, static assets are served by seahub's SERVE_STATIC default
   * mysql-only backend, migrate gates the stack until credentials are configured
