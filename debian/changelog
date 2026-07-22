@@ -1,4 +1,4 @@
-seafile-server (13.0.25-1~alpha4) unstable; urgency=medium
+seafile-server (13.0.25-1~alpha5) unstable; urgency=medium
 
   * rename units to a seafile- prefix (core: seafile, seahub keeps its name), decouple units via Wants (no stop/restart cascade)
   * drop whitenoise, static assets are served by seahub's SERVE_STATIC default
