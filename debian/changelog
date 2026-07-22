@@ -1,16 +1,42 @@
+seafile-server (13.0.25-1~alpha4) unstable; urgency=medium
+
+  * rename units to a seafile- prefix (core: seafile, seahub keeps its name), decouple units via Wants (no stop/restart cascade)
+  * drop whitenoise, static assets are served by seahub's SERVE_STATIC default
+  * mysql-only backend, migrate gates the stack until credentials are configured
+  * enable the go fileserver and notification server by default, units gate on their seafile.env toggle
+  * drop SERVICE_URL glue (upstream derives it from the environment), fix references stale since the seahub merge
+  * pass REMOTE_USER through gunicorn like upstream's generated config
+  * workers and threads set in gunicorn.conf like upstream, drop the env hook
+  * fix dead documentation references
+  * drop the /etc/default layer and env vars nothing reads, migrate scripts own their environment
+  * config templates document the full option surface, notification server binds localhost, seahub logs to the journal
+  * connection and process limit defaults sized per service, LimitNOFILE only where fd counts scale
+  * dh_ucf owns ucf registration and purge, postinst only adds the --three-way pass
+  * secrets are set by the admin instead of generated, migrate gates on all of them
+  * dpkg removes /etc/seafile on purge itself, the generated postrm suffices
+  * neutral "Other options" section naming in the config templates
+  * seafile.conf notes which file server reads single-implementation options
+  * unit comments stay service-agnostic so the units diff cleanly
+  * seaf-fuse mounts at its state directory, fuse options are a unit directive
+  * data dir configured once in seafile.env, fixed unit paths use specifiers
+  * version stamp lives in the data dir like upstream docker deployments
+  * seahub predefined environment as a section in seafile.env
+
+ -- dionysius <dragon.dionysius@gmail.com>  Wed, 22 Jul 2026 21:33:27 +0200
+
 seafile-server (13.0.25-1~alpha3) unstable; urgency=medium
 
-  * debian: compute daemon and venv-wheel shlibdeps in one run
+  * compute daemon and venv-wheel shlibdeps in one run
 
  -- dionysius <dragon.dionysius@gmail.com>  Sun, 19 Jul 2026 14:58:08 +0200
 
 seafile-server (13.0.25-1~alpha2) unstable; urgency=medium
 
-  * debian: patch the missing fsck include instead of demoting compiler errors
-  * debian: use the distribution libsearpc, track pinned libevhtp via uscan
-  * debian: directory-level config confidentiality, migrations without CLI database tools or backups
-  * debian: units for trixie+ only, read-only config mounts, add seaf-fuse and seaf-notification services
-  * debian: merge seahub into seafile-server, split seafile-fuse and arch-independent seafile-server-data
+  * patch the missing fsck include instead of demoting compiler errors
+  * use the distribution libsearpc, track pinned libevhtp via uscan
+  * directory-level config confidentiality, migrations without CLI database tools or backups
+  * units for trixie+ only, read-only config mounts, add seaf-fuse and seaf-notification services
+  * merge seahub into seafile-server, split seafile-fuse and arch-independent seafile-server-data
   * docs+ci: follow the new packaging layout
 
  -- dionysius <dragon.dionysius@gmail.com>  Sun, 19 Jul 2026 14:17:37 +0200
