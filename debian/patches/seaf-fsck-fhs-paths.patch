@@ -1,0 +1,125 @@
+Description: seaf-fsck.sh: use this packaging's fixed FHS paths, add a
+ running-check before repairing the object store, require the seafile identity
+ Same TOPDIR-detection problem as reset-admin.sh (see reset-admin-fhs-paths.patch);
+ sources /etc/seafile/seafile.env instead. Unlike upstream's seaf-gc.sh, this
+ script had no guard against running concurrently with the live daemons - added
+ one (same validate_already_running as the patched seaf-gc.sh: checks
+ systemctl unit state for seafile.service, seafile-fileserver.service,
+ seahub.service and seafile-fuse.service), since --repair mutates the object
+ store just as gc does. Re-execs as the seafile user via runuser when invoked
+ as anyone else, before doing anything, for the same file-ownership reason as
+ seaf-gc.sh.
+Author: dionysius <dragon.dionysius@gmail.com>
+Forwarded: not-needed
+Comment: install-layout specific, not something upstream's own tar.gz/docker install needs.
+--- a/seahub/scripts/seaf-fsck.sh
++++ b/seahub/scripts/seaf-fsck.sh
+@@ -1,18 +1,16 @@
+ #!/bin/bash
+ 
++if [ "$(id -un)" != "seafile" ]; then
++    exec runuser -u seafile -- "$(readlink -f "$0")" "$@"
++fi
++
+ echo ""
+ 
+-SCRIPT=$(readlink -f "$0")
+-INSTALLPATH=$(dirname "${SCRIPT}")
+-TOPDIR=$(dirname "${INSTALLPATH}")
+-central_config_dir=${TOPDIR}/conf
+-default_seafile_data_dir=${TOPDIR}/seafile-data
+-default_conf_dir=${TOPDIR}/conf
+-seaf_fsck=${INSTALLPATH}/seafile/bin/seaf-fsck
+-
+-export PATH=${INSTALLPATH}/seafile/bin:$PATH
+-export SEAFILE_LD_LIBRARY_PATH=${INSTALLPATH}/seafile/lib/:${INSTALLPATH}/seafile/lib64:${LD_LIBRARY_PATH}
+-export SEAFILE_CENTRAL_CONF_DIR=${default_conf_dir}
++seaf_fsck=/usr/lib/seafile/bin/seaf-fsck
++
++set -a
++. /etc/seafile/seafile.env
++set +a
+ 
+ script_name=$0
+ function usage () {
+@@ -21,55 +19,44 @@
+     echo ""
+ }
+ 
+-function set_env_config () {
+-    if [ -z "${JWT_PRIVATE_KEY}" ]; then
+-        if [ ! -e "${central_config_dir}/.env" ]; then
+-            echo "Error: .env file not found."
+-            echo "Please follow the upgrade manual to set the .env file."
+-            echo ""
+-            exit -1;
+-        fi
+-
+-        # load the .env file
+-        set -a
+-        source "${central_config_dir}/.env"
+-        set +a
+-
+-        if [ -z "${JWT_PRIVATE_KEY}" ]; then
+-            echo "Error: JWT_PRIVATE_KEY not found in .env file."
+-            echo "Please follow the upgrade manual to set the .env file."
+-            echo ""
+-            exit -1;
+-        fi
+-        export JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+-        export SEAFILE_MYSQL_DB_CCNET_DB_NAME=${SEAFILE_MYSQL_DB_CCNET_DB_NAME:-ccnet_db}
+-        export SEAFILE_MYSQL_DB_SEAFILE_DB_NAME=${SEAFILE_MYSQL_DB_SEAFILE_DB_NAME:-seafile_db}
+-        export SEAFILE_MYSQL_DB_SEAHUB_DB_NAME=${SEAFILE_MYSQL_DB_SEAHUB_DB_NAME:-seahub_db}
+-        export SEAFILE_SERVER_PROTOCOL=${SEAFILE_SERVER_PROTOCOL}
+-        export SEAFILE_SERVER_HOSTNAME=${SEAFILE_SERVER_HOSTNAME}
+-        export SITE_ROOT=${SITE_ROOT:-/}
+-    fi
+-}
+-
+ function validate_seafile_data_dir () {
+-    if [[ ! -d ${default_seafile_data_dir} ]]; then
++    if [[ ! -d ${SEAFILE_DATA_DIR} ]]; then
+         echo "Error: there is no seafile server data directory."
+-        echo "Have you run setup-seafile.sh before this?"
+         echo ""
+         exit 1;
+     fi
+ }
+ 
++function validate_unit_not_active () {
++    local unit=$1
++    if systemctl is-active --quiet "$unit" 2>/dev/null; then
++        echo "$unit is running."
++        echo
++        echo "        systemctl stop $unit"
++        echo
++        echo "Stop it and try again."
++        echo
++        exit 1
++    fi
++}
++
++function validate_already_running () {
++    validate_unit_not_active seafile.service
++    validate_unit_not_active seafile-fileserver.service
++    validate_unit_not_active seahub.service
++    validate_unit_not_active seafile-fuse.service
++}
++
+ function run_seaf_fsck () {
+     validate_seafile_data_dir;
+-    set_env_config;
++    validate_already_running;
+ 
+     echo "Starting seaf-fsck, please wait ..."
+     echo
+ 
+-    LD_LIBRARY_PATH=$SEAFILE_LD_LIBRARY_PATH ${seaf_fsck} \
+-        -d "${default_seafile_data_dir}" \
+-        -F "${default_conf_dir}" \
++    ${seaf_fsck} \
++        -d "${SEAFILE_DATA_DIR}" \
++        -F "/etc/seafile" \
+         ${seaf_fsck_opts}
+ 
+     echo "seaf-fsck run done"

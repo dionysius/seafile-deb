@@ -11,6 +11,10 @@
 # every phase below is a no-op.
 set -euo pipefail
 
+if [ "$(id -un)" != "seafile" ]; then
+    exec runuser -u seafile -- "$(readlink -f "$0")" "$@"
+fi
+
 INSTALLDIR=/usr/lib/seafile
 STATEDIR=/var/lib/seafile
 CONFDIR=/etc/seafile

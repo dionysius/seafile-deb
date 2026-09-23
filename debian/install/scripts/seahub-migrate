@@ -3,6 +3,10 @@
 # migration and asset collection, never touches ccnet/seafile.
 set -euo pipefail
 
+if [ "$(id -un)" != "seafile" ]; then
+    exec runuser -u seafile -- "$(readlink -f "$0")" "$@"
+fi
+
 HUB=/usr/lib/seahub
 
 set -a; . /etc/seafile/seafile.env; set +a

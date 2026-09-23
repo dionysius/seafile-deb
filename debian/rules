@@ -141,12 +141,21 @@ override_dh_auto_install-arch:
 	debian/helpers/third-party-go.sh fileserver notification-server \
 		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-go.txt.gz
 
-# migration assets: base schema, per-version upgrade scripts, dispatcher, version stamp
+# migration assets: base schema, per-version upgrade deltas, dispatcher, version stamp
 	cp -a scripts/sql $(TMPDEB)$(SEAFPREFIX)/sql
 	cp -a seahub/scripts/upgrade $(TMPDEB)$(SEAFPREFIX)/upgrade
+# only db_update_helper.py and the sql/ deltas are used; the .sh wrappers assume
+# upstream's own multi-version install tree
+	find $(TMPDEB)$(SEAFPREFIX)/upgrade -maxdepth 1 -name '*.sh' -delete
 	install -m 0755 debian/install/scripts/seafile-migrate $(TMPDEB)$(SEAFPREFIX)/bin/seafile-migrate
 	install -m 0755 debian/install/scripts/seafile-db-tool $(TMPDEB)$(SEAFPREFIX)/bin/seafile-db-tool
 	echo "$(DEB_VERSION_UPSTREAM)" > $(TMPDEB)$(SEAFPREFIX)/version
+
+# admin maintenance tools: patched (debian/patches) to use this packaging's FHS
+# paths instead of upstream's own install-tree detection; kept under their
+# original names, exposed on PATH via seafile-server.links
+	install -m 0755 seahub/scripts/seaf-gc.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-gc.sh
+	install -m 0755 seahub/scripts/seaf-fsck.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-fsck.sh
 
 # static/dev artefacts and the upstream supervisor; systemd runs the daemons directly
 	rm -rf $(TMPDEB)$(SEAFPREFIX)/include
@@ -180,6 +189,9 @@ override_dh_auto_install-arch:
 
 # seahub's migration step, invoked by the seafile-migrate unit
 	install -D -m 0755 debian/install/scripts/seahub-migrate $(TMPDEB)$(HUBPREFIX)/bin/seahub-migrate
+# admin tool: patched (debian/patches) to use this packaging's FHS paths, kept
+# under its original name, exposed on PATH via seafile-server.links
+	install -D -m 0755 seahub/scripts/reset-admin.sh $(TMPDEB)$(HUBPREFIX)/bin/reset-admin.sh
 
 # build-only leftovers
 	find $(TMPDEB)$(HUBPREFIX)/venv -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
@@ -198,6 +210,46 @@ override_dh_auto_install-indep:
 	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src
 	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '.git*' -prune -exec rm -rf {} + 2>/dev/null || true
 	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+
+# upstream's manual-install service-control scripts: never invoked here, and would
+# actively fight the systemd units (own start/stop dance, no awareness of what this
+# packaging already has running) if an admin ran one by mistake
+	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/bin
+	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafile.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seahub.sh \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafile-background-tasks.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafile-monitor.sh
+# redundant with this packaging's own tooling (seafile-migrate/postinst+ucf/seafile-fuse.service)
+	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile-mysql.sh \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile-mysql.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seaf-fuse.sh
+# db_update_helper.py and its sql/ deltas are only ever used from the seafile-server
+# package's own copy (/usr/lib/seafile/upgrade, seafile-db-tool); nothing reaches
+# into this one, so the whole subtree here is dead weight, not just the .sh wrappers
+	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/scripts/upgrade
+# niche/unused tools (object-store migration between backends, sqlite, ldap, pro-only,
+# search-index workers - none of this is wired up) and upstream's own dev/CI scaffolding
+	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate.py \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate-repo.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate-repo.py \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/remove-objs.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/remove-objs.py \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/run_index_master.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/run_index_worker.sh \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/sqlite2mysql.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/sqlite2mysql.py \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/parse_jwt_pk.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/pro.py \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafobj_migrate.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/index_op.py \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate_ldapusers.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seahub.conf \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/server-release.md
+	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/fabfile $(TMPDEB)$(HUBPREFIX)/seahub/tests $(TMPDEB)$(HUBPREFIX)/seahub/tools \
+		$(TMPDEB)$(HUBPREFIX)/seahub/.tx $(TMPDEB)$(HUBPREFIX)/seahub/sql
+	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/.travis.yml.bak \
+		$(TMPDEB)$(HUBPREFIX)/seahub/pylintrc $(TMPDEB)$(HUBPREFIX)/seahub/pylintrc.template \
+		$(TMPDEB)$(HUBPREFIX)/seahub/dev-requirements.txt $(TMPDEB)$(HUBPREFIX)/seahub/test-requirements.txt \
+		$(TMPDEB)$(HUBPREFIX)/seahub/code-check.sh $(TMPDEB)$(HUBPREFIX)/seahub/i18n.sh $(TMPDEB)$(HUBPREFIX)/seahub/sdoc-helper.sh \
+		$(TMPDEB)$(HUBPREFIX)/seahub/HACKING $(TMPDEB)$(HUBPREFIX)/seahub/CONTRIBUTORS \
+		$(TMPDEB)$(HUBPREFIX)/seahub/run-seahub.sh.template $(TMPDEB)$(HUBPREFIX)/seahub/send_user_notifications.sh.template \
+		$(TMPDEB)$(HUBPREFIX)/seahub/setenv.sh.template
+# reset-admin.sh/seaf-gc.sh/seaf-fsck.sh get patched (debian/patches) and
+# installed as real tools elsewhere (override_dh_auto_install-arch); drop the
+# unpatched duplicates riding along in this wholesale copy. check_init_admin.py
+# is left as unused dead weight here, awaiting the first-run bootstrap design
+	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/reset-admin.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seaf-gc.sh \
+		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/seaf-fsck.sh
 
 execute_after_dh_install-arch:
 # seafile-server.install takes the whole daemon tree; seaf-fuse ships in seafile-fuse

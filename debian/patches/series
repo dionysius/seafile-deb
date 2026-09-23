@@ -1,1 +1,4 @@
 fsck-missing-seaf-utils-include.patch
+reset-admin-fhs-paths.patch
+seaf-gc-fhs-paths.patch
+seaf-fsck-fhs-paths.patch

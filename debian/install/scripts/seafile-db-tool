@@ -14,6 +14,7 @@
 #
 # Usage: seafile-db-tool check | init <version> | upgrade <version>
 import os
+import pwd
 import sys
 
 INSTALLDIR = "/usr/lib/seafile"
@@ -64,6 +65,10 @@ def upgrade(version):
 
 
 def main():
+    if pwd.getpwuid(os.getuid()).pw_name != "seafile":
+        os.execvp("runuser", ["runuser", "-u", "seafile", "--",
+                               sys.executable, os.path.abspath(__file__), *sys.argv[1:]])
+
     args = sys.argv[1:]
     if args == ["check"]:
         check()
