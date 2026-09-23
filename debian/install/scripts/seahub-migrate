@@ -1,20 +1,16 @@
 #!/bin/bash
-# Apply seahub's database migrations (django, idempotent) and collect the static
-# files. Invoked by seafile-migrate; runs from the shipped venv.
+# seahub owns its own (django) schema; this only invokes its self-gating
+# migration and asset collection, never touches ccnet/seafile.
 set -euo pipefail
 
 HUB=/usr/lib/seahub
-VENV="$HUB/venv"
 
-# The seafile environment provides both the seahub runtime environment (install
-# layout, Seahub section) and the admin configuration.
-set -a
-. /etc/seafile/seafile.env
-set +a
+set -a; . /etc/seafile/seafile.env; set +a
 
 cd "$HUB/seahub"
 echo "seahub-migrate: applying database migrations"
-"$VENV/bin/python" manage.py migrate --noinput
-# Collect the static files (with manifest) into the writable STATIC_ROOT.
+"$HUB/venv/bin/python" manage.py migrate --noinput
+
+# Builds the staticfiles manifest into STATIC_ROOT (seahub_settings.py).
 echo "seahub-migrate: collecting static files"
-"$VENV/bin/python" manage.py collectstatic --noinput -i admin
+"$HUB/venv/bin/python" manage.py collectstatic --noinput -i admin

@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+# ccnet/seafile MySQL schema: existence check, initial load, versioned deltas.
+#
+# Init and upgrade both go through upstream's own MySQLDBUpdater.update_ccnet_sql/
+# update_seafile_sql - it takes an arbitrary sql file path, not one bound to a
+# specific version directory, so there is no separate SQL-loading code of our
+# own here, only which directory to point it at. Its per-statement error
+# handling is intentionally left as upstream wrote it (warn and keep going,
+# not fatal) - see WONTFIX-MAYBELATER.md for why a stricter local patch was
+# tried and reverted.
+#
+# seahub/seafevents schema is django's own (see seahub-migrate) and is never
+# touched here, in either mode.
+#
+# Usage: seafile-db-tool check | init <version> | upgrade <version>
+import os
+import sys
+
+INSTALLDIR = "/usr/lib/seafile"
+
+
+def _updater(version):
+    sys.path.insert(0, os.path.join(INSTALLDIR, "upgrade"))
+    import db_update_helper as h
+    return h.MySQLDBUpdater(
+        version,
+        h.DBUpdater.get_ccnet_mysql_info(version),
+        h.DBUpdater.get_seafile_mysql_info(version),
+        h.DBUpdater.get_seahub_mysql_info(),
+    )
+
+
+def _apply_dir(updater, sql_dir):
+    for name, apply_fn in (("ccnet.sql", updater.update_ccnet_sql),
+                            ("seafile.sql", updater.update_seafile_sql)):
+        path = os.path.join(sql_dir, name)
+        if os.path.exists(path):
+            apply_fn(path)
+
+
+def check():
+    import pymysql
+    con = pymysql.connect(
+        host=os.environ.get("SEAFILE_MYSQL_DB_HOST", "127.0.0.1"),
+        port=int(os.environ.get("SEAFILE_MYSQL_DB_PORT", "3306")),
+        user=os.environ.get("SEAFILE_MYSQL_DB_USER", "seafile"),
+        password=os.environ.get("SEAFILE_MYSQL_DB_PASSWORD", ""),
+        database=os.environ.get("SEAFILE_MYSQL_DB_SEAFILE_DB_NAME", "seafile_db"),
+    )
+    cur = con.cursor()
+    cur.execute("SHOW TABLES")
+    sys.exit(0 if cur.fetchone() else 1)
+
+
+def init(version):
+    # the databases and the seafile user/grants must already exist (see the
+    # wiki); this only loads the schema into them.
+    _apply_dir(_updater(version), os.path.join(INSTALLDIR, "sql/mysql"))
+
+
+def upgrade(version):
+    updater = _updater(version)
+    _apply_dir(updater, updater.sql_dir)
+
+
+def main():
+    args = sys.argv[1:]
+    if args == ["check"]:
+        check()
+    elif len(args) == 2 and args[0] in ("init", "upgrade"):
+        {"init": init, "upgrade": upgrade}[args[0]](args[1])
+    else:
+        sys.exit(f"usage: {sys.argv[0]} check|init|upgrade <version>")
+
+
+if __name__ == "__main__":
+    main()

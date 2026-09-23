@@ -145,7 +145,7 @@ override_dh_auto_install-arch:
 	cp -a scripts/sql $(TMPDEB)$(SEAFPREFIX)/sql
 	cp -a seahub/scripts/upgrade $(TMPDEB)$(SEAFPREFIX)/upgrade
 	install -m 0755 debian/install/scripts/seafile-migrate $(TMPDEB)$(SEAFPREFIX)/bin/seafile-migrate
-	install -m 0755 debian/install/scripts/seafile-db-upgrade $(TMPDEB)$(SEAFPREFIX)/bin/seafile-db-upgrade
+	install -m 0755 debian/install/scripts/seafile-db-tool $(TMPDEB)$(SEAFPREFIX)/bin/seafile-db-tool
 	echo "$(DEB_VERSION_UPSTREAM)" > $(TMPDEB)$(SEAFPREFIX)/version
 
 # static/dev artefacts and the upstream supervisor; systemd runs the daemons directly
