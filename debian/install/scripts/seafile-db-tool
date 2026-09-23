@@ -6,8 +6,8 @@
 # specific version directory, so there is no separate SQL-loading code of our
 # own here, only which directory to point it at. Its per-statement error
 # handling is intentionally left as upstream wrote it (warn and keep going,
-# not fatal) - see WONTFIX-MAYBELATER.md for why a stricter local patch was
-# tried and reverted.
+# not fatal): a rerun after an interrupted upgrade relies on this to skip past
+# already-applied statements instead of failing on them.
 #
 # seahub/seafevents schema is django's own (see seahub-migrate) and is never
 # touched here, in either mode.
