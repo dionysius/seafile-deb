@@ -2,3 +2,4 @@
 /usr/share/seafile-server/seafile.conf /etc/seafile/seafile.conf
 /usr/share/seafile-server/seahub_settings.py /etc/seafile/seahub_settings.py
 /usr/share/seafile-server/gunicorn.conf.py /etc/seafile/gunicorn.conf.py
+/usr/share/seafile-server/seafevents.conf /etc/seafile/seafevents.conf

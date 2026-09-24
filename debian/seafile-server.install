@@ -7,5 +7,6 @@ debian/install/system/seafile.env usr/share/seafile-server
 debian/install/system/seafile.conf usr/share/seafile-server
 debian/install/system/seahub_settings.py usr/share/seafile-server
 debian/install/system/gunicorn.conf.py usr/share/seafile-server
+debian/install/system/seafevents.conf usr/share/seafile-server
 usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-go.txt.gz
 usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-python.txt.gz

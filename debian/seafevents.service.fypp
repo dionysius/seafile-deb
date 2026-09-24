@@ -1,0 +1,93 @@
+# Please consider only editing this file through systemd drop-in files
+# (e.g. `systemctl edit seafevents`). This will enable you to get updates
+# to this file automatically, without your overrides being lost.
+
+# Refer to the manpage `systemd.unit` for detailed documentation on each option.
+[Unit]
+Description=Seafile background tasks and event processing (seafevents)
+Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
+After=network.target seafile.service seafile-migrate.service
+Requires=seafile-migrate.service
+# Talks to seaf-server over the RPC pipe; Wants pulls the core daemon in on
+# start without propagating stop/restart.
+Wants=seafile.service
+
+# Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
+[Service]
+## Service execution environment
+# Service configuration file.
+EnvironmentFile=%E/seafile/seafile.env
+Type=exec
+# Runs only while seafile.env opts in.
+ExecCondition=/bin/sh -ec '[ "$ENABLE_SEAFEVENTS" = true ]'
+ExecStart=/usr/lib/seahub/venv/bin/python -m seafevents.main --config-file %E/seafile/seafevents.conf
+WorkingDirectory=/usr/lib/seahub/seahub
+Restart=on-failure
+RestartSec=5s
+
+## Permissions and directories
+User=seafile
+Group=seafile
+# Read config from /etc/seafile; read/write the object store (search indexing
+# and virus scanning read file contents directly). The RPC pipe dir is
+# created and owned by seaf-server.
+ConfigurationDirectory=seafile::ro
+ConfigurationDirectoryMode=0500
+StateDirectory=seafile seafile/seafile-data
+StateDirectoryMode=0750
+UMask=0027
+
+## Connection and process limits
+#TasksMax=128
+# Customize limits to your setup; scales with which background tasks are enabled.
+#CPUQuota=200%
+#MemoryHigh=1G
+#MemoryMax=2G
+
+## Sandboxing and isolation
+# An overview is available using `systemd-analyze security <service>`.
+AmbientCapabilities=
+CapabilityBoundingSet=
+
+# Process restrictions
+NoNewPrivileges=true
+RestrictSUIDSGID=true
+SecureBits=noroot noroot-locked
+
+# Filesystem protection
+ProtectSystem=strict
+ProtectHome=true
+ProtectProc=noaccess
+ProcSubset=pid
+
+# Namespace isolation
+PrivateTmp=disconnected
+PrivateDevices=true
+PrivateIPC=true
+#:if SYSTEMD_MAJOR >= 258
+PrivateBPF=true
+#:endif
+
+# Kernel and system protection
+ProtectClock=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=strict
+
+# Execution restrictions
+# Python needs writable+executable memory.
+MemoryDenyWriteExecute=false
+SetLoginEnvironment=false
+
+# System call and network filtering
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=true
+
+# Cleanup
+RemoveIPC=true
+
+[Install]
+WantedBy=multi-user.target
