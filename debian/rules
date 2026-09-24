@@ -177,6 +177,8 @@ override_dh_auto_install-arch:
 # pillow-heif floor: upstream's ==1.0.* pin neither ships wheels nor builds for current pythons
 # django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend, declared as a
 # dependency in none of the three requirements.txt above
+# libmemcached-dev (Build-Depends) is only for this step: uv still builds django-pylibmc's
+# own pylibmc dependency from source here even though it's discarded and replaced below
 	cd $(TMPDEB)$(HUBPREFIX) && $(UV) lock --python python3
 	$(UV) venv --relocatable --python python3 $(TMPDEB)$(HUBPREFIX)/venv
 	cd $(TMPDEB)$(HUBPREFIX) && UV_PROJECT_ENVIRONMENT=$(TMPDEB)$(HUBPREFIX)/venv \
