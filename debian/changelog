@@ -1,3 +1,16 @@
+seafile-server (13.0.25-1~alpha8) unstable; urgency=medium
+
+  * rework db migration: refuse unstamped data, replace seafile-db-upgrade with seafile-db-tool
+  * Inline the reason for seafile-db-tool's tolerant SQL error handling
+  * Stop shipping upstream's manual-install scripts, patch the admin tools worth keeping
+  * Rename seafile-db-tool to seaf-dbctl, move version/stamp ownership into it
+  * Add seafevents.service for background tasks (email, indexing, auto-expiry)
+  * seafobj: defer the pylibmc import so seafevents actually starts
+  * Add django-pylibmc so seahub's CACHE_PROVIDER=memcached actually works
+  * Add libmemcached-dev: uv still builds pylibmc from source to satisfy django-pylibmc's own dependency, even though it's discarded afterward
+
+ -- dionysius <dragon.dionysius@gmail.com>  Thu, 24 Sep 2026 14:55:18 +0200
+
 seafile-server (13.0.25-1~alpha6) unstable; urgency=medium
 
   * add seahub dir to seafile.env
