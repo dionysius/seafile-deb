@@ -171,9 +171,12 @@ override_dh_auto_install-arch:
 	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|pillow-heif|$$)' | sed 's/.*/  "&",/'; \
 	  echo '  "pyOpenSSL>=24",'; \
 	  echo '  "pillow-heif>=1.1",'; \
+	  echo '  "django-pylibmc>=0.6",'; \
 	  echo ']'; } > $(TMPDEB)$(HUBPREFIX)/pyproject.toml
 # pyOpenSSL floor: uv otherwise resolves a 22.x incompatible with current cryptography
 # pillow-heif floor: upstream's ==1.0.* pin neither ships wheels nor builds for current pythons
+# django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend, declared as a
+# dependency in none of the three requirements.txt above
 	cd $(TMPDEB)$(HUBPREFIX) && $(UV) lock --python python3
 	$(UV) venv --relocatable --python python3 $(TMPDEB)$(HUBPREFIX)/venv
 	cd $(TMPDEB)$(HUBPREFIX) && UV_PROJECT_ENVIRONMENT=$(TMPDEB)$(HUBPREFIX)/venv \
@@ -181,6 +184,16 @@ override_dh_auto_install-arch:
 # self-contained venv (system site-packages would leak conflicts); bundle the
 # pure-python pysearpc, seaserv comes via PYTHONPATH in the units
 	cp -a /usr/lib/python3/dist-packages/pysearpc \
+		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/
+# pylibmc's PyPI build (whether wheel or source) hits a CPython 3.13 C-API
+# incompatibility that spams ignored-exception tracebacks on every use; Debian's
+# own build doesn't, so replace django-pylibmc's copy with it
+	rm -rf $(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/pylibmc \
+		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/pylibmc-*.dist-info \
+		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/_pylibmc.cpython-*.so
+	cp -a /usr/lib/python3/dist-packages/pylibmc \
+		/usr/lib/python3/dist-packages/_pylibmc.cpython-*.so \
+		/usr/lib/python3/dist-packages/pylibmc-*.egg-info \
 		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/
 
 # third-party license inventory of the compiled venv
@@ -281,7 +294,7 @@ override_dh_shlibdeps-arch:
 # venv, but feed the source-compiled wheels that link system libraries into the same
 # run (a second dpkg-shlibdeps run replaces shlibs:Depends instead of extending it)
 	dh_shlibdeps -pseafile-server -Xseahub/venv -- \
-		$$(find debian/seafile-server$(HUBPREFIX)/venv \( -name '_mysql*.so' -o -name '_ldap*.so' \) -printf '-e%p ')
+		$$(find debian/seafile-server$(HUBPREFIX)/venv \( -name '_mysql*.so' -o -name '_ldap*.so' -o -name '_pylibmc*.so' \) -printf '-e%p ')
 	dh_shlibdeps -pseafile-fuse
 
 override_dh_gencontrol:
