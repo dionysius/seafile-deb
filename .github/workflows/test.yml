@@ -102,3 +102,11 @@ jobs:
         with:
           instance: seafile-test
           run: bash .github/test/upgrade-check.sh --out "$GITHUB_STEP_SUMMARY"
+
+      - name: Admin tools check
+        # seaf-gc, seaf-fsck, seahub-reset-admin: refuse while the stack is active, work
+        # once it isn't, keep correct ownership. See .github/test/admin-tools-check.sh.
+        uses: dionysius/incus-zabbly-actions/exec@v1
+        with:
+          instance: seafile-test
+          run: bash .github/test/admin-tools-check.sh --out "$GITHUB_STEP_SUMMARY"

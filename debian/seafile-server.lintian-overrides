@@ -3,11 +3,12 @@ statically-linked-binary [usr/lib/seafile/bin/fileserver]
 statically-linked-binary [usr/lib/seafile/bin/notification-server]
 
 # the daemons are run via systemd; the admin tools (seaf-gc, seaf-fsck,
-# seahub-reset-admin) ship no man page of their own either
+# seaf-dbctl, seahub-reset-admin) ship no man page of their own either
 no-manual-page [usr/lib/seafile/bin/*]
 no-manual-page [usr/lib/seahub/bin/*]
 no-manual-page [usr/bin/seaf-gc]
 no-manual-page [usr/bin/seaf-fsck]
+no-manual-page [usr/bin/seaf-dbctl]
 no-manual-page [usr/bin/seahub-reset-admin]
 
 # venv wheels bundle their own private shared objects

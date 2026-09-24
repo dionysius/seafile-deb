@@ -148,7 +148,7 @@ override_dh_auto_install-arch:
 # upstream's own multi-version install tree
 	find $(TMPDEB)$(SEAFPREFIX)/upgrade -maxdepth 1 -name '*.sh' -delete
 	install -m 0755 debian/install/scripts/seafile-migrate $(TMPDEB)$(SEAFPREFIX)/bin/seafile-migrate
-	install -m 0755 debian/install/scripts/seafile-db-tool $(TMPDEB)$(SEAFPREFIX)/bin/seafile-db-tool
+	install -m 0755 debian/install/scripts/seaf-dbctl $(TMPDEB)$(SEAFPREFIX)/bin/seaf-dbctl
 	echo "$(DEB_VERSION_UPSTREAM)" > $(TMPDEB)$(SEAFPREFIX)/version
 
 # admin maintenance tools: patched (debian/patches) to use this packaging's FHS
@@ -221,7 +221,7 @@ override_dh_auto_install-indep:
 	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile-mysql.sh \
 		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile-mysql.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seaf-fuse.sh
 # db_update_helper.py and its sql/ deltas are only ever used from the seafile-server
-# package's own copy (/usr/lib/seafile/upgrade, seafile-db-tool); nothing reaches
+# package's own copy (/usr/lib/seafile/upgrade, seaf-dbctl); nothing reaches
 # into this one, so the whole subtree here is dead weight, not just the .sh wrappers
 	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/scripts/upgrade
 # niche/unused tools (object-store migration between backends, sqlite, ldap, pro-only,

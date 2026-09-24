@@ -1,3 +1,4 @@
 usr/lib/seafile/bin/seaf-gc.sh usr/bin/seaf-gc
 usr/lib/seafile/bin/seaf-fsck.sh usr/bin/seaf-fsck
+usr/lib/seafile/bin/seaf-dbctl usr/bin/seaf-dbctl
 usr/lib/seahub/bin/reset-admin.sh usr/bin/seahub-reset-admin

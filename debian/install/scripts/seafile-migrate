@@ -1,12 +1,8 @@
 #!/bin/bash
 # Bring the ccnet/seafile databases to the installed version, then hand off
-# to seahub's own (django) migration.
-#
-# $SEAFILE_DATA_DIR/current_version stamps the data's schema version, in the
-# same place upstream's docker deployment keeps it, so the stamp travels with
-# the object store across relocation, restore or a docker migration. No stamp
-# and no data means a fresh install; no stamp with existing data means the
-# data's real version is unknown and is refused rather than guessed at.
+# to seahub's own (django) migration. Version comparison, the data's version
+# stamp and the schema itself are all owned by seaf-dbctl; this only decides
+# whether to call its init or upgrade, based on whether a stamp exists yet.
 # Re-run any number of times: once the stamp matches the installed version,
 # every phase below is a no-op.
 set -euo pipefail
@@ -15,14 +11,10 @@ if [ "$(id -un)" != "seafile" ]; then
     exec runuser -u seafile -- "$(readlink -f "$0")" "$@"
 fi
 
-INSTALLDIR=/usr/lib/seafile
-STATEDIR=/var/lib/seafile
 CONFDIR=/etc/seafile
-DBTOOL="$INSTALLDIR/bin/seafile-db-tool"
+DBCTL=/usr/lib/seafile/bin/seaf-dbctl
 
 log() { echo "seafile-migrate: $*"; }
-
-INSTALLED=$(cat "$INSTALLDIR/version")
 
 if [ -f "$CONFDIR/seafile.env" ]; then
     set -a; . "$CONFDIR/seafile.env"; set +a
@@ -41,54 +33,16 @@ if [ -n "$missing" ]; then
     exit 1
 fi
 
-STAMP="$SEAFILE_DATA_DIR/current_version"
-major_minor() { echo "$1" | cut -d. -f1,2; }
-
-apply_deltas() {
-    local from="$1" to="$2" vdir vmm applied=0
-    if [ "$(major_minor "$from")" = "$(major_minor "$to")" ]; then
-        log "minor upgrade $from -> $to: no server schema migration required"
-        return 0
-    fi
-    for vdir in $(ls "$INSTALLDIR/upgrade/sql" 2>/dev/null | sort -V); do
-        vmm=$(major_minor "$vdir")
-        dpkg --compare-versions "$vmm" gt "$(major_minor "$from")" || continue
-        dpkg --compare-versions "$vmm" le "$(major_minor "$to")" || continue
-        log "applying server schema deltas for $vdir"
-        CCNET_CONF_DIR="$STATEDIR/ccnet" SEAFILE_CENTRAL_CONF_DIR="$CONFDIR" \
-            "$DBTOOL" upgrade "$vdir"
-        applied=1
-    done
-    [ "$applied" = 1 ] || log "major upgrade $from -> $to: no server schema deltas to apply"
-}
-
-if [ ! -f "$STAMP" ]; then
-    if "$DBTOOL" check 2>/dev/null; then
-        log "ERROR: $SEAFILE_DATA_DIR has existing data but no version stamp ($STAMP)."
-        log "There is no reliable way to tell which schema version it is at, so"
-        log "automatic migration is refused. If you know the seafile-server version"
-        log "this data was last run against, write it verbatim to $STAMP and retry."
-        exit 1
-    fi
-    log "initialising databases for $INSTALLED"
-    "$DBTOOL" init "$INSTALLED"
-    # seaf-server expects an (empty) default library template directory
-    mkdir -p "$SEAFILE_DATA_DIR/library-template"
-    echo "$INSTALLED" > "$STAMP"
+if [ -f "$SEAFILE_DATA_DIR/current_version" ]; then
+    log "checking for schema upgrades"
+    "$DBCTL" upgrade
 else
-    LAST=$(cat "$STAMP")
-    if [ "$LAST" != "$INSTALLED" ]; then
-        if dpkg --compare-versions "$INSTALLED" lt "$LAST"; then
-            log "ERROR: this data's version ($LAST) is newer than the installed package ($INSTALLED)."
-            log "The package can be downgraded, but migrating its data backward is not supported."
-            log "Reinstall seafile-server >= $LAST, or restore a backup matching $INSTALLED."
-            exit 1
-        fi
-        log "upgrading $LAST -> $INSTALLED (databases are not backed up automatically)"
-        apply_deltas "$LAST" "$INSTALLED"
-        echo "$INSTALLED" > "$STAMP"
-    fi
+    log "initialising databases"
+    "$DBCTL" init
 fi
+
+# seaf-server expects an (empty) default library template directory
+mkdir -p "$SEAFILE_DATA_DIR/library-template"
 
 log "running seahub migration"
 /usr/lib/seahub/bin/seahub-migrate
