@@ -1,0 +1,34 @@
+Description: seafobj: defer the pylibmc import to when memcached caching is actually used
+ objstore_factory.py imports every other optional backend (ceph, s3, alioss,
+ swift) lazily inside the function that needs it, but imported get_mc_cache
+ unconditionally at module load - pylibmc is declared as a dependency nowhere
+ (neither seafobj's nor seafevents' requirements.txt), so importing seafobj at
+ all (e.g. via seafevents_api, pulled in by EVENTS_CONFIG_FILE) unconditionally
+ required a package this packaging never installs, breaking seafile-migrate
+ even when memcached caching itself is unused.
+Author: dionysius <dragon.dionysius@gmail.com>
+Forwarded: not-needed
+--- a/seafobj/seafobj/objstore_factory.py
++++ b/seafobj/seafobj/objstore_factory.py
+@@ -8,7 +8,6 @@
+
+ from seafobj.exceptions import InvalidConfigError
+ from seafobj.backends.filesystem import SeafObjStoreFS
+-from seafobj.mc import get_mc_cache
+ from seafobj.redis_cache import get_redis_cache
+
+ logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+@@ -573,6 +572,7 @@
+             else:
+                 expiry = 24 * 3600
+
++            from seafobj.mc import get_mc_cache
+             return get_mc_cache(mc_options, int(expiry))
+         return None
+
+@@ -609,6 +609,7 @@
+                 expiry = int(envs.get("MEMCACHED_EXPIRY"))
+             else:
+                 expiry = 24 * 3600
++            from seafobj.mc import get_mc_cache
+             return get_mc_cache(mc_options, expiry)
