@@ -1,5 +1,7 @@
-seafile-server (13.0.25-1~alpha10) unstable; urgency=medium
+seafile-server (13.0.25-1~alpha11) unstable; urgency=medium
 
+  * admin-tools-check: stop and restart the whole stack, seaf-gc refuses while the fileserver runs
+  * Manage seahub's schema with upstream's sql like its installer and docker image do, instead of django migrations
   * Create seafevents' tables in seahub-migrate (seahub writes into them before seafevents' first start); tests start and check the whole stack
   * Serve shipped seahub media from /usr, avatars and custom branding from SEAHUB_DATA_DIR, assets and thumbnails from /var/cache
   * Stamp SEAFILE_VERSION into seahub's settings at build, as upstream's release build does
