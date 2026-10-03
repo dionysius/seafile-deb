@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+# Finalize upgrade from < 13.0.25-1~alpha9~: collected assets now ship in the package,
+# thumbnails live in /var/cache/seafile
+if [ "$1" = "configure" ] && dpkg --compare-versions "$2" lt "13.0.25-1~alpha9~"; then
+  rm -rf /var/lib/seafile/seahub-data/assets /var/lib/seafile/seahub-data/thumbnail
+fi
+
 # Always provide --three-way for ucf comparison (unable to configure, rest of dh_ucf still valid and
 # it should not prompt twice for the same file since the original is cached by ucf)
 if [ "$1" = "configure" ]; then

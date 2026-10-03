@@ -225,6 +225,18 @@ override_dh_auto_install-indep:
 	grep -q "^SEAFILE_VERSION = " $(TMPDEB)$(HUBPREFIX)/seahub/seahub/settings.py
 	sed -i "s/^SEAFILE_VERSION = .*/SEAFILE_VERSION = '$(DEB_VERSION_UPSTREAM)'/" $(TMPDEB)$(HUBPREFIX)/seahub/seahub/settings.py
 
+# collected static files (media/assets + staticfiles manifest), as upstream's
+# release build ships them. Needs django from the venv, so an indep-only build
+# (-A) cannot produce the data package. seahub's import chain requires the conf
+# dirs with a seafile.conf and SEAHUB_DIR even though collectstatic uses none.
+	test -x $(TMPDEB)$(HUBPREFIX)/venv/bin/python || { echo "ERROR: collectstatic needs the venv from the arch build; build arch and indep together"; exit 1; }
+	mkdir -p $(STAGING)/conf && printf '[database]\ntype = mysql\n' > $(STAGING)/conf/seafile.conf
+	cd $(TMPDEB)$(HUBPREFIX)/seahub && env -i PATH=/usr/bin:/bin \
+		SEAFILE_CONF_DIR=$(STAGING)/conf SEAFILE_CENTRAL_CONF_DIR=$(STAGING)/conf SEAHUB_DIR=$(TMPDEB)$(HUBPREFIX)/seahub \
+		PYTHONPATH=$(TMPDEB)$(HUBPREFIX)/seahub:$(TMPDEB)$(HUBPREFIX)/seahub/thirdpart:$(TMPDEB)$(PYSEAF) \
+		DJANGO_SETTINGS_MODULE=seahub.settings \
+		$(TMPDEB)$(HUBPREFIX)/venv/bin/python manage.py collectstatic --noinput -i admin -i termsandconditions
+
 # build-only leftovers
 	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src
 	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '.git*' -prune -exec rm -rf {} + 2>/dev/null || true

@@ -1,13 +1,13 @@
 Description: seahub: fixed FHS paths for the data, cache and media trees
  Upstream assumes one mutable install tree: MEDIA_ROOT is the shipped media/
  directory with avatars/ and custom/ symlinked into seahub-data, itself
- located relative to the install tree, and the collected assets and
- thumbnails are written next to them.
- Here the shipped media stays read-only in the install tree (MEDIA_ROOT),
- avatars and custom branding live in SEAHUB_DATA_ROOT (taken from the
- SEAHUB_DATA_DIR environment variable, so the data directory can be
- relocated), and the regenerable collected assets and thumbnails live in
- /var/cache/seafile. Each /media/ subtree is served from the setting that
+ located relative to the install tree, and thumbnails are written next to
+ them.
+ Here the shipped media and the collected assets stay read-only in the
+ install tree (MEDIA_ROOT), avatars and custom branding live in
+ SEAHUB_DATA_ROOT (taken from the SEAHUB_DATA_DIR environment variable, so
+ the data directory can be relocated), and the regenerable thumbnails live
+ in /var/cache/seafile. Each /media/ subtree is served from the setting that
  owns it; the custom-branding lookups and the default file storage use
  SEAHUB_DATA_ROOT directly, so no symlink into the install tree is needed.
 Author: dionysius <dragon.dionysius@gmail.com>
@@ -132,15 +132,6 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  # URL that handles the media served from MEDIA_ROOT. Make sure to use a
  # trailing slash if there is a path component (optional in other cases).
  # Examples: "http://media.lawrence.com", "http://example.com/media/"
-@@ -80,7 +83,7 @@
- # Don't put anything in this directory yourself; store your static files
- # in apps' "static/" subdirectories and in STATICFILES_DIRS.
- # Example: "/home/media/media.lawrence.com/static/"
--STATIC_ROOT = '%s/assets/' % MEDIA_ROOT
-+STATIC_ROOT = '/var/cache/seafile/assets/'
- 
- # URL prefix for static files.
- # Example: "http://media.lawrence.com/static/"
 @@ -106,7 +109,8 @@
  
  STORAGES = {
@@ -175,12 +166,13 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  
 --- a/seahub/seahub/urls.py
 +++ b/seahub/seahub/urls.py
-@@ -981,6 +981,10 @@
+@@ -981,6 +981,11 @@
      from django.views.static import serve as static_view
      media_url = settings.MEDIA_URL.strip('/')
      urlpatterns += [
-+        re_path(r'^%s/assets/(?P<path>.*)$' % (media_url), static_view,
-+            {'document_root': settings.STATIC_ROOT}),
++        # the shipped default avatars; uploaded ones are in SEAHUB_DATA_ROOT
++        re_path(r'^%s/(?P<path>avatars/(groups/)?default[^/]*)$' % (media_url), static_view,
++            {'document_root': settings.MEDIA_ROOT}),
 +        re_path(r'^%s/(?P<path>(avatars|custom)/.*)$' % (media_url), static_view,
 +            {'document_root': settings.SEAHUB_DATA_ROOT}),
          re_path(r'^%s/(?P<path>.*)$' % (media_url), static_view,
