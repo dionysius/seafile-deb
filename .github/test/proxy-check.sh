@@ -43,7 +43,7 @@ info "Point seafile at the public address and restart"
 sed -i -e "s|^SEAFILE_SERVER_PROTOCOL=.*|SEAFILE_SERVER_PROTOCOL=https|" \
        -e "s|^SEAFILE_SERVER_HOSTNAME=.*|SEAFILE_SERVER_HOSTNAME=$HOST|" \
        -e "s|^NOTIFICATION_SERVER_URL=.*|NOTIFICATION_SERVER_URL=wss://$HOST/notification|" /etc/seafile/seafile.env
-systemctl restart seafile.service seafile-fileserver.service seafile-notification.service seahub.service
+systemctl restart seafile.service seafile-fileserver.service seafile-notification.service seahub.service seafevents.service
 for i in $(seq 1 30); do [ "$(http "$B/accounts/login/")" = 200 ] && break; sleep 2; done
 
 info "Account for the checks"

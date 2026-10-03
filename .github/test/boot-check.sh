@@ -46,7 +46,7 @@ else mark="❌"; echo "MIGRATE FAIL (Result=$mig)"; rc=1; fi
 rows+=("| \`seafile-migrate\` | one-shot Result=success | $mark |")
 
 info "Service active state"
-for s in seafile seahub; do
+for s in seafile seafile-fileserver seafile-notification seahub seafevents; do
   if systemctl is-active --quiet "$s.service"; then mark="✅"; echo "SVC OK $s active"
   else mark="❌"; echo "SVC FAIL $s active"; rc=1; fi
   rows+=("| \`$s\` | active | $mark |")

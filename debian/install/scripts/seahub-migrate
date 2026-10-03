@@ -1,6 +1,6 @@
 #!/bin/bash
 # seahub owns its own (django) schema; this only invokes its self-gating
-# migration, never touches ccnet/seafile.
+# migration and seafevents' own table creation, never touches ccnet/seafile.
 set -euo pipefail
 
 if [ "$(id -un)" != "seafile" ]; then
@@ -14,3 +14,9 @@ set -a; . /etc/seafile/seafile.env; set +a
 cd "$HUB/seahub"
 echo "seahub-migrate: applying database migrations"
 "$HUB/venv/bin/python" manage.py migrate --noinput
+
+# seahub writes activities into seafevents' tables (Activity, UserActivity, ...),
+# which seafevents otherwise only creates on its own first start. The app import
+# registers every model, as seafevents' own main does.
+echo "seahub-migrate: creating seafevents tables"
+"$HUB/venv/bin/python" -c 'import seafevents.app.app; from seafevents.db import create_db_tables; create_db_tables()'
