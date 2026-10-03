@@ -1,3 +1,16 @@
+seafile-server (13.0.25-1~alpha9) unstable; urgency=medium
+
+  * Serve shipped seahub media from /usr, avatars and custom branding from SEAHUB_DATA_DIR, assets and thumbnails from /var/cache
+  * Stamp SEAFILE_VERSION into seahub's settings at build, as upstream's release build does
+  * Ship the collected assets in the package and serve the default avatars from the install tree; seahub-migrate is down to manage.py migrate
+  * Units: prune comments, update the suggested limits, provision only the state root, drop ENABLE_SEAFEVENTS in favour of systemctl
+  * seahub: make createsuperuser honour --password, so seahub-reset-admin --noinput creates an account that can log in
+  * Ship tested nginx, Caddy and Apache reverse proxy examples, suggest the three, hint at Before= ordering in the proxied units
+  * CI: run the stack through the shipped nginx example (login, assets, transfer, thumbnail, websocket)
+  * Patches: reference the upstream PR for the createsuperuser and reset-admin argument fixes
+
+ -- dionysius <dragon.dionysius@gmail.com>  Sat, 03 Oct 2026 03:26:48 +0200
+
 seafile-server (13.0.25-1~alpha8) unstable; urgency=medium
 
   * rework db migration: refuse unstamped data, replace seafile-db-upgrade with seafile-db-tool
