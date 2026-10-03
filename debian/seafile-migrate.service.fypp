@@ -28,6 +28,9 @@ ConfigurationDirectoryMode=0500
 # migration writes the databases and the version stamp
 StateDirectory=seafile seafile/seafile-data seafile/ccnet seafile/seahub-data
 StateDirectoryMode=0750
+# collectstatic target (seahub-migrate)
+CacheDirectory=seafile
+CacheDirectoryMode=0750
 UMask=0027
 
 ## Sandboxing and isolation

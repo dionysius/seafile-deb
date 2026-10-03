@@ -69,6 +69,13 @@ if [ "$code" = 200 ]; then mark="✅"; echo "HTTP OK 200"
 else mark="❌"; echo "HTTP FAIL $code"; rc=1; fi
 rows+=("| seahub | GET /accounts/login/ = 200 | $mark |")
 
+info "HTTP shipped media"
+MEDIA_URL="http://127.0.0.1:8000/media/favicons/favicon.png"
+media=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$MEDIA_URL" 2>/dev/null || echo 000)
+if [ "$media" = 200 ]; then mark="✅"; echo "HTTP OK 200"
+else mark="❌"; echo "HTTP FAIL $media"; rc=1; fi
+rows+=("| seahub | GET /media/favicons/favicon.png = 200 | $mark |")
+
 if [ "$rc" != 0 ]; then
   for s in seafile-migrate seafile seahub; do
     echo "--- status + last 60 journal lines: $s ---"

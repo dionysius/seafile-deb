@@ -11,14 +11,6 @@
 # and private.
 SECRET_KEY = ""
 
-# User-uploaded content (avatars, thumbnails).
-MEDIA_ROOT = '/var/lib/seafile/seahub-data/'
-
-# Collected static files. seahub derives STATIC_ROOT from MEDIA_ROOT before this file
-# loads, so it points into the read-only install tree; redirect it to a writable path
-# where seafile-migrate runs collectstatic (which also builds the staticfiles manifest).
-STATIC_ROOT = '/var/lib/seafile/seahub-data/assets/'
-
 ### Site ###
 #SITE_NAME = 'Seafile'
 #SITE_TITLE = 'Private Seafile'

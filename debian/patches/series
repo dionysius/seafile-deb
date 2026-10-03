@@ -3,3 +3,4 @@ reset-admin-fhs-paths.patch
 seaf-gc-fhs-paths.patch
 seaf-fsck-fhs-paths.patch
 seafobj-lazy-pylibmc-import.patch
+seahub-media-fhs-paths.patch

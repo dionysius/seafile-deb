@@ -15,6 +15,10 @@ cd "$HUB/seahub"
 echo "seahub-migrate: applying database migrations"
 "$HUB/venv/bin/python" manage.py migrate --noinput
 
-# Builds the staticfiles manifest into STATIC_ROOT (seahub_settings.py).
+# Builds the staticfiles manifest into STATIC_ROOT.
 echo "seahub-migrate: collecting static files"
 "$HUB/venv/bin/python" manage.py collectstatic --noinput -i admin
+
+# The default avatars are served from the avatars directory; refreshed on every run.
+mkdir -p "$SEAHUB_DATA_DIR/avatars"
+cp -r --no-preserve=all "$HUB/seahub/media/avatars/." "$SEAHUB_DATA_DIR/avatars/"

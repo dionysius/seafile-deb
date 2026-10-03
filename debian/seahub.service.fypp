@@ -35,6 +35,9 @@ ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
 StateDirectory=seafile seafile/seahub-data
 StateDirectoryMode=0750
+# regenerable: thumbnails, and the collected assets written by seafile-migrate
+CacheDirectory=seafile
+CacheDirectoryMode=0750
 RuntimeDirectory=seahub
 UMask=0027
 

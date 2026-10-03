@@ -22,6 +22,7 @@ fi
 
 missing=""
 [ -n "${SEAFILE_DATA_DIR:-}" ] || missing="$missing SEAFILE_DATA_DIR (seafile.env)"
+[ -n "${SEAHUB_DATA_DIR:-}" ] || missing="$missing SEAHUB_DATA_DIR (seafile.env)"
 [ -n "${SEAFILE_MYSQL_DB_PASSWORD:-}" ] || missing="$missing SEAFILE_MYSQL_DB_PASSWORD (seafile.env)"
 [ -n "${JWT_PRIVATE_KEY:-}" ] || missing="$missing JWT_PRIVATE_KEY (seafile.env)"
 grep -q '^SECRET_KEY = ""' "$CONFDIR/seahub_settings.py" 2>/dev/null && missing="$missing SECRET_KEY (seahub_settings.py)"
