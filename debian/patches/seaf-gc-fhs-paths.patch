@@ -4,10 +4,10 @@ Description: seaf-gc.sh: use this packaging's fixed FHS paths, drop pro/sqlite
  Same TOPDIR-detection problem as reset-admin.sh (see reset-admin-fhs-paths.patch);
  sources /etc/seafile/seafile.env instead. validate_already_running now checks
  systemctl unit state (seafile.service, seafile-fileserver.service,
- seahub.service, seafile-fuse.service) instead of pgrep'ing process names, since
- seafdav runs embedded in seahub's gunicorn workers here rather than as its own
- process like in upstream's own layout. Drops check_python_executable (nothing
- here is python) and the IS_PRO_VERSION branch (community edition only).
+ seahub.service, seafile-fuse.service, seafdav.service) instead of pgrep'ing
+ process names, since systemd already tracks exactly these units here. Drops
+ check_python_executable (nothing here is python) and the IS_PRO_VERSION branch
+ (community edition only).
  Re-execs as the seafile user via runuser when invoked as anyone else, before
  doing anything: this writes into the object store, and running as root would
  leave files owned by root that seafile.service can no longer manage.
@@ -16,7 +16,7 @@ Forwarded: not-needed
 Comment: install-layout specific, not something upstream's own tar.gz/docker install needs.
 --- a/seahub/scripts/seaf-gc.sh
 +++ b/seahub/scripts/seaf-gc.sh
-@@ -1,140 +1,69 @@
+@@ -1,140 +1,70 @@
  #!/bin/bash
  
 +if [ "$(id -un)" != "seafile" ]; then
@@ -154,6 +154,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
 +    validate_unit_not_active seafile-fileserver.service
 +    validate_unit_not_active seahub.service
 +    validate_unit_not_active seafile-fuse.service
++    validate_unit_not_active seafdav.service
  }
  
  function run_seaf_gc () {

@@ -15,6 +15,7 @@ if [ "$1" = "configure" ]; then
   ucf --three-way /usr/share/seafile-server/seahub_settings.py /etc/seafile/seahub_settings.py
   ucf --three-way /usr/share/seafile-server/gunicorn.conf.py /etc/seafile/gunicorn.conf.py
   ucf --three-way /usr/share/seafile-server/seafevents.conf /etc/seafile/seafevents.conf
+  ucf --three-way /usr/share/seafile-server/seafdav.conf /etc/seafile/seafdav.conf
 fi
 
 #DEBHELPER#
