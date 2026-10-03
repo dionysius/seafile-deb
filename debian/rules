@@ -221,6 +221,10 @@ override_dh_auto_install-indep:
 	cp -a seafobj/seafobj $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/seafobj
 	cp -a seafobj/objwrapper $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/objwrapper
 
+# the version reported by the api and the web ui; upstream's release build stamps it the same way
+	grep -q "^SEAFILE_VERSION = " $(TMPDEB)$(HUBPREFIX)/seahub/seahub/settings.py
+	sed -i "s/^SEAFILE_VERSION = .*/SEAFILE_VERSION = '$(DEB_VERSION_UPSTREAM)'/" $(TMPDEB)$(HUBPREFIX)/seahub/seahub/settings.py
+
 # build-only leftovers
 	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src
 	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '.git*' -prune -exec rm -rf {} + 2>/dev/null || true
