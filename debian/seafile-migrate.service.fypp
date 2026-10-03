@@ -12,10 +12,7 @@ After=network.target
 #Requires=mariadb.service
 
 [Service]
-# The script sources seafile.env and sets up the environment for its helpers itself.
-# Run once and exit; NO RemainAfterExit, so seafile.service's Requires= re-runs it
-# on every start (including the post-upgrade restart). The script itself decides via
-# the version stamp whether there is any work to do.
+# No RemainAfterExit: re-run on every start of the dependents, a no-op once at version.
 Type=oneshot
 ExecStart=/usr/lib/seafile/bin/seafile-migrate
 WorkingDirectory=/var/lib/seafile
@@ -25,14 +22,12 @@ User=seafile
 Group=seafile
 ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
-# migration writes the databases and the version stamp
-StateDirectory=seafile seafile/seafile-data seafile/ccnet seafile/seahub-data
+StateDirectory=seafile
 StateDirectoryMode=0750
 UMask=0027
 
 ## Sandboxing and isolation
-# Looser than the daemons: migration forks shell/python upgrade scripts, so it
-# needs a broader profile than seaf-server.
+# Broader than the daemons: forks shell/python upgrade scripts.
 NoNewPrivileges=true
 RestrictSUIDSGID=true
 ProtectSystem=strict

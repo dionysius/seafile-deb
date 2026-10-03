@@ -6,7 +6,6 @@
 [Unit]
 Description=Seafile FUSE filesystem (seaf-fuse)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-# The databases must be initialised before the object store is presented.
 After=seafile-migrate.service
 Requires=seafile-migrate.service
 
@@ -15,13 +14,10 @@ Requires=seafile-migrate.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# Extra fuse options. Only the mounting user (seafile) can access the mount by
-# default; set "-o allow_other" (requires user_allow_other in /etc/fuse.conf)
-# to expose it to other users.
+# Extra fuse options, e.g. "-o allow_other" (needs user_allow_other in /etc/fuse.conf)
+# to expose the mount to users other than seafile.
 Environment=SEAFILE_FUSE_OPTS=
-# Runs in the foreground (-f); systemd supervises it directly. Logs to stdout (-l -).
-# The libraries are presented at the seafile-fuse state directory (%S = /var/lib);
-# adjust ExecStart, ExecStopPost and StateDirectory together when changing it.
+# Mountpoint %S/seafile/seafile-fuse: change ExecStart, ExecStopPost and StateDirectory together.
 Type=exec
 ExecStart=/usr/lib/seafile/bin/seaf-fuse -f \
   -F %E/seafile \
@@ -38,11 +34,9 @@ RestartSec=5s
 ## Permissions and directories
 User=seafile
 Group=seafile
-# /etc/seafile - central config, mounted read-only (permissions managed by tmpfiles).
 ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
-# The object store (read) and the default mountpoint.
-StateDirectory=seafile seafile/seafile-data seafile/seafile-fuse
+StateDirectory=seafile seafile/seafile-fuse
 StateDirectoryMode=0750
 UMask=0027
 
@@ -55,10 +49,8 @@ LimitNOFILE=1048576
 #MemoryMax=2G
 
 ## Sandboxing and isolation
-# Not sandboxed: mounting as an unprivileged user runs the setuid fusermount
-# helper (incompatible with NoNewPrivileges and every option implying it), and
-# the mount must propagate to the host (incompatible with filesystem
-# namespacing options like ProtectSystem or PrivateTmp).
+# Not sandboxed: the setuid fusermount helper rules out NoNewPrivileges, and the
+# mount must propagate to the host, which rules out filesystem namespacing.
 
 [Install]
 WantedBy=multi-user.target

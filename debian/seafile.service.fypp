@@ -8,9 +8,6 @@ Description=Seafile storage and sync server (seaf-server)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 # The service requires network interfaces to be configured.
 After=network.target seafile-migrate.service
-# The databases must be initialised/upgraded before the server starts. The migrate
-# unit has no RemainAfterExit, so this re-runs it on every start (it is a no-op when
-# the version stamp already matches).
 Requires=seafile-migrate.service
 # If you want to expose the server to the network directly, you may find the following useful:
 #After=network-online.target
@@ -24,8 +21,6 @@ Requires=seafile-migrate.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# Runs in the foreground (-f); systemd supervises it directly. -p is the RPC
-# pipe directory shared with the file server and seahub.
 Type=exec
 ExecStart=/usr/lib/seafile/bin/seaf-server \
   -F %E/seafile \
@@ -41,23 +36,18 @@ RestartSec=5s
 ## Permissions and directories
 User=seafile
 Group=seafile
-# /etc/seafile - central config, mounted read-only (permissions managed by tmpfiles).
 ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
-# /var/lib/seafile - object store (seafile-data), ccnet and other state.
-StateDirectory=seafile seafile/seafile-data seafile/ccnet
+StateDirectory=seafile
 StateDirectoryMode=0750
-# /run/seafile - RPC pipe shared with the file server and seahub.
 RuntimeDirectory=seafile
 RuntimeDirectoryMode=0750
-# File creation mask.
 UMask=0027
 # External directories (grant write access to a folder outside of service-managed directories above).
 #ReadWritePaths=/path/to/your/storage
 
 ## Connection and process limits
 LimitNOFILE=1048576
-# Sized for the fixed 50-thread RPC pool plus the DB pool and worker threads.
 #TasksMax=256
 # Customize limits to your setup and expected usage spikes.
 #CPUQuota=200%

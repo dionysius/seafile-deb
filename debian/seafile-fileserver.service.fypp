@@ -7,8 +7,6 @@
 Description=Seafile file server (HTTP upload/download)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 After=network.target seafile.service
-# The file server talks to seaf-server over the RPC pipe; Wants pulls the core
-# daemon in on start without propagating stop/restart.
 Wants=seafile.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
@@ -16,10 +14,7 @@ Wants=seafile.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# Runs in the foreground; systemd supervises it directly.
 Type=exec
-# Runs only while seafile.env opts in; when false, seaf-server's built-in
-# fileserver owns [fileserver] host:port instead.
 ExecCondition=/bin/sh -ec '[ "$ENABLE_GO_FILESERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/fileserver \
   -F %E/seafile \
@@ -32,23 +27,20 @@ RestartSec=5s
 ## Permissions and directories
 User=seafile
 Group=seafile
-# Read config from /etc/seafile and read/write the object store; the RPC pipe dir is
-# created and owned by seaf-server.
 ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
-StateDirectory=seafile seafile/seafile-data
+StateDirectory=seafile
 StateDirectoryMode=0750
 UMask=0027
 
 ## Connection and process limits
 LimitNOFILE=1048576
 #TasksMax=256
-# Customize limits to your setup and expected usage spikes. Memory scales with
-# the fs-object cache (fs_cache_limit in seafile.conf, ~1G effective by default)
-# plus per-transfer buffers.
+# Customize limits to your setup and expected usage spikes.
 #CPUQuota=400%
-#MemoryHigh=2G
-#MemoryMax=3G
+# fs_cache_limit (seafile.conf, 4G by default) plus transfer buffers.
+#MemoryHigh=4G
+#MemoryMax=5G
 
 ## Sandboxing and isolation
 # An overview is available using `systemd-analyze security <service>`.
@@ -85,7 +77,7 @@ ProtectKernelLogs=true
 ProtectControlGroups=strict
 
 # Execution restrictions
-# The go runtime needs writable+executable memory, so this must stay disabled.
+# The go runtime needs writable+executable memory.
 MemoryDenyWriteExecute=false
 SetLoginEnvironment=false
 

@@ -6,8 +6,6 @@
 [Unit]
 Description=Seafile real-time notification server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-# Receives events from seaf-server and the file server over HTTP and pushes them
-# to clients via websockets.
 After=network.target seafile.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
@@ -15,9 +13,7 @@ After=network.target seafile.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# Runs in the foreground; systemd supervises it directly.
 Type=exec
-# Runs only while seafile.env opts in.
 ExecCondition=/bin/sh -ec '[ "$ENABLE_NOTIFICATION_SERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/notification-server -c %E/seafile
 WorkingDirectory=/var/lib/seafile
@@ -27,7 +23,6 @@ RestartSec=5s
 ## Permissions and directories
 User=seafile
 Group=seafile
-# /etc/seafile - central config, mounted read-only (permissions managed by tmpfiles).
 ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
 UMask=0027
@@ -35,8 +30,7 @@ UMask=0027
 ## Connection and process limits
 LimitNOFILE=1048576
 #TasksMax=128
-# Customize limits to your setup and expected usage spikes; the websocket hub
-# stays small even with many connected clients.
+# Customize limits to your setup and expected usage spikes.
 #CPUQuota=100%
 #MemoryHigh=256M
 #MemoryMax=512M
@@ -76,7 +70,7 @@ ProtectKernelLogs=true
 ProtectControlGroups=strict
 
 # Execution restrictions
-# The go runtime needs writable+executable memory, so this must stay disabled.
+# The go runtime needs writable+executable memory.
 MemoryDenyWriteExecute=false
 SetLoginEnvironment=false
 

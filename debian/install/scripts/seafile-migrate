@@ -34,6 +34,7 @@ if [ -n "$missing" ]; then
     exit 1
 fi
 
+mkdir -p "$SEAFILE_DATA_DIR"
 if [ -f "$SEAFILE_DATA_DIR/current_version" ]; then
     log "checking for schema upgrades"
     "$DBCTL" upgrade
