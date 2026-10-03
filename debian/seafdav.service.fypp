@@ -18,15 +18,15 @@ Wants=seafile.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# share_name, workers, timeout and show_repo_id are read from seafdav.conf.
 Environment=SEAFDAV_CONF=%E/seafile/seafdav.conf
 Type=exec
-# Upstream's controller passes the listen address on the command line; seafdav
-# itself never reads it from seafdav.conf. --root only satisfies the cli's
-# provider check, the seafile provider replaces that mapping right after.
+# --root only satisfies the cli's provider check: the seafile provider replaces
+# that mapping, the unit's private /var/tmp stays empty. --no-config skips a
+# wsgidav.yaml in the working directory.
 ExecStart=/usr/lib/seahub/venv/bin/python -m wsgidav.server.server_cli \
   --server gunicorn \
-  --root / \
+  --no-config \
+  --root /var/tmp \
   --host 127.0.0.1 \
   --port 8080
 WorkingDirectory=/usr/lib/seahub/seahub
@@ -44,8 +44,7 @@ UMask=0027
 
 ## Connection and process limits
 #TasksMax=128
-# Customize limits to your setup and expected usage spikes; memory scales with
-# the threads (workers in seafdav.conf) and concurrent transfers.
+# Customize limits to your setup and expected usage spikes.
 #CPUQuota=200%
 #MemoryHigh=512M
 #MemoryMax=1G

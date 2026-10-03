@@ -298,7 +298,7 @@ override_dh_installsystemd-arch:
 # the notification server is optional (mysql backend only)
 	dh_installsystemd -pseafile-server --name=seafile-notification --no-start --restart-after-upgrade seafile-notification.service
 	dh_installsystemd -pseafile-server --name=seafevents --no-start --restart-after-upgrade seafevents.service
-# webdav is optional, like upstream's enabled = false
+# the webdav server is optional
 	dh_installsystemd -pseafile-server --name=seafdav --no-enable --no-start --restart-after-upgrade seafdav.service
 
 execute_before_dh_installsystemd-arch:

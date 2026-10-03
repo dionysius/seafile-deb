@@ -6,9 +6,9 @@ Description: seaf-fsck.sh: use this packaging's fixed FHS paths, add a
  one (same validate_already_running as the patched seaf-gc.sh: checks
  systemctl unit state for seafile.service, seafile-fileserver.service,
  seahub.service, seafile-fuse.service and seafdav.service), since --repair
- mutates the object store just as gc does. Re-execs as the seafile user via runuser when invoked
- as anyone else, before doing anything, for the same file-ownership reason as
- seaf-gc.sh.
+ mutates the object store just as gc does. Re-execs as the seafile user via
+ runuser when invoked as anyone else, before doing anything, for the same
+ file-ownership reason as seaf-gc.sh.
 Author: dionysius <dragon.dionysius@gmail.com>
 Forwarded: not-needed
 Comment: install-layout specific, not something upstream's own tar.gz/docker install needs.
