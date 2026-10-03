@@ -110,3 +110,11 @@ jobs:
         with:
           instance: seafile-test
           run: bash .github/test/admin-tools-check.sh --out "$GITHUB_STEP_SUMMARY"
+
+      - name: Proxy check
+        # nginx with the shipped example in front of the stack: login, assets, transfer,
+        # thumbnail, websocket. See .github/test/proxy-check.sh.
+        uses: dionysius/incus-zabbly-actions/exec@v1
+        with:
+          instance: seafile-test
+          run: bash .github/test/proxy-check.sh --out "$GITHUB_STEP_SUMMARY"
