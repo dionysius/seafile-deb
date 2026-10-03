@@ -14,9 +14,12 @@
 # they take an arbitrary sql file path, not one bound to a specific version
 # directory, so there is no separate SQL-loading code of our own here, only
 # which directory to point them at. Their per-statement error handling is
-# intentionally left as upstream wrote it (warn and keep going, not fatal): a
-# rerun after an interrupted upgrade relies on this to skip past
-# already-applied statements instead of failing on them.
+# replaced, not reused: upstream's upgrade helper warns and keeps going on any
+# error (its installer, by contrast, aborts on any), which lets a real failure
+# pass silently and the stamp advance over a broken schema. Here only the
+# errors a rerun of an already-applied statement raises are skipped (a rerun
+# after an interrupted init/upgrade relies on that); anything else aborts
+# before the stamp is written, so the next run retries the same step.
 #
 # seahub's schema is handled like upstream's installer and docker image do:
 # the full seahub.sql on init, the versioned seahub.sql deltas on upgrade,
@@ -112,21 +115,45 @@ def ensure_databases():
     _ensure_database("SEAFILE_MYSQL_DB_SEAHUB_DB_NAME", "seahub_db")
 
 
+# mysql errors a rerun of an already-applied statement raises: table exists,
+# duplicate column, duplicate key name, duplicate entry (seahub.sql's INSERTs),
+# multiple primary key, can't drop (already dropped), duplicate foreign key
+_ALREADY_APPLIED = {1050, 1060, 1061, 1062, 1068, 1091, 1826}
+
+
+def _execute_sql(conn, sql):
+    import pymysql
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql)
+        conn.commit()
+    except pymysql.err.MySQLError as e:
+        code = e.args[0] if e.args else None
+        if code in _ALREADY_APPLIED:
+            print(f"seaf-dbctl: already applied, skipping ({e.args[1]})")
+            return
+        sys.exit(f"ERROR: sql failed ({e}):\n{sql}")
+
+
 def _updater(version):
     sys.path.insert(0, os.path.join(INSTALLDIR, "upgrade"))
     import db_update_helper as h
-    return h.MySQLDBUpdater(
+    updater = h.MySQLDBUpdater(
         version,
         h.DBUpdater.get_ccnet_mysql_info(version),
         h.DBUpdater.get_seafile_mysql_info(version),
         h.DBUpdater.get_seahub_mysql_info(),
     )
+    updater.execute_sql = _execute_sql
+    return updater
 
 
 def _apply_dir(updater, sql_dir):
+    # seafile.sql last: a non-empty seafile_db is what init takes for existing
+    # data (_schema_initialised), so an init interrupted before it can be rerun
     for name, apply_fn in (("ccnet.sql", updater.update_ccnet_sql),
-                            ("seafile.sql", updater.update_seafile_sql),
-                            ("seahub.sql", updater.update_seahub_sql)):
+                            ("seahub.sql", updater.update_seahub_sql),
+                            ("seafile.sql", updater.update_seafile_sql)):
         path = os.path.join(sql_dir, name)
         if os.path.exists(path):
             apply_fn(path)
