@@ -32,6 +32,21 @@ import subprocess
 import sys
 
 INSTALLDIR = "/usr/lib/seafile"
+CONFDIR = "/etc/seafile"
+
+
+def _load_env():
+    """seafile.env (the units' EnvironmentFile), for direct invocation."""
+    try:
+        with open(os.path.join(CONFDIR, "seafile.env")) as fp:
+            for line in fp:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip("\"'"))
+    except FileNotFoundError:
+        pass
 
 
 def _installed_version():
@@ -205,6 +220,7 @@ def main():
         os.execvp("runuser", ["runuser", "-u", "seafile", "--",
                                sys.executable, os.path.abspath(__file__), *sys.argv[1:]])
 
+    _load_env()
     args = sys.argv[1:]
     if args == ["check"]:
         check()
