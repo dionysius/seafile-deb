@@ -1,8 +1,8 @@
 #!/bin/bash
 # Smoke-test the admin/maintenance tools (seaf-gc, seaf-fsck, seahub-reset-admin):
 # each must refuse while the seafile stack is active, and actually work once it
-# isn't. Run after boot-check.sh has confirmed a healthy stack. Leaves seafile
-# and seahub running again on exit either way.
+# isn't. Run after boot-check.sh has confirmed a healthy stack. Leaves the
+# whole stack running again on exit either way.
 #
 # Runs IN PLACE as root, requires systemd - ephemeral testbed only.
 #
@@ -21,7 +21,7 @@ done
 [ -d /run/systemd/system ] || error 4 "systemd is not running (/run/systemd/system missing)"
 
 rc=0; rows=()
-trap 'systemctl start seafile.service seahub.service >/dev/null 2>&1 || true' EXIT
+trap 'systemctl start seafile.service seafile-fileserver.service seafile-notification.service seahub.service seafevents.service >/dev/null 2>&1 || true' EXIT
 
 check_refuses_while_active() {
   local tool="$1" out
@@ -40,7 +40,7 @@ check_refuses_while_active seaf-gc
 check_refuses_while_active seaf-fsck
 
 info "Stop the stack, run seaf-gc and seaf-fsck for real"
-systemctl stop seahub.service seafile.service
+systemctl stop seahub.service seafevents.service seafile-notification.service seafile-fileserver.service seafile.service
 
 out=$(seaf-gc 2>&1)
 if grep -q "GC is finished" <<<"$out"; then
