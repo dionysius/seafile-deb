@@ -9,6 +9,9 @@ Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-de
 After=network.target seafile.service
 Wants=seafile.service
 
+# If running behind a reverse proxy - running on this system - consider ordering it before also:
+#Before=nginx.service
+
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment

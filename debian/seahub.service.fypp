@@ -10,6 +10,9 @@ After=network.target seafile.service seafile-migrate.service redis-server.servic
 Wants=seafile.service
 Requires=seafile-migrate.service
 
+# If running behind a reverse proxy - running on this system - consider ordering it before also:
+#Before=nginx.service
+
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment

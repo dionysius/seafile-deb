@@ -1,0 +1,24 @@
+# Caddyfile for seafile (TLS certificates are obtained automatically for a public domain).
+# The public address must match SEAFILE_SERVER_PROTOCOL/SEAFILE_SERVER_HOSTNAME and
+# NOTIFICATION_SERVER_URL in /etc/seafile/seafile.env.
+
+seafile.example.com {
+	# file server; handle_path strips the path prefix
+	handle_path /seafhttp/* {
+		reverse_proxy 127.0.0.1:8082 {
+			transport http {
+				read_timeout 36000s
+			}
+		}
+	}
+
+	# notification server (websocket)
+	handle_path /notification/* {
+		reverse_proxy 127.0.0.1:8083
+	}
+
+	# seahub
+	handle {
+		reverse_proxy 127.0.0.1:8000
+	}
+}
