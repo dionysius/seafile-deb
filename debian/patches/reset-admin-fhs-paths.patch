@@ -18,6 +18,7 @@ Description: reset-admin.sh: use this packaging's fixed FHS paths instead of
 Author: dionysius <dragon.dionysius@gmail.com>
 Forwarded: not-needed
 Comment: install-layout specific, not something upstream's own tar.gz/docker install needs.
+ The argument forwarding is: https://github.com/haiwen/seahub/pull/9590
 --- a/seahub/scripts/reset-admin.sh
 +++ b/seahub/scripts/reset-admin.sh
 @@ -1,105 +1,22 @@
