@@ -143,6 +143,7 @@ override_dh_auto_install-arch:
 
 # migration assets: base schema, per-version upgrade deltas, dispatcher, version stamp
 	cp -a scripts/sql $(TMPDEB)$(SEAFPREFIX)/sql
+	cp seahub/sql/mysql.sql $(TMPDEB)$(SEAFPREFIX)/sql/mysql/seahub.sql
 	cp -a seahub/scripts/upgrade $(TMPDEB)$(SEAFPREFIX)/upgrade
 # only db_update_helper.py and the sql/ deltas are used; the .sh wrappers assume
 # upstream's own multi-version install tree

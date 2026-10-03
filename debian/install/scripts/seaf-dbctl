@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# ccnet/seafile MySQL: database existence, initial schema load, versioned
-# deltas, and the data's version stamp.
+# ccnet/seafile/seahub MySQL: database existence, initial schema load,
+# versioned deltas, and the data's version stamp.
 #
 # The stamp ($SEAFILE_DATA_DIR/current_version) is the only source of truth
 # for what schema version the data is at - same location/semantics as
@@ -10,17 +10,19 @@
 # "decide" and "record" across a process boundary would just duplicate the
 # version-comparison logic on both sides.
 #
-# Both init and upgrade go through upstream's own MySQLDBUpdater.update_ccnet_sql/
-# update_seafile_sql - it takes an arbitrary sql file path, not one bound to a
-# specific version directory, so there is no separate SQL-loading code of our
-# own here, only which directory to point it at. Its per-statement error
-# handling is intentionally left as upstream wrote it (warn and keep going,
-# not fatal): a rerun after an interrupted upgrade relies on this to skip past
+# Both init and upgrade go through upstream's own MySQLDBUpdater.update_*_sql -
+# they take an arbitrary sql file path, not one bound to a specific version
+# directory, so there is no separate SQL-loading code of our own here, only
+# which directory to point them at. Their per-statement error handling is
+# intentionally left as upstream wrote it (warn and keep going, not fatal): a
+# rerun after an interrupted upgrade relies on this to skip past
 # already-applied statements instead of failing on them.
 #
-# seahub/seafevents schema is django's own (see seahub-migrate) and is never
-# touched here, in either mode - only the seahub_db container itself is
-# ensured to exist, since django creates tables but never the database itself.
+# seahub's schema is handled like upstream's installer and docker image do:
+# the full seahub.sql on init, the versioned seahub.sql deltas on upgrade,
+# never django's migrations. seafevents creates its own tables (see
+# seahub-migrate); upstream applies seafevents.sql deltas in the pro edition
+# only.
 #
 # Usage: seaf-dbctl check | init | upgrade [<target-version>]
 import functools
@@ -123,7 +125,8 @@ def _updater(version):
 
 def _apply_dir(updater, sql_dir):
     for name, apply_fn in (("ccnet.sql", updater.update_ccnet_sql),
-                            ("seafile.sql", updater.update_seafile_sql)):
+                            ("seafile.sql", updater.update_seafile_sql),
+                            ("seahub.sql", updater.update_seahub_sql)):
         path = os.path.join(sql_dir, name)
         if os.path.exists(path):
             apply_fn(path)
