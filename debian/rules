@@ -288,7 +288,8 @@ execute_after_dh_install-arch:
 	rm debian/seafile-server/usr/lib/seafile/bin/seaf-fuse
 
 override_dh_installsystemd-arch:
-	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start seafile-migrate.service
+# stopping it on upgrade would take its Requires= dependents down with it
+	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start --no-stop-on-upgrade seafile-migrate.service
 # the bundle; its members restart on their own after upgrade
 	dh_installsystemd -pseafile-server --name=seafile --no-start --no-stop-on-upgrade seafile.target
 	dh_installsystemd -pseafile-server --name=seafile-server --no-start --restart-after-upgrade seafile-server.service
