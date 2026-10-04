@@ -32,9 +32,9 @@ rc=0; rows=()
 simulate() {
   local label="$1" fake="$2"
   info "Upgrade path: $label ($fake -> $installed)"
-  systemctl stop seahub.service seafile.service 2>/dev/null
+  systemctl stop seafile.target 2>/dev/null
   echo "$fake" > "$STAMP"
-  systemctl start seahub.service 2>&1 || true
+  systemctl start seafile.target 2>&1 || true
   sleep 5
   local ok=1
   WAIT=90 bash "$HERE/boot-check.sh" >/dev/null 2>&1 || ok=0

@@ -21,12 +21,12 @@ done
 [ -d /run/systemd/system ] || error 4 "systemd is not running (/run/systemd/system missing)"
 
 rc=0; rows=()
-trap 'systemctl start seafile.service seafile-fileserver.service seafile-notification.service seahub.service seafevents.service >/dev/null 2>&1 || true' EXIT
+trap 'systemctl start seafile.target >/dev/null 2>&1 || true' EXIT
 
 check_refuses_while_active() {
   local tool="$1" out
   out=$("$tool" 2>&1) && { echo "FAIL: $tool did not refuse"; echo "$out"; rc=1; rows+=("| \`$tool\` refuses while the stack is active | ❌ |"); return; }
-  if grep -q "seafile.service is running" <<<"$out"; then
+  if grep -q "seafile-server.service is running" <<<"$out"; then
     echo "OK: $tool refused"
     rows+=("| \`$tool\` refuses while the stack is active | ✅ |")
   else
@@ -35,12 +35,12 @@ check_refuses_while_active() {
   fi
 }
 
-info "seaf-gc / seaf-fsck refuse while seafile.service is active"
+info "seaf-gc / seaf-fsck refuse while seafile-server.service is active"
 check_refuses_while_active seaf-gc
 check_refuses_while_active seaf-fsck
 
 info "Stop the stack, run seaf-gc and seaf-fsck for real"
-systemctl stop seahub.service seafevents.service seafile-notification.service seafile-fileserver.service seafile.service
+systemctl stop seafile.target
 
 out=$(seaf-gc 2>&1)
 if grep -q "GC is finished" <<<"$out"; then
@@ -66,7 +66,7 @@ else
 fi
 
 info "seahub-reset-admin creates an account non-interactively"
-systemctl start seafile.service
+systemctl start seafile-server.service
 sleep 3
 out=$(seahub-reset-admin --noinput --username=citest --email=citest@example.com --password=citest-password-123 2>&1)
 if grep -q "Superuser created successfully" <<<"$out"; then
