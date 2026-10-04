@@ -1,35 +1,35 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seafile`). This will enable you to get updates
+# (e.g. `systemctl edit seafdav`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
 [Unit]
-Description=Seafile storage and sync server (seaf-server)
+Description=Seafile WebDAV server (seafdav)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-# The service requires network interfaces to be configured.
-After=network.target seafile-migrate.service
+After=network.target seafile-server.service seafile-migrate.service
 Requires=seafile-migrate.service
-# If you want to expose the server to the network directly, you may find the following useful:
-#After=network-online.target
+Wants=seafile-server.service
 
-# If the MySQL/MariaDB server runs on this system, order after it:
-#After=mariadb.service
-#Requires=mariadb.service
+# If running behind a reverse proxy - running on this system - consider ordering it before also:
+#Before=nginx.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
+Environment=SEAFDAV_CONF=%E/seafile/seafdav.conf
 Type=exec
-ExecStart=/usr/lib/seafile/bin/seaf-server \
-  -F %E/seafile \
-  -c %S/seafile/ccnet \
-  -d ${SEAFILE_DATA_DIR} \
-  -p %t/seafile \
-  -f
-WorkingDirectory=/var/lib/seafile
-# Restart on failure
+# --root only satisfies the cli's provider check: the seafile provider replaces
+# that mapping, the unit's private /var/tmp stays empty. --no-config skips a
+# wsgidav.yaml in the working directory.
+ExecStart=/usr/lib/seahub/venv/bin/python -m wsgidav.server.server_cli \
+  --server gunicorn \
+  --no-config \
+  --root /var/tmp \
+  --host 127.0.0.1 \
+  --port 8080
+WorkingDirectory=/usr/lib/seahub/seahub
 Restart=on-failure
 RestartSec=5s
 
@@ -40,24 +40,17 @@ ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
 StateDirectory=seafile
 StateDirectoryMode=0750
-RuntimeDirectory=seafile
-RuntimeDirectoryMode=0750
 UMask=0027
-# External directories (grant write access to a folder outside of service-managed directories above).
-#ReadWritePaths=/path/to/your/storage
 
 ## Connection and process limits
-LimitNOFILE=1048576
-#TasksMax=256
+#TasksMax=128
 # Customize limits to your setup and expected usage spikes.
 #CPUQuota=200%
-#MemoryHigh=1G
-#MemoryMax=2G
+#MemoryHigh=512M
+#MemoryMax=1G
 
 ## Sandboxing and isolation
 # An overview is available using `systemd-analyze security <service>`.
-
-## Capabilities
 AmbientCapabilities=
 CapabilityBoundingSet=
 # Uncomment these to allow binding to ports in the range 0-1024.
@@ -91,7 +84,8 @@ ProtectKernelLogs=true
 ProtectControlGroups=strict
 
 # Execution restrictions
-MemoryDenyWriteExecute=true
+# Python needs writable+executable memory.
+MemoryDenyWriteExecute=false
 SetLoginEnvironment=false
 
 # System call and network filtering

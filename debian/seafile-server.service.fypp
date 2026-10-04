@@ -1,27 +1,35 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seahub`). This will enable you to get updates
+# (e.g. `systemctl edit seafile-server`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
 [Unit]
-Description=Seahub (Seafile web frontend)
+Description=Seafile storage and sync server (seaf-server)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-server.service seafile-migrate.service redis-server.service seafile.target
-Wants=seafile-server.service
+# The service requires network interfaces to be configured.
+After=network.target seafile-migrate.service seafile.target
 Requires=seafile-migrate.service
+# If you want to expose the server to the network directly, you may find the following useful:
+#After=network-online.target
 
-# If running behind a reverse proxy - running on this system - consider ordering it before also:
-#Before=nginx.service
+# If the MySQL/MariaDB server runs on this system, order after it:
+#After=mariadb.service
+#Requires=mariadb.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-WorkingDirectory=/usr/lib/seahub/seahub
 Type=exec
-ExecStart=/usr/lib/seahub/venv/bin/gunicorn seahub.wsgi:application -c /etc/seafile/gunicorn.conf.py
+ExecStart=/usr/lib/seafile/bin/seaf-server \
+  -F %E/seafile \
+  -c %S/seafile/ccnet \
+  -d ${SEAFILE_DATA_DIR} \
+  -p %t/seafile \
+  -f
+WorkingDirectory=/var/lib/seafile
 # Restart on failure
 Restart=on-failure
 RestartSec=5s
@@ -33,23 +41,31 @@ ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
 StateDirectory=seafile
 StateDirectoryMode=0750
-CacheDirectory=seafile
-CacheDirectoryMode=0750
-RuntimeDirectory=seahub
+RuntimeDirectory=seafile
+RuntimeDirectoryMode=0750
 UMask=0027
+# External directories (grant write access to a folder outside of service-managed directories above).
+#ReadWritePaths=/path/to/your/storage
 
 ## Connection and process limits
-#TasksMax=128
+LimitNOFILE=1048576
+#TasksMax=256
 # Customize limits to your setup and expected usage spikes.
-#CPUQuota=400%
-# Scales with the gunicorn workers (gunicorn.conf.py).
-#MemoryHigh=2G
-#MemoryMax=3G
+#CPUQuota=200%
+#MemoryHigh=1G
+#MemoryMax=2G
 
 ## Sandboxing and isolation
 # An overview is available using `systemd-analyze security <service>`.
+
+## Capabilities
 AmbientCapabilities=
 CapabilityBoundingSet=
+# Uncomment these to allow binding to ports in the range 0-1024.
+#AmbientCapabilities=CAP_NET_BIND_SERVICE
+#CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+
+# Process restrictions
 NoNewPrivileges=true
 RestrictSUIDSGID=true
 SecureBits=noroot noroot-locked
@@ -76,8 +92,7 @@ ProtectKernelLogs=true
 ProtectControlGroups=strict
 
 # Execution restrictions
-# Python and native wheels need writable+executable memory.
-MemoryDenyWriteExecute=false
+MemoryDenyWriteExecute=true
 SetLoginEnvironment=false
 
 # System call and network filtering

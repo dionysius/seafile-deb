@@ -15,9 +15,35 @@ if [ "$1" = "configure" ]; then
   ucf --three-way /usr/share/seafile-server/seahub_settings.py /etc/seafile/seahub_settings.py
   ucf --three-way /usr/share/seafile-server/gunicorn.conf.py /etc/seafile/gunicorn.conf.py
   ucf --three-way /usr/share/seafile-server/seafevents.conf /etc/seafile/seafevents.conf
+  ucf --three-way /usr/share/seafile-server/seafdav.conf /etc/seafile/seafdav.conf
+fi
+
+# Upgrade from < 13.0.25-1~alpha12~: seafile.service is now seafile-server.service, and the
+# server units are wanted by seafile.target instead of multi-user.target. Carry over the core's
+# enabled and running state; stop the old one before the units below try-restart, or their
+# Wants= starts seafile-server.service next to it.
+if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.0.25-1~alpha12~"; then
+  if [ -d /run/systemd/system ] && systemctl --quiet is-active seafile.service; then
+    deb-systemd-invoke stop seafile.service >/dev/null || true
+    start_seafile_server=1
+  fi
+  if deb-systemd-helper --quiet debian-installed seafile.service; then
+    # a state file without links makes the debhelper section below leave it disabled
+    deb-systemd-helper --quiet was-enabled seafile.service || deb-systemd-helper update-state seafile-server.service >/dev/null || true
+    deb-systemd-helper purge seafile.service >/dev/null || true
+  fi
+  for unit in seafile-fileserver seafile-notification seahub seafevents; do
+    if deb-systemd-helper --quiet was-enabled "$unit.service"; then
+      deb-systemd-helper reenable "$unit.service" >/dev/null || true
+    fi
+  done
 fi
 
 #DEBHELPER#
+
+if [ -n "${start_seafile_server:-}" ]; then
+  deb-systemd-invoke start seafile-server.service >/dev/null || true
+fi
 
 # /etc/seafile is 0500 seafile:seafile via tmpfiles: only the service user and root
 # reach the config; the seafile group is for data access. The units mount it read-only.

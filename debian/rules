@@ -16,6 +16,10 @@ SEAFPREFIX = /usr/lib/seafile
 HUBPREFIX = /usr/lib/seahub
 # throwaway prefix for the statically linked libevhtp
 STAGING = $(CURDIR)/debian/staging
+# staged seahub tree: the application and the venv
+HUBDEST = $(TMPDEB)$(HUBPREFIX)
+SEAHUB = $(HUBDEST)/seahub
+VENV = $(HUBDEST)/venv
 
 # steps imitate upstream's community build recipe:
 # https://github.com/haiwen/seafile-docker/tree/master/build/seafile_13.0
@@ -72,7 +76,7 @@ override_dh_auto_clean:
 	rm -rf $(STAGING) debian/.gocache debian/.gomodcache debian/.buildbin debian/.uvcache debian/.npmcache
 	[ ! -f Makefile ] || $(MAKE) distclean || true
 	rm -f fileserver/fileserver notification-server/notification-server
-	rm -f debian/seafile-server.seafile.service debian/seafile-server.seafile-migrate.service debian/seafile-server.seafile-fileserver.service debian/seafile-server.seahub.service debian/seafile-fuse.seafile-fuse.service debian/seafile-server.seafile-notification.service debian/seafile-server.seafevents.service debian/uv.tar.gz
+	rm -f debian/seafile-server.seafile-server.service debian/seafile-server.seafile-migrate.service debian/seafile-server.seafile-fileserver.service debian/seafile-server.seahub.service debian/seafile-fuse.seafile-fuse.service debian/seafile-server.seafile-notification.service debian/seafile-server.seafevents.service debian/seafile-server.seafdav.service debian/uv.tar.gz
 	rm -rf seahub/frontend/node_modules seahub/frontend/build seahub/frontend/webpack-stats.json seahub/media/assets
 
 override_dh_auto_configure-arch:
@@ -129,17 +133,21 @@ override_dh_dwz:
 override_dh_strip:
 	dh_strip -Xseahub/venv
 
+# the venv's shared objects are private, no ldconfig trigger
+override_dh_makeshlibs:
+	dh_makeshlibs -Xseahub/venv
+
+# upstream ships modules, templates and media with the executable bit
+execute_after_dh_fixperms-indep:
+	find debian/seafile-server-data/usr/lib/seahub -type f -perm /111 \
+		-exec sh -c 'for f; do [ "$$(head -c2 "$$f")" = "#!" ] || chmod a-x "$$f"; done' sh {} +
+
 override_dh_auto_install-arch:
 	$(MAKE) install DESTDIR=$(TMPDEB) pythondir=$(PYSEAF) pyexecdir=$(PYSEAF)
 
 # drop the go binaries next to the C daemons
 	install -m 0755 fileserver/fileserver $(TMPDEB)$(SEAFPREFIX)/bin/fileserver
 	install -m 0755 notification-server/notification-server $(TMPDEB)$(SEAFPREFIX)/bin/notification-server
-
-# third-party license inventory of the linked go modules
-	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server
-	debian/helpers/third-party-go.sh fileserver notification-server \
-		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-go.txt.gz
 
 # migration assets: base schema, per-version upgrade deltas, dispatcher, version stamp
 	cp -a scripts/sql $(TMPDEB)$(SEAFPREFIX)/sql
@@ -158,14 +166,15 @@ override_dh_auto_install-arch:
 	install -m 0755 seahub/scripts/seaf-gc.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-gc.sh
 	install -m 0755 seahub/scripts/seaf-fsck.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-fsck.sh
 
-# static/dev artefacts and the upstream supervisor; systemd runs the daemons directly
+# static/dev artefacts, the upstream supervisor and its setup helpers; systemd runs the daemons directly
 	rm -rf $(TMPDEB)$(SEAFPREFIX)/include
 	find $(TMPDEB)$(SEAFPREFIX) -name '*.la' -delete
-	rm -f $(TMPDEB)$(SEAFPREFIX)/bin/seafile-controller
+	rm -f $(TMPDEB)$(SEAFPREFIX)/bin/seafile-controller $(TMPDEB)$(SEAFPREFIX)/bin/seafile-admin \
+		$(TMPDEB)$(SEAFPREFIX)/bin/parse_seahub_db.py
 
 # synthesize a project from the merged upstream requirements (minus the bundled
 # components), lock it and compile a relocatable venv - nothing to resolve at runtime
-	mkdir -p $(TMPDEB)$(HUBPREFIX)
+	mkdir -p $(HUBDEST)
 	{ echo '[project]'; echo 'name = "seahub-deps"'; echo 'version = "0"'; \
 	  echo 'requires-python = ">=3.11"'; echo 'dependencies = ['; \
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
@@ -173,140 +182,132 @@ override_dh_auto_install-arch:
 	  echo '  "pyOpenSSL>=24",'; \
 	  echo '  "pillow-heif>=1.1",'; \
 	  echo '  "django-pylibmc>=0.6",'; \
-	  echo ']'; } > $(TMPDEB)$(HUBPREFIX)/pyproject.toml
+	  echo ']'; } > $(HUBDEST)/pyproject.toml
 # pyOpenSSL floor: uv otherwise resolves a 22.x incompatible with current cryptography
 # pillow-heif floor: upstream's ==1.0.* pin neither ships wheels nor builds for current pythons
 # django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend, declared as a
 # dependency in none of the three requirements.txt above
 # libmemcached-dev (Build-Depends) is only for this step: uv still builds django-pylibmc's
 # own pylibmc dependency from source here even though it's discarded and replaced below
-	cd $(TMPDEB)$(HUBPREFIX) && $(UV) lock --python python3
-	$(UV) venv --relocatable --python python3 $(TMPDEB)$(HUBPREFIX)/venv
-	cd $(TMPDEB)$(HUBPREFIX) && UV_PROJECT_ENVIRONMENT=$(TMPDEB)$(HUBPREFIX)/venv \
+	cd $(HUBDEST) && $(UV) lock --python python3
+	$(UV) venv --relocatable --python python3 $(VENV)
+	cd $(HUBDEST) && UV_PROJECT_ENVIRONMENT=$(VENV) \
 		$(UV) sync --frozen --no-dev --inexact
 # self-contained venv (system site-packages would leak conflicts); bundle the
 # pure-python pysearpc, seaserv comes via PYTHONPATH in the units
 	cp -a /usr/lib/python3/dist-packages/pysearpc \
-		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/
+		$(VENV)/lib/python3*/site-packages/
 # pylibmc's PyPI build (whether wheel or source) hits a CPython 3.13 C-API
 # incompatibility that spams ignored-exception tracebacks on every use; Debian's
 # own build doesn't, so replace django-pylibmc's copy with it
-	rm -rf $(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/pylibmc \
-		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/pylibmc-*.dist-info \
-		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/_pylibmc.cpython-*.so
+	rm -rf $(VENV)/lib/python3*/site-packages/pylibmc \
+		$(VENV)/lib/python3*/site-packages/pylibmc-*.dist-info \
+		$(VENV)/lib/python3*/site-packages/_pylibmc.cpython-*.so
 	cp -a /usr/lib/python3/dist-packages/pylibmc \
 		/usr/lib/python3/dist-packages/_pylibmc.cpython-*.so \
 		/usr/lib/python3/dist-packages/pylibmc-*.egg-info \
-		$(TMPDEB)$(HUBPREFIX)/venv/lib/python3*/site-packages/
+		$(VENV)/lib/python3*/site-packages/
 
-# third-party license inventory of the compiled venv
-	$(TMPDEB)$(HUBPREFIX)/venv/bin/python debian/helpers/third-party-licenses.py \
-		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-python.txt.gz
+# third-party license inventory: the linked go modules and the compiled venv
+	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server
+	{ debian/helpers/third-party-go.sh fileserver notification-server; \
+	  $(VENV)/bin/python debian/helpers/third-party-python.py; } \
+		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES.txt.gz
 
 # seahub's migration step, invoked by the seafile-migrate unit
-	install -D -m 0755 debian/install/scripts/seahub-migrate $(TMPDEB)$(HUBPREFIX)/bin/seahub-migrate
+	install -D -m 0755 debian/install/scripts/seahub-migrate $(HUBDEST)/bin/seahub-migrate
 # admin tool: patched (debian/patches) to use this packaging's FHS paths, kept
 # under its original name, exposed on PATH via seafile-server.links
-	install -D -m 0755 seahub/scripts/reset-admin.sh $(TMPDEB)$(HUBPREFIX)/bin/reset-admin.sh
+	install -D -m 0755 seahub/scripts/reset-admin.sh $(HUBDEST)/bin/reset-admin.sh
 
-# build-only leftovers
-	find $(TMPDEB)$(HUBPREFIX)/venv -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+# build-only leftovers: bytecode, the wheels' test suites, the synthesized project
+	find $(VENV) $(TMPDEB)$(PYSEAF) -type d \( -name __pycache__ -o -name tests \) -prune -exec rm -rf {} +
+	rm -f $(VENV)/.gitignore $(HUBDEST)/pyproject.toml $(HUBDEST)/uv.lock
 
 # seahub tree in upstream's layout: seafdav/seafobj/objwrapper inside thirdpart,
 # seafevents alongside (arch-independent, ships in seafile-server-data)
 override_dh_auto_install-indep:
-	mkdir -p $(TMPDEB)$(HUBPREFIX)
-	cp -a seahub $(TMPDEB)$(HUBPREFIX)/seahub
-	cp -a seafevents $(TMPDEB)$(HUBPREFIX)/seafevents
-	cp -a seafdav/wsgidav $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/wsgidav
-	cp -a seafobj/seafobj $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/seafobj
-	cp -a seafobj/objwrapper $(TMPDEB)$(HUBPREFIX)/seahub/thirdpart/objwrapper
+	mkdir -p $(HUBDEST)
+	cp -a seahub $(SEAHUB)
+	cp -a seafevents $(HUBDEST)/seafevents
+	cp -a seafdav/wsgidav $(SEAHUB)/thirdpart/wsgidav
+	cp -a seafobj/seafobj $(SEAHUB)/thirdpart/seafobj
+	cp -a seafobj/objwrapper $(SEAHUB)/thirdpart/objwrapper
+
+# third-party license inventory of the frontend
+	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server-data
+	cd seahub/frontend && $(CURDIR)/debian/helpers/third-party-npm.py \
+		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server-data/THIRD-PARTY-LICENSES.txt.gz
 
 # the version reported by the api and the web ui; upstream's release build stamps it the same way
-	grep -q "^SEAFILE_VERSION = " $(TMPDEB)$(HUBPREFIX)/seahub/seahub/settings.py
-	sed -i "s/^SEAFILE_VERSION = .*/SEAFILE_VERSION = '$(DEB_VERSION_UPSTREAM)'/" $(TMPDEB)$(HUBPREFIX)/seahub/seahub/settings.py
+	grep -q "^SEAFILE_VERSION = " $(SEAHUB)/seahub/settings.py
+	sed -i "s/^SEAFILE_VERSION = .*/SEAFILE_VERSION = '$(DEB_VERSION_UPSTREAM)'/" $(SEAHUB)/seahub/settings.py
 
 # collected static files (media/assets + staticfiles manifest), as upstream's
 # release build ships them. Needs django from the venv, so an indep-only build
 # (-A) cannot produce the data package. seahub's import chain requires the conf
 # dirs with a seafile.conf and SEAHUB_DIR even though collectstatic uses none.
-	test -x $(TMPDEB)$(HUBPREFIX)/venv/bin/python || { echo "ERROR: collectstatic needs the venv from the arch build; build arch and indep together"; exit 1; }
+	test -x $(VENV)/bin/python || { echo "ERROR: collectstatic needs the venv from the arch build; build arch and indep together"; exit 1; }
 	mkdir -p $(STAGING)/conf && printf '[database]\ntype = mysql\n' > $(STAGING)/conf/seafile.conf
-	cd $(TMPDEB)$(HUBPREFIX)/seahub && env -i PATH=/usr/bin:/bin \
-		SEAFILE_CONF_DIR=$(STAGING)/conf SEAFILE_CENTRAL_CONF_DIR=$(STAGING)/conf SEAHUB_DIR=$(TMPDEB)$(HUBPREFIX)/seahub \
-		PYTHONPATH=$(TMPDEB)$(HUBPREFIX)/seahub:$(TMPDEB)$(HUBPREFIX)/seahub/thirdpart:$(TMPDEB)$(PYSEAF) \
+	cd $(SEAHUB) && env -i PATH=/usr/bin:/bin PYTHONDONTWRITEBYTECODE=1 \
+		SEAFILE_CONF_DIR=$(STAGING)/conf SEAFILE_CENTRAL_CONF_DIR=$(STAGING)/conf SEAHUB_DIR=$(SEAHUB) \
+		PYTHONPATH=$(SEAHUB):$(SEAHUB)/thirdpart:$(TMPDEB)$(PYSEAF) \
 		DJANGO_SETTINGS_MODULE=seahub.settings \
-		$(TMPDEB)$(HUBPREFIX)/venv/bin/python manage.py collectstatic --noinput -i admin -i termsandconditions
+		$(VENV)/bin/python manage.py collectstatic --noinput -i admin -i termsandconditions
 
-# build-only leftovers
-	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src
-	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '.git*' -prune -exec rm -rf {} + 2>/dev/null || true
-	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+# build-only leftovers: collectstatic's sources (seahub serves the collected copies
+# and reads only the webpack stats; static/ stays a STATICFILES_DIRS entry),
+# translation sources, test suites, vcs files
+	find $(SEAHUB)/frontend -mindepth 1 -maxdepth 1 ! -name webpack-stats.pro.json -exec rm -rf {} +
+	find $(SEAHUB)/static -mindepth 1 -delete
+	find $(SEAHUB) -name '*.po' -delete
+	find $(SEAHUB) $(HUBDEST)/seafevents \( -name '.git*' -o -name tests.py -o -type d \( -name __pycache__ -o -name tests -o -name test \) \) \
+		-prune -exec rm -rf {} +
+	find $(SEAHUB)/thirdpart -type d -empty -delete
 
-# upstream's manual-install service-control scripts: never invoked here, and would
-# actively fight the systemd units (own start/stop dance, no awareness of what this
-# packaging already has running) if an admin ran one by mistake
-	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/bin
-	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafile.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seahub.sh \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafile-background-tasks.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafile-monitor.sh
-# redundant with this packaging's own tooling (seafile-migrate/postinst+ucf/seafile-fuse.service)
-	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile-mysql.sh \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/setup-seafile-mysql.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seaf-fuse.sh
-# db_update_helper.py and its sql/ deltas are only ever used from the seafile-server
-# package's own copy (/usr/lib/seafile/upgrade, seaf-dbctl); nothing reaches
-# into this one, so the whole subtree here is dead weight, not just the .sh wrappers
-	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/scripts/upgrade
-# niche/unused tools (object-store migration between backends, sqlite, ldap, pro-only,
-# search-index workers - none of this is wired up) and upstream's own dev/CI scaffolding
-	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate.py \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate-repo.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate-repo.py \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/remove-objs.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/remove-objs.py \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/run_index_master.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/run_index_worker.sh \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/sqlite2mysql.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/sqlite2mysql.py \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/parse_jwt_pk.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/pro.py \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/seafobj_migrate.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/index_op.py \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/migrate_ldapusers.py $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seahub.conf \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/server-release.md
-	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/fabfile $(TMPDEB)$(HUBPREFIX)/seahub/tests $(TMPDEB)$(HUBPREFIX)/seahub/tools \
-		$(TMPDEB)$(HUBPREFIX)/seahub/.tx $(TMPDEB)$(HUBPREFIX)/seahub/sql
-	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/.travis.yml.bak \
-		$(TMPDEB)$(HUBPREFIX)/seahub/pylintrc $(TMPDEB)$(HUBPREFIX)/seahub/pylintrc.template \
-		$(TMPDEB)$(HUBPREFIX)/seahub/dev-requirements.txt $(TMPDEB)$(HUBPREFIX)/seahub/test-requirements.txt \
-		$(TMPDEB)$(HUBPREFIX)/seahub/code-check.sh $(TMPDEB)$(HUBPREFIX)/seahub/i18n.sh $(TMPDEB)$(HUBPREFIX)/seahub/sdoc-helper.sh \
-		$(TMPDEB)$(HUBPREFIX)/seahub/HACKING $(TMPDEB)$(HUBPREFIX)/seahub/CONTRIBUTORS \
-		$(TMPDEB)$(HUBPREFIX)/seahub/run-seahub.sh.template $(TMPDEB)$(HUBPREFIX)/seahub/send_user_notifications.sh.template \
-		$(TMPDEB)$(HUBPREFIX)/seahub/setenv.sh.template
-# reset-admin.sh/seaf-gc.sh/seaf-fsck.sh get patched (debian/patches) and
-# installed as real tools elsewhere (override_dh_auto_install-arch); drop the
-# unpatched duplicates riding along in this wholesale copy. check_init_admin.py
-# is left as unused dead weight here, awaiting the first-run bootstrap design
-	rm -f $(TMPDEB)$(HUBPREFIX)/seahub/scripts/reset-admin.sh $(TMPDEB)$(HUBPREFIX)/seahub/scripts/seaf-gc.sh \
-		$(TMPDEB)$(HUBPREFIX)/seahub/scripts/seaf-fsck.sh
+# upstream's manual-install tree: service-control scripts that would fight the
+# systemd units, setup/migration/index tools, dev and CI scaffolding, wsgidav's
+# sample providers and their sample TLS key. The admin
+# tools and upgrade deltas this packaging uses are installed from the source
+# tree by override_dh_auto_install-arch.
+	rm -rf $(SEAHUB)/bin $(SEAHUB)/scripts $(SEAHUB)/fabfile $(SEAHUB)/tools $(SEAHUB)/.tx $(SEAHUB)/sql
+	rm -rf $(SEAHUB)/thirdpart/wsgidav/samples $(SEAHUB)/thirdpart/wsgidav/server/sample_bogo_server.*
+	rm -f $(SEAHUB)/.travis.yml.bak \
+		$(SEAHUB)/pylintrc $(SEAHUB)/pylintrc.template \
+		$(SEAHUB)/dev-requirements.txt $(SEAHUB)/test-requirements.txt \
+		$(SEAHUB)/code-check.sh $(SEAHUB)/i18n.sh $(SEAHUB)/sdoc-helper.sh \
+		$(SEAHUB)/HACKING $(SEAHUB)/CONTRIBUTORS \
+		$(SEAHUB)/run-seahub.sh.template $(SEAHUB)/send_user_notifications.sh.template \
+		$(SEAHUB)/setenv.sh.template $(SEAHUB)/Makefile $(SEAHUB)/pytest.ini \
+		$(SEAHUB)/README.markdown $(SEAHUB)/requirements.txt
 
 execute_after_dh_install-arch:
 # seafile-server.install takes the whole daemon tree; seaf-fuse ships in seafile-fuse
 	rm debian/seafile-server/usr/lib/seafile/bin/seaf-fuse
 
 override_dh_installsystemd-arch:
-	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start seafile-migrate.service
-	dh_installsystemd -pseafile-server --name=seafile --no-start --restart-after-upgrade seafile.service
-# the go file server is optional (mysql backend only)
+# stopping it on upgrade would take its Requires= dependents down with it
+	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start --no-stop-on-upgrade seafile-migrate.service
+# the bundle; its members restart on their own after upgrade
+	dh_installsystemd -pseafile-server --name=seafile --no-start --no-stop-on-upgrade seafile.target
+	dh_installsystemd -pseafile-server --name=seafile-server --no-start --restart-after-upgrade seafile-server.service
 	dh_installsystemd -pseafile-server --name=seafile-fileserver --no-start --restart-after-upgrade seafile-fileserver.service
-	dh_installsystemd -pseafile-server --name=seahub --no-start --restart-after-upgrade seahub.service
-# the fuse mount is optional
-	dh_installsystemd -pseafile-fuse --name=seafile-fuse --no-enable --no-start --restart-after-upgrade seafile-fuse.service
-# the notification server is optional (mysql backend only)
 	dh_installsystemd -pseafile-server --name=seafile-notification --no-start --restart-after-upgrade seafile-notification.service
+	dh_installsystemd -pseafile-server --name=seahub --no-start --restart-after-upgrade seahub.service
 	dh_installsystemd -pseafile-server --name=seafevents --no-start --restart-after-upgrade seafevents.service
+# optional, outside seafile.target
+	dh_installsystemd -pseafile-server --name=seafdav --no-enable --no-start --restart-after-upgrade seafdav.service
+	dh_installsystemd -pseafile-fuse --name=seafile-fuse --no-enable --no-start --restart-after-upgrade seafile-fuse.service
 
 execute_before_dh_installsystemd-arch:
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-migrate.service.fypp debian/seafile-server.seafile-migrate.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile.service.fypp debian/seafile-server.seafile.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-server.service.fypp debian/seafile-server.seafile-server.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-fileserver.service.fypp debian/seafile-server.seafile-fileserver.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seahub.service.fypp debian/seafile-server.seahub.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-fuse.service.fypp debian/seafile-fuse.seafile-fuse.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-notification.service.fypp debian/seafile-server.seafile-notification.service
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafevents.service.fypp debian/seafile-server.seafevents.service
+	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafdav.service.fypp debian/seafile-server.seafdav.service
 
 override_dh_shlibdeps-arch:
 # most venv wheels bundle private .so files dpkg-shlibdeps cannot resolve: skip the

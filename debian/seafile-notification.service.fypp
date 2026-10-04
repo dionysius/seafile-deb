@@ -6,7 +6,8 @@
 [Unit]
 Description=Seafile real-time notification server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-After=network.target seafile.service
+PartOf=seafile.target
+After=network.target seafile-server.service seafile.target
 
 # If running behind a reverse proxy - running on this system - consider ordering it before also:
 #Before=nginx.service
@@ -87,4 +88,4 @@ RestrictRealtime=true
 RemoveIPC=true
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=seafile.target

@@ -1,2 +1,5 @@
 # target distros ship older policy versions
 seafile-server source: newer-standards-version
+
+# python3 only runs the bundled venv, there is no system python module to manage
+seafile-server source: python3-depends-but-no-python3-helper seafile-server

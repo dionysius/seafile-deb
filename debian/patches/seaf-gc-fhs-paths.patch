@@ -3,20 +3,20 @@ Description: seaf-gc.sh: use this packaging's fixed FHS paths, drop pro/sqlite
  identity
  Same TOPDIR-detection problem as reset-admin.sh (see reset-admin-fhs-paths.patch);
  sources /etc/seafile/seafile.env instead. validate_already_running now checks
- systemctl unit state (seafile.service, seafile-fileserver.service,
- seahub.service, seafile-fuse.service) instead of pgrep'ing process names, since
- seafdav runs embedded in seahub's gunicorn workers here rather than as its own
- process like in upstream's own layout. Drops check_python_executable (nothing
- here is python) and the IS_PRO_VERSION branch (community edition only).
+ systemctl unit state (seafile-server.service, seafile-fileserver.service,
+ seahub.service, seafile-fuse.service, seafdav.service) instead of pgrep'ing
+ process names, since systemd already tracks exactly these units here. Drops
+ check_python_executable (nothing here is python) and the IS_PRO_VERSION branch
+ (community edition only).
  Re-execs as the seafile user via runuser when invoked as anyone else, before
  doing anything: this writes into the object store, and running as root would
- leave files owned by root that seafile.service can no longer manage.
+ leave files owned by root that seafile-server.service can no longer manage.
 Author: dionysius <dragon.dionysius@gmail.com>
 Forwarded: not-needed
 Comment: install-layout specific, not something upstream's own tar.gz/docker install needs.
 --- a/seahub/scripts/seaf-gc.sh
 +++ b/seahub/scripts/seaf-gc.sh
-@@ -1,140 +1,69 @@
+@@ -1,140 +1,70 @@
  #!/bin/bash
  
 +if [ "$(id -un)" != "seafile" ]; then
@@ -126,12 +126,12 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
 -    if pid=$(pgrep -f "$cmd" 2>/dev/null); then
 -        echo "[$name] is running, pid $pid. You can stop it by: "
 +function validate_unit_not_active () {
-+    local unit=$1
++    local unit=$1 stop=${2:-$1}
 +    if systemctl is-active --quiet "$unit" 2>/dev/null; then
 +        echo "$unit is running."
          echo
 -        echo "        kill $pid"
-+        echo "        systemctl stop $unit"
++        echo "        systemctl stop $stop"
          echo
          echo "Stop it and try again."
          echo
@@ -150,10 +150,11 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
 -    check_component_running "seaf-server" "seaf-server"
 -    check_component_running "fileserver" "fileserver"
 -    check_component_running "seafdav" "wsgidav.server.server_cli"
-+    validate_unit_not_active seafile.service
-+    validate_unit_not_active seafile-fileserver.service
-+    validate_unit_not_active seahub.service
++    validate_unit_not_active seafile-server.service seafile.target
++    validate_unit_not_active seafile-fileserver.service seafile.target
++    validate_unit_not_active seahub.service seafile.target
 +    validate_unit_not_active seafile-fuse.service
++    validate_unit_not_active seafdav.service
  }
  
  function run_seaf_gc () {

@@ -2,8 +2,9 @@
 # Exercise the stack through the shipped nginx example (/usr/share/doc/seafile-server/examples)
 # with a self-signed certificate under a local hostname: browser-style login (CSRF needs Host
 # and X-Forwarded-Proto), every asset of the login and library pages, an upload and download
-# through /seafhttp, a thumbnail, and the notification websocket upgrade. Run after
-# boot-check.sh; sets the public address in seafile.env and restarts the stack.
+# through /seafhttp, a thumbnail, the notification websocket upgrade and WebDAV through
+# /seafdav (enabling seafdav.service). Run after boot-check.sh; sets the public address in
+# seafile.env and restarts the stack.
 #
 # Runs IN PLACE as root, requires systemd - ephemeral testbed only.
 #
@@ -43,7 +44,9 @@ info "Point seafile at the public address and restart"
 sed -i -e "s|^SEAFILE_SERVER_PROTOCOL=.*|SEAFILE_SERVER_PROTOCOL=https|" \
        -e "s|^SEAFILE_SERVER_HOSTNAME=.*|SEAFILE_SERVER_HOSTNAME=$HOST|" \
        -e "s|^NOTIFICATION_SERVER_URL=.*|NOTIFICATION_SERVER_URL=wss://$HOST/notification|" /etc/seafile/seafile.env
-systemctl restart seafile.service seafile-fileserver.service seafile-notification.service seahub.service seafevents.service
+systemctl restart seafile.target
+# on a rerun seafdav is already up, holding an rpc connection to the old seaf-server
+systemctl try-restart seafdav.service
 for i in $(seq 1 30); do [ "$(http "$B/accounts/login/")" = 200 ] && break; sleep 2; done
 
 info "Account for the checks"
@@ -90,13 +93,39 @@ code=$(curl -sSk -o /dev/null -w '%{http_code}' --max-time 3 --http1.1 -H "Conne
   -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "$B/notification/" 2>/dev/null)
 [ "$code" = 101 ] && ok "websocket upgrade via /notification" || fail "websocket upgrade via /notification" "HTTP $code"
 
+info "WebDAV through /seafdav (seafdav.service, disabled by default)"
+systemctl enable --now seafdav.service
+for i in $(seq 1 30); do [ "$(http "$B/seafdav/")" = 401 ] && break; sleep 2; done
+D=(-u proxytest@example.com:proxytest-password-123)
+code=$(http -X PROPFIND -H "Depth: 0" "$B/seafdav/")
+[ "$code" = 401 ] && ok "webdav requires authentication" || fail "webdav requires authentication" "HTTP $code"
+code=$(curl -sSk -o /tmp/propfind.xml -w '%{http_code}' "${D[@]}" -X PROPFIND -H "Depth: 1" "$B/seafdav/")
+# equally named libraries (a rerun creates another proxytest) are told apart by an id suffix
+L=proxytest; grep -q "/seafdav/proxytest-${RID:0:6}/" /tmp/propfind.xml && L=proxytest-${RID:0:6}
+[ "$code" = 207 ] && grep -q "/seafdav/$L/" /tmp/propfind.xml && ok "webdav lists the libraries" || fail "webdav lists the libraries" "HTTP $code"
+code=$(http "${D[@]}" -T /tmp/proxytest.bin "$B/seafdav/$L/dav.bin")
+curl -sSk "${D[@]}" -o /tmp/dav.out "$B/seafdav/$L/dav.bin"
+case "$code" in 201|204) cmp -s /tmp/proxytest.bin /tmp/dav.out && ok "webdav upload and download" || fail "webdav upload and download" "content differs" ;;
+  *) fail "webdav upload and download" "PUT HTTP $code" ;; esac
+# MOVE carries an absolute Destination, which only matches when the proxy passes X-Forwarded-Proto
+code=$(http "${D[@]}" -X MOVE -H "Destination: $B/seafdav/$L/dav-moved.bin" "$B/seafdav/$L/dav.bin")
+case "$code" in 201|204) ok "webdav move" ;; *) fail "webdav move" "HTTP $code" ;; esac
+# the listing's assets need the credentials too, a browser resends them for the same realm
+curl -sSk "${D[@]}" -o /tmp/davlist.html "$B/seafdav/$L/"
+bad=0; n=0
+for u in $(grep -oE '(src|href)="/:dir_browser/[^"]+"' /tmp/davlist.html | sed -E 's/^(src|href)="//; s/"$//' | sort -u); do
+  n=$((n+1)); c=$(http "${D[@]}" "$B$u"); [ "$c" = 200 ] || { bad=$((bad+1)); echo "  $c $u"; }
+done
+[ "$n" -gt 0 ] && [ "$bad" = 0 ] && ok "webdav directory listing ($n assets)" || fail "webdav directory listing" "$bad of $n assets failing"
+
 if [ "$rc" != 0 ]; then
   echo "--- nginx error log ---"; tail -n 30 /var/log/nginx/error.log 2>/dev/null || true
   echo "--- seahub journal ---"; journalctl -u seahub.service --no-pager -n 40 || true
+  echo "--- seafdav journal ---"; journalctl -u seafdav.service --no-pager -n 40 || true
 fi
 
 info "Summary"
-[ "$rc" -eq 0 ] && verdict="✅ proxy: login, assets, transfer, thumbnail and websocket work through the shipped nginx example" \
+[ "$rc" -eq 0 ] && verdict="✅ proxy: login, assets, transfer, thumbnail, websocket and webdav work through the shipped nginx example" \
                 || verdict="❌ proxy: see failures above"
 [ "$OUT" = /dev/stdout ] || mkdir -p "$(dirname "$OUT")"
 {

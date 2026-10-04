@@ -17,6 +17,20 @@ seafile.example.com {
 		reverse_proxy 127.0.0.1:8083
 	}
 
+	# WebDAV (seafdav.service); the path is forwarded as is and must match share_name
+	# in seafdav.conf, a browser's directory listing loads its assets from /:dir_browser/
+	redir /seafdav /seafdav/ 301
+	handle /seafdav/* {
+		reverse_proxy 127.0.0.1:8080 {
+			transport http {
+				read_timeout 1200s
+			}
+		}
+	}
+	handle /:dir_browser/* {
+		reverse_proxy 127.0.0.1:8080
+	}
+
 	# seahub
 	handle {
 		reverse_proxy 127.0.0.1:8000
