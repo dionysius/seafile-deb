@@ -1,4 +1,13 @@
 # vendored upstream components and prebuilt frontend assets, shipped as-is
-package-contains-vcs-control-file [usr/lib/seahub/*]
 embedded-javascript-library * [usr/lib/seahub/*]
-source-contains-prebuilt-javascript-object [usr/lib/seahub/*]
+duplicate-font-file * [usr/lib/seahub/*]
+truetype-font-prohibits-installable-embedding * [usr/lib/seahub/*]
+
+# run through the venv's python, never through their shebang
+unusual-interpreter * [usr/lib/seahub/*]
+
+# the editor bundles only load social widgets for embeds a user inserts; the
+# remaining scripts sit in conditional comments for Internet Explorer < 9
+privacy-breach-twitter * [usr/lib/seahub/*]
+privacy-breach-generic * [usr/lib/seahub/*]
+privacy-breach-uses-embedded-file * [usr/lib/seahub/*]
