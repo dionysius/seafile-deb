@@ -5,21 +5,15 @@
 > change and the package architecture is not fixed yet — package names, splits
 > and layout can change without notice between releases.
 
-Debian packages for running [Seafile Community Edition](https://www.seafile.com) on your system natively without docker. Upstream only ships a docker-based deployment; these packages build the community server from source and integrate it with systemd.
-
-This single source package builds the whole server-side stack. Its main upstream is [seafile-server](https://github.com/haiwen/seafile-server); the other pieces are pulled in by tag as source components and compiled together. It produces these binary packages:
-
-- **seafile-server** — the complete server: the compiled daemons (`seaf-server`, the go `fileserver` and `notification-server`) and the Seahub web frontend with its background tasks (seafevents) and WebDAV (seafdav); Seahub's Python dependencies ship as a bundled virtualenv resolved with [uv](https://docs.astral.sh/uv/) at build time. For a headless server, disable the seahub service.
-- **seafile-server-data** — the architecture-independent Seahub application (Django app, prebuilt frontend assets, seafevents, seafdav).
-- **seafile-fuse** — optional read-only FUSE filesystem (`seaf-fuse`) presenting the libraries in the object store as regular files.
-
-The RPC library ([libsearpc](https://github.com/haiwen/libsearpc)) comes from the distribution (`libsearpc1t64`, `python3-searpc`).
-
-The desktop and command line clients ([seaf-cli](https://github.com/haiwen/seafile), [seafile-client](https://github.com/haiwen/seafile-client), [SeaDrive](https://github.com/haiwen/seadrive-fuse)) and [SeaDoc](https://github.com/haiwen/sdoc-server) have their own independent version streams and are packaged separately, not from this repository.
+Easy to install and highly configurable debian packages for running [Seafile Community Edition](https://www.seafile.com) on your system natively without docker. Out of the box it can be installed and built on Debian stable and latest Ubuntu LTS.
 
 ## Installation
 
-The easiest way to install is using the apt repository on [apt.crunchy.run/seafile](https://apt.crunchy.run/seafile). Installation instructions are available directly on the repository page.
+The easiest way to install seafile is using the apt repository on [apt.crunchy.run/seafile](https://apt.crunchy.run/seafile). Installation instructions are available directly on the repository page.
+
+For detailed installation guides, see the [Installation Wiki](https://github.com/dionysius/seafile-deb/wiki/Installation).
+
+Quick installation:
 
 ```bash
 sudo apt install curl
@@ -31,12 +25,15 @@ Alternatively, download prebuilt packages from the [releases section](https://gi
 
 ## Configuration
 
-After installation, configure the server by editing `/etc/seafile/seafile.env` (secrets, database, cache, hostname, feature toggles) and `/etc/seafile/seafile.conf`. Generate the secrets (`JWT_PRIVATE_KEY` in `seafile.env`, `SECRET_KEY` in `seahub_settings.py`), e.g. with `openssl rand -hex 32`. Restart afterwards with `systemctl restart seafile seafile-fileserver seafile-notification seahub`.
+After installation, you'll need to configure a MySQL/MariaDB database, the secrets and a reverse proxy before starting the server with `systemctl start seafile.target`. For complete setup instructions, see the [Configuration Wiki](https://github.com/dionysius/seafile-deb/wiki/Configuration).
 
-Two things must be configured before the server is functional: a MySQL/MariaDB database (create the databases and user, set the `SEAFILE_MYSQL_DB_*` variables in `seafile.env` — the services refuse to start until then) and a reverse proxy for clients (routing `/` to seahub, `/seafhttp` to the file server and `/notification` to the notification websocket). Step-by-step instructions for both are in the [wiki](https://github.com/dionysius/seafile-deb/wiki); see the [Seafile manual](https://manual.seafile.com/13.0/) for the full configuration reference.
+For advanced topics:
 
-> [!NOTE]
-> First-run initialisation of the databases, data directories and the admin account is not yet fully wired for the native install. Track progress in the issues.
+- [Admin Tools](https://github.com/dionysius/seafile-deb/wiki/Admin-Tools) - Garbage collection, integrity checks and admin accounts
+- [Upgrading](https://github.com/dionysius/seafile-deb/wiki/Upgrading) - What happens automatically on a package upgrade
+- [Migrating from Docker](https://github.com/dionysius/seafile-deb/wiki/Migrating-from-Docker) - Moving an existing docker deployment to the packages
+
+See also the [Official Seafile Manual](https://manual.seafile.com/13.0/) for user guides and features.
 
 ## Issues
 
@@ -49,11 +46,11 @@ As this is an alternative installation method, there may be differences from the
 
 These packages favour the distribution-native way of running software. Wherever possible they link against system libraries and reuse distribution packages, so they receive the distribution's regular security updates and stability, with newer distributions or backports providing more recent versions.
 
-By default the systemd service is sandboxed, isolating the service from the rest of the system, while the configuration and data directories are restricted to the service's own user. Complex setups may need extra configuration, freely adjustable in the service file.
+By default the systemd services are extensively sandboxed, isolating the service from the rest of the system, while the configuration and data directories are restricted to the service's own user. Complex setups may need extra configuration, freely adjustable in the service file, whose comments and/or the [Wiki](https://github.com/dionysius/seafile-deb/wiki) should cover the common cases.
 
 ## Release schedule
 
-This project aims to closely match the releases of upstream. The first release in each minor version series starts as a prerelease with a 3-day waiting period to allow upstream to fix oversights in new features or changes. Subsequent releases follow the same waiting period. After the waiting period has passed, all prereleases are automatically promoted to normal releases. Important releases may skip the waiting period.
+This project aims to closely match the releases of upstream. The first release in each minor version series starts as a prerelease with a 3-day waiting period to allow upstream to fix oversights in new features or changes. Subsequent releases follow the same waiting period. After the waiting period has passed, all prereleases are automatically promoted to normal releases including new releases. Important releases may skip the waiting period.
 
 ## Build source package
 
@@ -78,7 +75,7 @@ If `nodejs`/`npm` is not recent enough don't forget to look into your `*-updates
 
 ### Build package
 
-There are many arguments to fine-tune the build (see `gbp buildpackage --help` and `dpkg-buildpackage --help`), notable options: `-b` (binary-only, no source files), `-us` (unsigned source package), `-uc` (unsigned .buildinfo and .changes file), for example:
+There are many arguments to fine-tune the build (see `gbp buildpackage --help` and `dpkg-buildpackage --help`), notable options: `-b` (binary-only, no source files), `-us` (unsigned source package), `-uc` (unsigned .buildinfo and .changes file), `--git-export-dir=<somedir>` (before building the package export the source there), for example:
 
 ```bash
 gbp buildpackage -b -us -uc
