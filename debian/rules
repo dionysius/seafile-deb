@@ -149,11 +149,6 @@ override_dh_auto_install-arch:
 	install -m 0755 fileserver/fileserver $(TMPDEB)$(SEAFPREFIX)/bin/fileserver
 	install -m 0755 notification-server/notification-server $(TMPDEB)$(SEAFPREFIX)/bin/notification-server
 
-# third-party license inventory of the linked go modules
-	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server
-	debian/helpers/third-party-go.sh fileserver notification-server \
-		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-go.txt.gz
-
 # migration assets: base schema, per-version upgrade deltas, dispatcher, version stamp
 	cp -a scripts/sql $(TMPDEB)$(SEAFPREFIX)/sql
 	cp seahub/sql/mysql.sql $(TMPDEB)$(SEAFPREFIX)/sql/mysql/seahub.sql
@@ -213,9 +208,11 @@ override_dh_auto_install-arch:
 		/usr/lib/python3/dist-packages/pylibmc-*.egg-info \
 		$(VENV)/lib/python3*/site-packages/
 
-# third-party license inventory of the compiled venv
-	$(VENV)/bin/python debian/helpers/third-party-licenses.py \
-		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES-python.txt.gz
+# third-party license inventory: the linked go modules and the compiled venv
+	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server
+	{ debian/helpers/third-party-go.sh fileserver notification-server; \
+	  $(VENV)/bin/python debian/helpers/third-party-python.py; } \
+		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES.txt.gz
 
 # seahub's migration step, invoked by the seafile-migrate unit
 	install -D -m 0755 debian/install/scripts/seahub-migrate $(HUBDEST)/bin/seahub-migrate
@@ -236,6 +233,11 @@ override_dh_auto_install-indep:
 	cp -a seafdav/wsgidav $(SEAHUB)/thirdpart/wsgidav
 	cp -a seafobj/seafobj $(SEAHUB)/thirdpart/seafobj
 	cp -a seafobj/objwrapper $(SEAHUB)/thirdpart/objwrapper
+
+# third-party license inventory of the frontend
+	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server-data
+	cd seahub/frontend && $(CURDIR)/debian/helpers/third-party-npm.py \
+		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server-data/THIRD-PARTY-LICENSES.txt.gz
 
 # the version reported by the api and the web ui; upstream's release build stamps it the same way
 	grep -q "^SEAFILE_VERSION = " $(SEAHUB)/seahub/settings.py
