@@ -1,11 +1,12 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seafile`). This will enable you to get updates
+# (e.g. `systemctl edit seafile-server`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
 [Unit]
 Description=Seafile storage and sync server (seaf-server)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
+PartOf=seafile.target
 # The service requires network interfaces to be configured.
 After=network.target seafile-migrate.service
 Requires=seafile-migrate.service
@@ -104,4 +105,4 @@ RestrictRealtime=true
 RemoveIPC=true
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=seafile.target

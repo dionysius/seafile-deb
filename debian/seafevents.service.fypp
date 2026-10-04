@@ -6,9 +6,10 @@
 [Unit]
 Description=Seafile background tasks and event processing (seafevents)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-After=network.target seafile.service seafile-migrate.service
+PartOf=seafile.target
+After=network.target seafile-server.service seafile-migrate.service
 Requires=seafile-migrate.service
-Wants=seafile.service
+Wants=seafile-server.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
@@ -83,4 +84,4 @@ RestrictRealtime=true
 RemoveIPC=true
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=seafile.target

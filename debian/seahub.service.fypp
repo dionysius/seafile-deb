@@ -6,8 +6,9 @@
 [Unit]
 Description=Seahub (Seafile web frontend)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-After=network.target seafile.service seafile-migrate.service redis-server.service
-Wants=seafile.service
+PartOf=seafile.target
+After=network.target seafile-server.service seafile-migrate.service redis-server.service
+Wants=seafile-server.service
 Requires=seafile-migrate.service
 
 # If running behind a reverse proxy - running on this system - consider ordering it before also:
@@ -89,4 +90,4 @@ RestrictRealtime=true
 RemoveIPC=true
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=seafile.target
