@@ -129,6 +129,15 @@ override_dh_dwz:
 override_dh_strip:
 	dh_strip -Xseahub/venv
 
+# the venv's shared objects are private, no ldconfig trigger
+override_dh_makeshlibs:
+	dh_makeshlibs -Xseahub/venv
+
+# upstream ships modules, templates and media with the executable bit
+execute_after_dh_fixperms-indep:
+	find debian/seafile-server-data/usr/lib/seahub -type f -perm /111 \
+		-exec sh -c 'for f; do [ "$$(head -c2 "$$f")" = "#!" ] || chmod a-x "$$f"; done' sh {} +
+
 override_dh_auto_install-arch:
 	$(MAKE) install DESTDIR=$(TMPDEB) pythondir=$(PYSEAF) pyexecdir=$(PYSEAF)
 
@@ -158,10 +167,11 @@ override_dh_auto_install-arch:
 	install -m 0755 seahub/scripts/seaf-gc.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-gc.sh
 	install -m 0755 seahub/scripts/seaf-fsck.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-fsck.sh
 
-# static/dev artefacts and the upstream supervisor; systemd runs the daemons directly
+# static/dev artefacts, the upstream supervisor and its setup helpers; systemd runs the daemons directly
 	rm -rf $(TMPDEB)$(SEAFPREFIX)/include
 	find $(TMPDEB)$(SEAFPREFIX) -name '*.la' -delete
-	rm -f $(TMPDEB)$(SEAFPREFIX)/bin/seafile-controller
+	rm -f $(TMPDEB)$(SEAFPREFIX)/bin/seafile-controller $(TMPDEB)$(SEAFPREFIX)/bin/seafile-admin \
+		$(TMPDEB)$(SEAFPREFIX)/bin/parse_seahub_db.py
 
 # synthesize a project from the merged upstream requirements (minus the bundled
 # components), lock it and compile a relocatable venv - nothing to resolve at runtime
@@ -210,7 +220,8 @@ override_dh_auto_install-arch:
 	install -D -m 0755 seahub/scripts/reset-admin.sh $(TMPDEB)$(HUBPREFIX)/bin/reset-admin.sh
 
 # build-only leftovers
-	find $(TMPDEB)$(HUBPREFIX)/venv -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	find $(TMPDEB)$(HUBPREFIX)/venv $(TMPDEB)$(PYSEAF) -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
+	rm -f $(TMPDEB)$(HUBPREFIX)/venv/.gitignore
 
 # seahub tree in upstream's layout: seafdav/seafobj/objwrapper inside thirdpart,
 # seafevents alongside (arch-independent, ships in seafile-server-data)
@@ -232,14 +243,15 @@ override_dh_auto_install-indep:
 # dirs with a seafile.conf and SEAHUB_DIR even though collectstatic uses none.
 	test -x $(TMPDEB)$(HUBPREFIX)/venv/bin/python || { echo "ERROR: collectstatic needs the venv from the arch build; build arch and indep together"; exit 1; }
 	mkdir -p $(STAGING)/conf && printf '[database]\ntype = mysql\n' > $(STAGING)/conf/seafile.conf
-	cd $(TMPDEB)$(HUBPREFIX)/seahub && env -i PATH=/usr/bin:/bin \
+	cd $(TMPDEB)$(HUBPREFIX)/seahub && env -i PATH=/usr/bin:/bin PYTHONDONTWRITEBYTECODE=1 \
 		SEAFILE_CONF_DIR=$(STAGING)/conf SEAFILE_CENTRAL_CONF_DIR=$(STAGING)/conf SEAHUB_DIR=$(TMPDEB)$(HUBPREFIX)/seahub \
 		PYTHONPATH=$(TMPDEB)$(HUBPREFIX)/seahub:$(TMPDEB)$(HUBPREFIX)/seahub/thirdpart:$(TMPDEB)$(PYSEAF) \
 		DJANGO_SETTINGS_MODULE=seahub.settings \
 		$(TMPDEB)$(HUBPREFIX)/venv/bin/python manage.py collectstatic --noinput -i admin -i termsandconditions
 
 # build-only leftovers
-	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src
+	rm -rf $(TMPDEB)$(HUBPREFIX)/seahub/frontend/node_modules $(TMPDEB)$(HUBPREFIX)/seahub/frontend/src \
+		$(TMPDEB)$(HUBPREFIX)/seahub/frontend/.eslintrc.json
 	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '.git*' -prune -exec rm -rf {} + 2>/dev/null || true
 	find $(TMPDEB)$(HUBPREFIX)/seahub $(TMPDEB)$(HUBPREFIX)/seafevents -name '__pycache__' -type d -prune -exec rm -rf {} + 2>/dev/null || true
 
