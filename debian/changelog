@@ -1,3 +1,19 @@
+seafile-server (13.0.25-1~alpha12) unstable; urgency=medium
+
+  [ wdclub ]
+  * Add seafdav.service: WebDAV is shipped but nothing started it
+
+  [ dionysius ]
+  * seafdav: serve the private /var/tmp as the placeholder root, skip wsgidav.yaml, note seafdav for data relocation, align comments
+  * seaf-dbctl: source seafile.env itself, so a direct invocation uses the configured database host and credentials
+  * Rename seafile.service to seafile-server.service, bundle the server units in seafile.target
+  * Carry seafile.service's enabled and running state over to seafile-server.service on upgrade, move the bundled units' links to seafile.target
+  * CI: manage the stack through seafile.target, check it is enabled and active
+  * README: align with the other packaging repos, leave the setup details to the wiki
+  * Order the bundled units after seafile.target, so stopping it returns once they are stopped
+
+ -- dionysius <dragon.dionysius@gmail.com>  Sun, 04 Oct 2026 02:36:36 +0200
+
 seafile-server (13.0.25-1~alpha11) unstable; urgency=medium
 
   * admin-tools-check: stop and restart the whole stack, seaf-gc refuses while the fileserver runs
