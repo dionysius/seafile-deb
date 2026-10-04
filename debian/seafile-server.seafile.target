@@ -7,6 +7,9 @@
 [Unit]
 Description=Seafile server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
+# The members order themselves after this target instead of the default reverse,
+# so stopping it returns once they are all stopped.
+DefaultDependencies=no
 
 [Install]
 WantedBy=multi-user.target

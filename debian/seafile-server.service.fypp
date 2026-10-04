@@ -8,7 +8,7 @@ Description=Seafile storage and sync server (seaf-server)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
 # The service requires network interfaces to be configured.
-After=network.target seafile-migrate.service
+After=network.target seafile-migrate.service seafile.target
 Requires=seafile-migrate.service
 # If you want to expose the server to the network directly, you may find the following useful:
 #After=network-online.target

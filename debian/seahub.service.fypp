@@ -7,7 +7,7 @@
 Description=Seahub (Seafile web frontend)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-server.service seafile-migrate.service redis-server.service
+After=network.target seafile-server.service seafile-migrate.service redis-server.service seafile.target
 Wants=seafile-server.service
 Requires=seafile-migrate.service
 

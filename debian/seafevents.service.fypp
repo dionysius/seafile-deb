@@ -7,7 +7,7 @@
 Description=Seafile background tasks and event processing (seafevents)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-server.service seafile-migrate.service
+After=network.target seafile-server.service seafile-migrate.service seafile.target
 Requires=seafile-migrate.service
 Wants=seafile-server.service
 
