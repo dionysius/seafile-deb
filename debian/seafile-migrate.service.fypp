@@ -14,6 +14,8 @@ After=network.target
 [Service]
 # No RemainAfterExit: re-run on every start of the dependents, a no-op once at version.
 Type=oneshot
+# seahub-migrate's django logs to the console instead of log files
+Environment=SEAFILE_LOG_TO_STDOUT=true
 ExecStart=/usr/lib/seafile/bin/seafile-migrate
 WorkingDirectory=/var/lib/seafile
 

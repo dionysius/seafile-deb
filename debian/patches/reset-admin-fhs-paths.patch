@@ -21,7 +21,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  The argument forwarding is: https://github.com/haiwen/seahub/pull/9590
 --- a/seahub/scripts/reset-admin.sh
 +++ b/seahub/scripts/reset-admin.sh
-@@ -1,105 +1,22 @@
+@@ -1,105 +1,24 @@
  #!/bin/bash
  
 -SCRIPT=$(readlink -f "$0")
@@ -63,6 +63,8 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
 +set -a
 +. /etc/seafile/seafile.env
 +set +a
++# django logs to the console instead of log files
++export SEAFILE_LOG_TO_STDOUT=true
  
  function validate_seafile_data_dir () {
 -    if [[ ! -d ${default_seafile_data_dir} ]]; then

@@ -24,7 +24,8 @@ ExecCondition=/bin/sh -ec '[ "$ENABLE_GO_FILESERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/fileserver \
   -F %E/seafile \
   -d ${SEAFILE_DATA_DIR} \
-  -p %t/seafile
+  -p %t/seafile \
+  -l -
 WorkingDirectory=/var/lib/seafile
 Restart=on-failure
 RestartSec=5s

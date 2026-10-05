@@ -20,6 +20,8 @@ SyslogIdentifier=seahub
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
+# django logs to the console instead of log files
+Environment=SEAFILE_LOG_TO_STDOUT=true
 WorkingDirectory=/usr/lib/seahub/seahub
 Type=exec
 ExecStart=/usr/lib/seahub/venv/bin/gunicorn seahub.wsgi:application -c /etc/seafile/gunicorn.conf.py

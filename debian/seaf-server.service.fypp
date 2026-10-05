@@ -28,6 +28,7 @@ ExecStart=/usr/lib/seafile/bin/seaf-server \
   -c %S/seafile/ccnet \
   -d ${SEAFILE_DATA_DIR} \
   -p %t/seafile \
+  -l - \
   -f
 WorkingDirectory=/var/lib/seafile
 # Restart on failure

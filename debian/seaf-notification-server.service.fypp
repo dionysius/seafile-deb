@@ -20,7 +20,7 @@ SyslogIdentifier=seaf-notification-server
 EnvironmentFile=%E/seafile/seafile.env
 Type=exec
 ExecCondition=/bin/sh -ec '[ "$ENABLE_NOTIFICATION_SERVER" = true ]'
-ExecStart=/usr/lib/seafile/bin/notification-server -c %E/seafile
+ExecStart=/usr/lib/seafile/bin/notification-server -c %E/seafile -l -
 WorkingDirectory=/var/lib/seafile
 Restart=on-failure
 RestartSec=5s
