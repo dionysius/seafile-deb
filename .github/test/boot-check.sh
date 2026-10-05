@@ -31,7 +31,7 @@ has_msg() { journalctl -u "$1" --no-pager 2>/dev/null | grep -qF "$2"; }
 info "Wait for seahub to answer at $URL (timeout ${WAIT}s)"
 i=0; code=000
 while [ "$i" -lt "$WAIT" ]; do
-  for s in seafile-migrate seafile-server seahub; do
+  for s in seafile-migrate seaf-server seahub; do
     systemctl is-failed --quiet "$s.service" && { echo "  $s entered failed state"; break 2; }
   done
   code=$(http_code); [ "$code" = 200 ] && break
@@ -49,7 +49,7 @@ info "Service active state"
 if systemctl is-enabled --quiet seafile.target && systemctl is-active --quiet seafile.target; then mark="✅"; echo "SVC OK seafile.target enabled and active"
 else mark="❌"; echo "SVC FAIL seafile.target enabled and active"; rc=1; fi
 rows+=("| \`seafile.target\` | enabled, active | $mark |")
-for s in seafile-server seafile-fileserver seafile-notification seahub seafevents; do
+for s in seaf-server seaf-fileserver seaf-notification-server seahub seafevents; do
   if systemctl is-active --quiet "$s.service"; then mark="✅"; echo "SVC OK $s active"
   else mark="❌"; echo "SVC FAIL $s active"; rc=1; fi
   rows+=("| \`$s\` | active | $mark |")
@@ -64,7 +64,7 @@ check_log() {
   rows+=("| \`$unit\` | log: \`$msg\` | $mark |")
 }
 check_log seafile-migrate.service "seafile-migrate: done"   # our migrate one-shot completed
-check_log seafile-server.service  "Use database"            # seaf-server initialised its DB backend
+check_log seaf-server.service  "Use database"            # seaf-server initialised its DB backend
 check_log seahub.service          "Listening at:"           # gunicorn bound and serving
 
 info "HTTP login page"
@@ -80,7 +80,7 @@ else mark="❌"; echo "HTTP FAIL $media"; rc=1; fi
 rows+=("| seahub | GET /media/favicons/favicon.png = 200 | $mark |")
 
 if [ "$rc" != 0 ]; then
-  for s in seafile-migrate seafile-server seahub; do
+  for s in seafile-migrate seaf-server seahub; do
     echo "--- status + last 60 journal lines: $s ---"
     systemctl status "$s.service" --no-pager -l 2>&1 | head -20 || true
     journalctl -u "$s.service" --no-pager -n 60 2>&1 || true

@@ -1,5 +1,5 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seafile-notification`). This will enable you to get updates
+# (e.g. `systemctl edit seaf-notification-server`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
@@ -7,13 +7,14 @@
 Description=Seafile real-time notification server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-server.service seafile.target
+After=network.target seaf-server.service seafile.target
 
 # If running behind a reverse proxy - running on this system - consider ordering it before also:
 #Before=nginx.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
+SyslogIdentifier=seaf-notification-server
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env

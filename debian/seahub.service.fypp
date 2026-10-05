@@ -7,8 +7,8 @@
 Description=Seahub (Seafile web frontend)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-server.service seafile-migrate.service redis-server.service seafile.target
-Wants=seafile-server.service
+After=network.target seaf-server.service seafile-migrate.service redis-server.service seafile.target
+Wants=seaf-server.service
 Requires=seafile-migrate.service
 
 # If running behind a reverse proxy - running on this system - consider ordering it before also:
@@ -16,6 +16,7 @@ Requires=seafile-migrate.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
+SyslogIdentifier=seahub
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env

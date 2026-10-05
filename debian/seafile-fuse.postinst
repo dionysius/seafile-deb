@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+# Upgrade from < 13.0.25-1~beta2~: seafile-fuse.service is now seaf-fuse.service. Carry its
+# enabled and running state over to the new name.
+if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.0.25-1~beta2~"; then
+  if [ -d /run/systemd/system ] && systemctl --quiet is-active seafile-fuse.service; then
+    deb-systemd-invoke stop seafile-fuse.service >/dev/null || true
+    start_seaf_fuse=1
+  fi
+  if deb-systemd-helper --quiet debian-installed seafile-fuse.service; then
+    if deb-systemd-helper --quiet was-enabled seafile-fuse.service; then
+      deb-systemd-helper enable seaf-fuse.service >/dev/null || true
+    fi
+    deb-systemd-helper purge seafile-fuse.service >/dev/null || true
+  fi
+fi
+
+#DEBHELPER#
+
+if [ -n "${start_seaf_fuse:-}" ]; then
+  deb-systemd-invoke start seaf-fuse.service >/dev/null || true
+fi

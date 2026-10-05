@@ -7,12 +7,13 @@
 Description=Seafile background tasks and event processing (seafevents)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-server.service seafile-migrate.service seafile.target
+After=network.target seaf-server.service seafile-migrate.service seafile.target
 Requires=seafile-migrate.service
-Wants=seafile-server.service
+Wants=seaf-server.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
+SyslogIdentifier=seafevents
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env

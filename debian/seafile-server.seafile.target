@@ -1,7 +1,7 @@
-# Bundles the server's units: seafile-server, seafile-fileserver,
-# seafile-notification, seahub and seafevents. Starting this target starts the
+# Bundles the server's units: seaf-server, seaf-fileserver,
+# seaf-notification-server, seahub and seafevents. Starting this target starts the
 # enabled ones; stopping or restarting it reaches all of them. seafdav and
-# seafile-fuse are standalone, enable and manage them on their own.
+# seaf-fuse are standalone, enable and manage them on their own.
 
 # Refer to the manpages `systemd.target` and `systemd.unit` for detailed documentation on each option.
 [Unit]

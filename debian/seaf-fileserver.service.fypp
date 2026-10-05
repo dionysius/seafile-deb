@@ -1,36 +1,31 @@
 # Please consider only editing this file through systemd drop-in files
-# (e.g. `systemctl edit seafile-server`). This will enable you to get updates
+# (e.g. `systemctl edit seaf-fileserver`). This will enable you to get updates
 # to this file automatically, without your overrides being lost.
 
 # Refer to the manpage `systemd.unit` for detailed documentation on each option.
 [Unit]
-Description=Seafile storage and sync server (seaf-server)
+Description=Seafile file server (HTTP upload/download)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-# The service requires network interfaces to be configured.
-After=network.target seafile-migrate.service seafile.target
-Requires=seafile-migrate.service
-# If you want to expose the server to the network directly, you may find the following useful:
-#After=network-online.target
+After=network.target seaf-server.service seafile.target
+Wants=seaf-server.service
 
-# If the MySQL/MariaDB server runs on this system, order after it:
-#After=mariadb.service
-#Requires=mariadb.service
+# If running behind a reverse proxy - running on this system - consider ordering it before also:
+#Before=nginx.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]
+SyslogIdentifier=seaf-fileserver
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
 Type=exec
-ExecStart=/usr/lib/seafile/bin/seaf-server \
+ExecCondition=/bin/sh -ec '[ "$ENABLE_GO_FILESERVER" = true ]'
+ExecStart=/usr/lib/seafile/bin/fileserver \
   -F %E/seafile \
-  -c %S/seafile/ccnet \
   -d ${SEAFILE_DATA_DIR} \
-  -p %t/seafile \
-  -f
+  -p %t/seafile
 WorkingDirectory=/var/lib/seafile
-# Restart on failure
 Restart=on-failure
 RestartSec=5s
 
@@ -41,24 +36,19 @@ ConfigurationDirectory=seafile::ro
 ConfigurationDirectoryMode=0500
 StateDirectory=seafile
 StateDirectoryMode=0750
-RuntimeDirectory=seafile
-RuntimeDirectoryMode=0750
 UMask=0027
-# External directories (grant write access to a folder outside of service-managed directories above).
-#ReadWritePaths=/path/to/your/storage
 
 ## Connection and process limits
 LimitNOFILE=1048576
 #TasksMax=256
 # Customize limits to your setup and expected usage spikes.
-#CPUQuota=200%
-#MemoryHigh=1G
-#MemoryMax=2G
+#CPUQuota=400%
+# fs_cache_limit (seafile.conf, 4G by default) plus transfer buffers.
+#MemoryHigh=4G
+#MemoryMax=5G
 
 ## Sandboxing and isolation
 # An overview is available using `systemd-analyze security <service>`.
-
-## Capabilities
 AmbientCapabilities=
 CapabilityBoundingSet=
 # Uncomment these to allow binding to ports in the range 0-1024.
@@ -92,7 +82,8 @@ ProtectKernelLogs=true
 ProtectControlGroups=strict
 
 # Execution restrictions
-MemoryDenyWriteExecute=true
+# The go runtime needs writable+executable memory.
+MemoryDenyWriteExecute=false
 SetLoginEnvironment=false
 
 # System call and network filtering

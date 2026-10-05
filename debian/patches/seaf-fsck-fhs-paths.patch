@@ -4,8 +4,8 @@ Description: seaf-fsck.sh: use this packaging's fixed FHS paths, add a
  sources /etc/seafile/seafile.env instead. Unlike upstream's seaf-gc.sh, this
  script had no guard against running concurrently with the live daemons - added
  one (same validate_already_running as the patched seaf-gc.sh: checks
- systemctl unit state for seafile-server.service, seafile-fileserver.service,
- seahub.service, seafile-fuse.service and seafdav.service), since --repair
+ systemctl unit state for seaf-server.service, seaf-fileserver.service,
+ seahub.service, seaf-fuse.service and seafdav.service), since --repair
  mutates the object store just as gc does. Re-execs as the seafile user via
  runuser when invoked as anyone else, before doing anything, for the same
  file-ownership reason as seaf-gc.sh.
@@ -100,10 +100,10 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
 +}
 +
 +function validate_already_running () {
-+    validate_unit_not_active seafile-server.service seafile.target
-+    validate_unit_not_active seafile-fileserver.service seafile.target
++    validate_unit_not_active seaf-server.service seafile.target
++    validate_unit_not_active seaf-fileserver.service seafile.target
 +    validate_unit_not_active seahub.service seafile.target
-+    validate_unit_not_active seafile-fuse.service
++    validate_unit_not_active seaf-fuse.service
 +    validate_unit_not_active seafdav.service
 +}
 +

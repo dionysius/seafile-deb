@@ -18,21 +18,26 @@ if [ "$1" = "configure" ]; then
   ucf --three-way /usr/share/seafile-server/seafdav.conf /etc/seafile/seafdav.conf
 fi
 
-# Upgrade from < 13.0.25-1~alpha12~: seafile.service is now seafile-server.service, and the
-# server units are wanted by seafile.target instead of multi-user.target. Carry over the core's
-# enabled and running state; stop the old one before the units below try-restart, or their
-# Wants= starts seafile-server.service next to it.
-if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.0.25-1~alpha12~"; then
-  if [ -d /run/systemd/system ] && systemctl --quiet is-active seafile.service; then
-    deb-systemd-invoke stop seafile.service >/dev/null || true
-    start_seafile_server=1
-  fi
-  if deb-systemd-helper --quiet debian-installed seafile.service; then
-    # a state file without links makes the debhelper section below leave it disabled
-    deb-systemd-helper --quiet was-enabled seafile.service || deb-systemd-helper update-state seafile-server.service >/dev/null || true
-    deb-systemd-helper purge seafile.service >/dev/null || true
-  fi
-  for unit in seafile-fileserver seafile-notification seahub seafevents; do
+# Upgrade from < 13.0.25-1~beta2~: the units are named after their upstream program and the
+# server units are wanted by seafile.target (seafile.service before alpha12, seafile-server.service
+# until beta1). Carry each old unit's enabled and running state over to its new name; stop the
+# old ones before the units below try-restart, or their Wants= starts seaf-server.service next
+# to them.
+if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.0.25-1~beta2~"; then
+  for rename in seafile:seaf-server seafile-server:seaf-server \
+      seafile-fileserver:seaf-fileserver seafile-notification:seaf-notification-server; do
+    old=${rename%%:*}.service new=${rename#*:}.service
+    if [ -d /run/systemd/system ] && systemctl --quiet is-active "$old"; then
+      deb-systemd-invoke stop "$old" >/dev/null || true
+      start_units="${start_units:-} $new"
+    fi
+    if deb-systemd-helper --quiet debian-installed "$old"; then
+      # a state file without links makes the debhelper section below leave it disabled
+      deb-systemd-helper --quiet was-enabled "$old" || deb-systemd-helper update-state "$new" >/dev/null || true
+      deb-systemd-helper purge "$old" >/dev/null || true
+    fi
+  done
+  for unit in seahub seafevents; do
     if deb-systemd-helper --quiet was-enabled "$unit.service"; then
       deb-systemd-helper reenable "$unit.service" >/dev/null || true
     fi
@@ -41,8 +46,8 @@ fi
 
 #DEBHELPER#
 
-if [ -n "${start_seafile_server:-}" ]; then
-  deb-systemd-invoke start seafile-server.service >/dev/null || true
+if [ -n "${start_units:-}" ]; then
+  deb-systemd-invoke start $start_units >/dev/null || true
 fi
 
 # /etc/seafile is 0500 seafile:seafile via tmpfiles: only the service user and root

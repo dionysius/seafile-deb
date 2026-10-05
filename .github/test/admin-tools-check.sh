@@ -26,7 +26,7 @@ trap 'systemctl start seafile.target >/dev/null 2>&1 || true' EXIT
 check_refuses_while_active() {
   local tool="$1" out
   out=$("$tool" 2>&1) && { echo "FAIL: $tool did not refuse"; echo "$out"; rc=1; rows+=("| \`$tool\` refuses while the stack is active | ❌ |"); return; }
-  if grep -q "seafile-server.service is running" <<<"$out"; then
+  if grep -q "seaf-server.service is running" <<<"$out"; then
     echo "OK: $tool refused"
     rows+=("| \`$tool\` refuses while the stack is active | ✅ |")
   else
@@ -35,7 +35,7 @@ check_refuses_while_active() {
   fi
 }
 
-info "seaf-gc / seaf-fsck refuse while seafile-server.service is active"
+info "seaf-gc / seaf-fsck refuse while seaf-server.service is active"
 check_refuses_while_active seaf-gc
 check_refuses_while_active seaf-fsck
 
@@ -66,7 +66,7 @@ else
 fi
 
 info "seahub-reset-admin creates an account non-interactively"
-systemctl start seafile-server.service
+systemctl start seaf-server.service
 sleep 3
 out=$(seahub-reset-admin --noinput --username=citest --email=citest@example.com --password=citest-password-123 2>&1)
 if grep -q "Superuser created successfully" <<<"$out"; then
