@@ -103,6 +103,8 @@ override_dh_auto_configure-indep:
 		echo "or your distribution's npm package."; exit 1; }
 
 override_dh_auto_build-arch:
+# lib/'s two valac rules write the same generated sources and race under -j
+	$(MAKE) -j1 -C lib gensource
 	$(MAKE) -j$(JOBS)
 
 # go components, each its own module
