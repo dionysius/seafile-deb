@@ -2,6 +2,7 @@
 
 include /usr/share/dpkg/default.mk
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 # the bundled libevhtp (K&R-style API, oniguruma) does not compile under C23 (gcc >= 15)
 export DEB_CFLAGS_MAINT_APPEND = -std=gnu17
 
