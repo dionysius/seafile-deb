@@ -1,3 +1,17 @@
+seafile-server (13.0.25-1~beta2) unstable; urgency=medium
+
+  * seafile.conf: a single [fileserver] section, group the options only the go or the built-in fileserver reads
+  * Name the units after their upstream program: seaf-server, seaf-fileserver, seaf-notification-server and seaf-fuse, log under the unit name; carry their enabled and running state over on upgrade
+  * Log to the journal without upstream's per-line program prefix and gunicorn's timestamps; SEAFILE_LOG_TO_STDOUT only in the units that need it instead of seafile.env
+  * seafile-migrate runs only through its dependents, not at boot on its own
+  * Build with all hardening flags
+  * Generate lib/'s vala sources before the parallel build, its two valac rules race
+  * Ship no type stubs, Cython sources or unused console scripts in the venv
+  * boot-check: accept a member skipped by its ENABLE_* toggle
+  * Install seafile.target disabled, the admin enables it once the database and secrets are configured
+
+ -- dionysius <dragon.dionysius@gmail.com>  Tue, 06 Oct 2026 20:26:16 +0200
+
 seafile-server (13.0.25-1~beta1) unstable; urgency=medium
 
   * Drop upstream's unused seafile-admin and parse_seahub_db.py, ship no bytecode or eslint config, clear exec bits on non-scripts, no ldconfig trigger for the venv
