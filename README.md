@@ -25,7 +25,7 @@ Alternatively, download prebuilt packages from the [releases section](https://gi
 
 ## Configuration
 
-After installation, you'll need to configure a MySQL/MariaDB database, the secrets and a reverse proxy before starting the server with `systemctl start seafile.target`. For complete setup instructions, see the [Configuration Wiki](https://github.com/dionysius/seafile-deb/wiki/Configuration).
+After installation, you'll need to configure a MySQL/MariaDB database, the secrets and a reverse proxy before enabling and starting the server with `systemctl enable --now seafile.target`. For complete setup instructions, see the [Configuration Wiki](https://github.com/dionysius/seafile-deb/wiki/Configuration).
 
 For advanced topics:
 

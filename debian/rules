@@ -294,8 +294,9 @@ execute_after_dh_install-arch:
 override_dh_installsystemd-arch:
 # stopping it on upgrade would take its Requires= dependents down with it
 	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start --no-stop-on-upgrade seafile-migrate.service
-# the bundle; its members restart on their own after upgrade
-	dh_installsystemd -pseafile-server --name=seafile --no-start --no-stop-on-upgrade seafile.target
+# the bundle, installed disabled: the admin enables it once the database and secrets are
+# configured; its members restart on their own after upgrade
+	dh_installsystemd -pseafile-server --name=seafile --no-enable --no-start --no-stop-on-upgrade seafile.target
 	dh_installsystemd -pseafile-server --name=seaf-server --no-start --restart-after-upgrade seaf-server.service
 	dh_installsystemd -pseafile-server --name=seaf-fileserver --no-start --restart-after-upgrade seaf-fileserver.service
 	dh_installsystemd -pseafile-server --name=seaf-notification-server --no-start --restart-after-upgrade seaf-notification-server.service

@@ -66,7 +66,7 @@ sed -i \
   /etc/seafile/seafile.env
 sed -i "s|^SECRET_KEY = \"\"|SECRET_KEY = \"$(openssl rand -hex 32)\"|" /etc/seafile/seahub_settings.py
 
-info "Start the stack (as a boot would; its members pull in the seafile-migrate one-shot)"
-systemctl start seafile.target || true
+info "Enable and start the stack, as the admin does once configured (its members pull in the seafile-migrate one-shot)"
+systemctl enable --now seafile.target || true
 
 info "DONE"
