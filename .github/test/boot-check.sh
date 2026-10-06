@@ -50,9 +50,11 @@ if systemctl is-enabled --quiet seafile.target && systemctl is-active --quiet se
 else mark="❌"; echo "SVC FAIL seafile.target enabled and active"; rc=1; fi
 rows+=("| \`seafile.target\` | enabled, active | $mark |")
 for s in seaf-server seaf-fileserver seaf-notification-server seahub seafevents; do
-  if systemctl is-active --quiet "$s.service"; then mark="✅"; echo "SVC OK $s active"
-  else mark="❌"; echo "SVC FAIL $s active"; rc=1; fi
-  rows+=("| \`$s\` | active | $mark |")
+  if systemctl is-active --quiet "$s.service"; then mark="✅"; state=active; echo "SVC OK $s active"
+  # seaf-fileserver and seaf-notification-server skip themselves when their ENABLE_* toggle is false
+  elif [ "$(systemctl show -p Result --value "$s.service")" = exec-condition ]; then mark="✅"; state="skipped by its toggle"; echo "SVC OK $s skipped by its toggle"
+  else mark="❌"; state=active; echo "SVC FAIL $s active"; rc=1; fi
+  rows+=("| \`$s\` | $state | $mark |")
 done
 
 info "Startup log messages (each service reporting healthy)"
