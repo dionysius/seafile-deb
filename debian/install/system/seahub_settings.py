@@ -80,7 +80,7 @@ SECRET_KEY = ""
 
 ### Online office (separate service, not part of this packaging) ###
 # OnlyOffice and Collabora Online publish their own Debian packages and docker images.
-# Enable only one of the two below.
+# Enable only one of the two below. SeaDoc is set up in seafile.env.
 #
 # OnlyOffice document server.
 #ENABLE_ONLYOFFICE = True
