@@ -21,6 +21,7 @@ STAGING = $(CURDIR)/debian/staging
 HUBDEST = $(TMPDEB)$(HUBPREFIX)
 SEAHUB = $(HUBDEST)/seahub
 VENV = $(HUBDEST)/venv
+VENVSITE = $(VENV)/lib/python3*/site-packages
 
 # steps imitate upstream's community build recipe:
 # https://github.com/haiwen/seafile-docker/tree/master/build/seafile_13.0
@@ -59,6 +60,10 @@ JOBS = $(or $(DEB_BUILD_OPTION_PARALLEL),1)
 # systemd major version for service file templating (systemd.pc from systemd-dev)
 SYSTEMD_MAJOR := $(shell pkgconf --modversion systemd)
 
+# units generated from debian/*.service.fypp; the bundle's members are wanted by seafile.target
+BUNDLE_UNITS = seaf-server seaf-fileserver seaf-notification-server seahub seafevents
+SERVER_UNITS = seafile-migrate $(BUNDLE_UNITS) seafdav
+
 # python install dir: upstream expects the versionless lib/python3/site-packages layout
 PYSEAF = $(SEAFPREFIX)/lib/python3/site-packages
 
@@ -77,7 +82,7 @@ override_dh_auto_clean:
 	rm -rf $(STAGING) debian/.gocache debian/.gomodcache debian/.buildbin debian/.uvcache debian/.npmcache
 	[ ! -f Makefile ] || $(MAKE) distclean || true
 	rm -f fileserver/fileserver notification-server/notification-server
-	rm -f debian/seafile-server.seaf-server.service debian/seafile-server.seafile-migrate.service debian/seafile-server.seaf-fileserver.service debian/seafile-server.seahub.service debian/seafile-fuse.seaf-fuse.service debian/seafile-server.seaf-notification-server.service debian/seafile-server.seafevents.service debian/seafile-server.seafdav.service debian/uv.tar.gz
+	rm -f debian/seafile-server.*.service debian/seafile-fuse.*.service debian/uv.tar.gz
 	rm -rf seahub/frontend/node_modules seahub/frontend/build seahub/frontend/webpack-stats.json seahub/media/assets
 
 override_dh_auto_configure-arch:
@@ -126,7 +131,6 @@ override_dh_auto_build-indep:
 	fi
 
 override_dh_auto_test:
-	:
 
 # dwz cannot process the go binaries' compressed DWARF nor the prebuilt venv wheels
 override_dh_dwz:
@@ -159,15 +163,7 @@ override_dh_auto_install-arch:
 # only db_update_helper.py and the sql/ deltas are used; the .sh wrappers assume
 # upstream's own multi-version install tree
 	find $(TMPDEB)$(SEAFPREFIX)/upgrade -maxdepth 1 -name '*.sh' -delete
-	install -m 0755 debian/install/scripts/seafile-migrate $(TMPDEB)$(SEAFPREFIX)/bin/seafile-migrate
-	install -m 0755 debian/install/scripts/seaf-dbctl $(TMPDEB)$(SEAFPREFIX)/bin/seaf-dbctl
 	echo "$(DEB_VERSION_UPSTREAM)" > $(TMPDEB)$(SEAFPREFIX)/version
-
-# admin maintenance tools: patched (debian/patches) to use this packaging's FHS
-# paths instead of upstream's own install-tree detection; kept under their
-# original names, exposed on PATH via seafile-server.links
-	install -m 0755 seahub/scripts/seaf-gc.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-gc.sh
-	install -m 0755 seahub/scripts/seaf-fsck.sh $(TMPDEB)$(SEAFPREFIX)/bin/seaf-fsck.sh
 
 # static/dev artefacts, the upstream supervisor and its setup helpers; systemd runs the daemons directly
 	rm -rf $(TMPDEB)$(SEAFPREFIX)/include
@@ -201,29 +197,23 @@ override_dh_auto_install-arch:
 # self-contained venv (system site-packages would leak conflicts); bundle the
 # pure-python pysearpc, seaserv comes via PYTHONPATH in the units
 	cp -a /usr/lib/python3/dist-packages/pysearpc \
-		$(VENV)/lib/python3*/site-packages/
+		$(VENVSITE)/
 # pylibmc's PyPI build (whether wheel or source) hits a CPython 3.13 C-API
 # incompatibility that spams ignored-exception tracebacks on every use; Debian's
 # own build doesn't, so replace django-pylibmc's copy with it
-	rm -rf $(VENV)/lib/python3*/site-packages/pylibmc \
-		$(VENV)/lib/python3*/site-packages/pylibmc-*.dist-info \
-		$(VENV)/lib/python3*/site-packages/_pylibmc.cpython-*.so
+	rm -rf $(VENVSITE)/pylibmc \
+		$(VENVSITE)/pylibmc-*.dist-info \
+		$(VENVSITE)/_pylibmc.cpython-*.so
 	cp -a /usr/lib/python3/dist-packages/pylibmc \
 		/usr/lib/python3/dist-packages/_pylibmc.cpython-*.so \
 		/usr/lib/python3/dist-packages/pylibmc-*.egg-info \
-		$(VENV)/lib/python3*/site-packages/
+		$(VENVSITE)/
 
 # third-party license inventory: the linked go modules and the compiled venv
 	mkdir -p $(TMPDEB)/usr/share/doc/seafile-server
 	{ debian/helpers/third-party-go.sh fileserver notification-server; \
 	  $(VENV)/bin/python debian/helpers/third-party-python.py; } \
 		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES.txt.gz
-
-# seahub's migration step, invoked by the seafile-migrate unit
-	install -D -m 0755 debian/install/scripts/seahub-migrate $(HUBDEST)/bin/seahub-migrate
-# admin tool: patched (debian/patches) to use this packaging's FHS paths, kept
-# under its original name, exposed on PATH via seafile-server.links
-	install -D -m 0755 seahub/scripts/reset-admin.sh $(HUBDEST)/bin/reset-admin.sh
 
 # build-only leftovers: bytecode, the wheels' test suites, type stubs, Cython and C sources,
 # translation sources, install records, the console scripts nothing calls (the units run
@@ -233,7 +223,7 @@ override_dh_auto_install-arch:
 		-o -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' -o -name '*.po' -o -path '*.dist-info/RECORD' \) -delete
 # parts seahub never loads: django apps it doesn't install, the templates and static files of the
 # admin and rest_framework (neither is an installed app), pycryptodome's self-test
-	cd $(VENV)/lib/python3*/site-packages && rm -rf django/contrib/flatpages django/contrib/gis \
+	cd $(VENVSITE) && rm -rf django/contrib/flatpages django/contrib/gis \
 		django/contrib/humanize django/contrib/postgres django/contrib/redirects django/contrib/sitemaps \
 		django/contrib/syndication django/contrib/admin/static django/contrib/admin/templates \
 		rest_framework/static rest_framework/templates Crypto/SelfTest
@@ -283,9 +273,9 @@ override_dh_auto_install-indep:
 
 # upstream's manual-install tree: service-control scripts that would fight the
 # systemd units, setup/migration/index tools, dev and CI scaffolding, wsgidav's
-# sample providers and their sample TLS key. The admin
-# tools and upgrade deltas this packaging uses are installed from the source
-# tree by override_dh_auto_install-arch.
+# sample providers and their sample TLS key. The admin tools and upgrade deltas
+# this packaging uses come from the source tree (seafile-server.install,
+# override_dh_auto_install-arch).
 	rm -rf $(SEAHUB)/bin $(SEAHUB)/scripts $(SEAHUB)/fabfile $(SEAHUB)/tools $(SEAHUB)/.tx $(SEAHUB)/sql
 	rm -rf $(SEAHUB)/thirdpart/wsgidav/samples $(SEAHUB)/thirdpart/wsgidav/server/sample_bogo_server.*
 	rm -f $(SEAHUB)/.travis.yml.bak \
@@ -307,24 +297,16 @@ override_dh_installsystemd-arch:
 # the bundle, installed disabled: the admin enables it once the database and secrets are
 # configured; its members restart on their own after upgrade
 	dh_installsystemd -pseafile-server --name=seafile --no-enable --no-start --no-stop-on-upgrade seafile.target
-	dh_installsystemd -pseafile-server --name=seaf-server --no-start --restart-after-upgrade seaf-server.service
-	dh_installsystemd -pseafile-server --name=seaf-fileserver --no-start --restart-after-upgrade seaf-fileserver.service
-	dh_installsystemd -pseafile-server --name=seaf-notification-server --no-start --restart-after-upgrade seaf-notification-server.service
-	dh_installsystemd -pseafile-server --name=seahub --no-start --restart-after-upgrade seahub.service
-	dh_installsystemd -pseafile-server --name=seafevents --no-start --restart-after-upgrade seafevents.service
+	for u in $(BUNDLE_UNITS); do \
+		dh_installsystemd -pseafile-server --name=$$u --no-start --restart-after-upgrade $$u.service || exit 1; done
 # optional, outside seafile.target
 	dh_installsystemd -pseafile-server --name=seafdav --no-enable --no-start --restart-after-upgrade seafdav.service
 	dh_installsystemd -pseafile-fuse --name=seaf-fuse --no-enable --no-start --restart-after-upgrade seaf-fuse.service
 
 execute_before_dh_installsystemd-arch:
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafile-migrate.service.fypp debian/seafile-server.seafile-migrate.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-server.service.fypp debian/seafile-server.seaf-server.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-fileserver.service.fypp debian/seafile-server.seaf-fileserver.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seahub.service.fypp debian/seafile-server.seahub.service
+	for u in $(SERVER_UNITS); do \
+		fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/$$u.service.fypp debian/seafile-server.$$u.service || exit 1; done
 	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-fuse.service.fypp debian/seafile-fuse.seaf-fuse.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seaf-notification-server.service.fypp debian/seafile-server.seaf-notification-server.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafevents.service.fypp debian/seafile-server.seafevents.service
-	fypp -DSYSTEMD_MAJOR=$(SYSTEMD_MAJOR) debian/seafdav.service.fypp debian/seafile-server.seafdav.service
 
 override_dh_shlibdeps-arch:
 # most venv wheels bundle private .so files dpkg-shlibdeps cannot resolve: skip the

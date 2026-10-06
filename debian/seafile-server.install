@@ -1,6 +1,12 @@
 usr/lib/seafile
-usr/lib/seahub/bin
 usr/lib/seahub/venv
+debian/install/scripts/seafile-migrate usr/lib/seafile/bin
+debian/install/scripts/seaf-dbctl usr/lib/seafile/bin
+debian/install/scripts/seahub-migrate usr/lib/seahub/bin
+# admin tools patched (debian/patches) to this packaging's paths; on PATH via seafile-server.links
+seahub/scripts/seaf-gc.sh usr/lib/seafile/bin
+seahub/scripts/seaf-fsck.sh usr/lib/seafile/bin
+seahub/scripts/reset-admin.sh usr/lib/seahub/bin
 debian/install/system/seafile.env usr/share/seafile-server
 debian/install/system/seafile.conf usr/share/seafile-server
 debian/install/system/seahub_settings.py usr/share/seafile-server
