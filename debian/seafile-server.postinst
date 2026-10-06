@@ -42,6 +42,8 @@ if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.
       deb-systemd-helper reenable "$unit.service" >/dev/null || true
     fi
   done
+  # seafile-migrate only runs through its dependents now, not at boot on its own
+  deb-systemd-helper purge seafile-migrate.service >/dev/null || true
 fi
 
 #DEBHELPER#

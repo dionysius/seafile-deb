@@ -44,6 +44,3 @@ PrivateTmp=disconnected
 MemoryDenyWriteExecute=false
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 RestrictRealtime=true
-
-[Install]
-WantedBy=multi-user.target
