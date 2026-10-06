@@ -78,14 +78,6 @@ SECRET_KEY = ""
 #SHARE_LINK_PASSWORD_MIN_LENGTH = 10
 #ENABLE_SHARE_TO_ALL_GROUPS = False
 
-### Metadata server (separate service, not part of this packaging) ###
-# Extended file properties, required by Seafile AI and face recognition (seafile.env).
-# Authenticates with JWT_PRIVATE_KEY from seafile.env.
-#ENABLE_METADATA_MANAGEMENT = False
-#METADATA_SERVER_URL = ''
-# Turn metadata on for newly created libraries.
-#ENABLE_METADATA_FOR_NEW_LIBRARY = False
-
 ### Other options ###
 # Terms shown and required on first login.
 #ENABLE_TERMS_AND_CONDITIONS = False
