@@ -9,13 +9,11 @@ no-manual-page [usr/bin/seahub-reset-admin]
 systemd-service-file-refers-to-unusual-wantedby-target seafile.target [usr/lib/systemd/system/*]
 
 # venv wheels ship as built: their own private shared objects, uv's sh/python
-# entry point trampolines, fonts, javascript and test data
+# entry point trampolines and fonts
 unstripped-binary-or-object [usr/lib/seahub/venv/*]
 embedded-library * [usr/lib/seahub/venv/*]
-shared-library-lacks-prerequisites [usr/lib/seahub/venv/*]
 shell-script-fails-syntax-check [usr/lib/seahub/venv/bin/*]
 unusual-interpreter * [usr/lib/seahub/venv/*]
 executable-not-elf-or-script [usr/lib/seahub/venv/*]
-broken-gz [usr/lib/seahub/venv/*]
 duplicate-font-file * [usr/lib/seahub/venv/*]
 truetype-font-prohibits-installable-embedding * [usr/lib/seahub/venv/*]
