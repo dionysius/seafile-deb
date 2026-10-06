@@ -78,6 +78,33 @@ SECRET_KEY = ""
 #SHARE_LINK_PASSWORD_MIN_LENGTH = 10
 #ENABLE_SHARE_TO_ALL_GROUPS = False
 
+### Online office (separate service, not part of this packaging) ###
+# OnlyOffice and Collabora Online publish their own Debian packages and docker images.
+# Enable only one of the two below.
+#
+# OnlyOffice document server.
+#ENABLE_ONLYOFFICE = True
+#ONLYOFFICE_APIJS_URL = 'https://office.example.com/web-apps/apps/api/documents/api.js'
+# The document server's JWT secret.
+#ONLYOFFICE_JWT_SECRET = ''
+#ONLYOFFICE_FORCE_SAVE = False
+#VERIFY_ONLYOFFICE_CERTIFICATE = True
+#
+# Collabora Online or Microsoft Office Online Server (WOPI).
+#ENABLE_OFFICE_WEB_APP = True
+# CollaboraOffice or OfficeOnlineServer.
+#OFFICE_SERVER_TYPE = 'CollaboraOffice'
+#OFFICE_WEB_APP_BASE_URL = 'https://office.example.com/hosting/discovery'
+# Extensions to open with the server; nothing opens while these are empty.
+#OFFICE_WEB_APP_FILE_EXTENSION = ('odt', 'ods', 'odp', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx')
+#ENABLE_OFFICE_WEB_APP_EDIT = True
+#OFFICE_WEB_APP_EDIT_FILE_EXTENSION = ('odt', 'ods', 'odp', 'docx', 'xlsx', 'pptx')
+# Lifetime of the access token the server uses, in seconds.
+#WOPI_ACCESS_TOKEN_EXPIRATION = 30 * 60
+#
+# Largest file opened online, in bytes.
+#OFFICE_PREVIEW_MAX_SIZE = 30 * 1024 * 1024
+
 ### Other options ###
 # Terms shown and required on first login.
 #ENABLE_TERMS_AND_CONDITIONS = False
