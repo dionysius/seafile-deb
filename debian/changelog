@@ -1,3 +1,13 @@
+seafile-server (13.0.25-1~beta3) unstable; urgency=medium
+
+  * Ship no translation or C sources, install records, unused django apps, admin and rest_framework templates and static files or pycryptodome's self-test in the venv
+  * Config templates: face recognition builds on Seafile AI and the metadata server rather than being Pro-only, list the metadata server settings
+  * Leave scikit-learn and with it numpy and scipy out of the venv, face recognition is not supported
+  * Config templates: drop the Seafile AI, metadata server and face recognition settings, not supported
+  * rules: generate and install the units in loops, install our scripts through seafile-server.install, name the venv's site-packages
+
+ -- dionysius <dragon.dionysius@gmail.com>  Tue, 06 Oct 2026 22:11:27 +0200
+
 seafile-server (13.0.25-1~beta2) unstable; urgency=medium
 
   * seafile.conf: a single [fileserver] section, group the options only the go or the built-in fileserver reads
