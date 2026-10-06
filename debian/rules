@@ -223,10 +223,18 @@ override_dh_auto_install-arch:
 # under its original name, exposed on PATH via seafile-server.links
 	install -D -m 0755 seahub/scripts/reset-admin.sh $(HUBDEST)/bin/reset-admin.sh
 
-# build-only leftovers: bytecode, the wheels' test suites, type stubs, Cython sources,
-# the console scripts nothing calls (the units run python and gunicorn), the synthesized project
+# build-only leftovers: bytecode, the wheels' test suites, type stubs, Cython and C sources,
+# translation sources, install records, the console scripts nothing calls (the units run
+# python and gunicorn), the synthesized project
 	find $(VENV) $(TMPDEB)$(PYSEAF) -type d \( -name __pycache__ -o -name tests \) -prune -exec rm -rf {} +
-	find $(VENV)/lib \( -name '*.pyi' -o -name py.typed -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' \) -delete
+	find $(VENV)/lib \( -name '*.pyi' -o -name py.typed -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' \
+		-o -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' -o -name '*.po' -o -path '*.dist-info/RECORD' \) -delete
+# parts seahub never loads: django apps it doesn't install, the templates and static files of the
+# admin and rest_framework (neither is an installed app), pycryptodome's self-test
+	cd $(VENV)/lib/python3*/site-packages && rm -rf django/contrib/flatpages django/contrib/gis \
+		django/contrib/humanize django/contrib/postgres django/contrib/redirects django/contrib/sitemaps \
+		django/contrib/syndication django/contrib/admin/static django/contrib/admin/templates \
+		rest_framework/static rest_framework/templates Crypto/SelfTest
 	find $(VENV)/bin -mindepth 1 ! -name 'python*' ! -name gunicorn -delete
 	rm -f $(VENV)/.gitignore $(HUBDEST)/pyproject.toml $(HUBDEST)/uv.lock
 
