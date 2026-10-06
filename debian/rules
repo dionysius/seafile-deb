@@ -223,8 +223,11 @@ override_dh_auto_install-arch:
 # under its original name, exposed on PATH via seafile-server.links
 	install -D -m 0755 seahub/scripts/reset-admin.sh $(HUBDEST)/bin/reset-admin.sh
 
-# build-only leftovers: bytecode, the wheels' test suites, the synthesized project
+# build-only leftovers: bytecode, the wheels' test suites, type stubs, Cython sources,
+# the console scripts nothing calls (the units run python and gunicorn), the synthesized project
 	find $(VENV) $(TMPDEB)$(PYSEAF) -type d \( -name __pycache__ -o -name tests \) -prune -exec rm -rf {} +
+	find $(VENV)/lib \( -name '*.pyi' -o -name py.typed -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' \) -delete
+	find $(VENV)/bin -mindepth 1 ! -name 'python*' ! -name gunicorn -delete
 	rm -f $(VENV)/.gitignore $(HUBDEST)/pyproject.toml $(HUBDEST)/uv.lock
 
 # seahub tree in upstream's layout: seafdav/seafobj/objwrapper inside thirdpart,
