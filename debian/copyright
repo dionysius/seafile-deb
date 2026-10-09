@@ -3,8 +3,8 @@ Upstream-Name: seafile-server
 Source: https://github.com/haiwen/seafile-server
 Comment:
  This source package pulls in several upstream repositories by tag as additional
- components, each unpacked into its own directory: libsearpc/, libevhtp/,
- seahub/, seafobj/, seafdav/ and seafevents/ (all from https://github.com/haiwen).
+ components, each unpacked into its own directory: libevhtp/, seahub/,
+ seafobj/, seafdav/ and seafevents/ (all from https://github.com/haiwen).
 
 Files: *
 Copyright: 2012-2026 Seafile Ltd.
@@ -14,7 +14,7 @@ Files: python/*
 Copyright: 2012-2026 Seafile Ltd.
 License: Apache-2.0
 
-Files: libsearpc/* seahub/* seafobj/* seafdav/* seafevents/*
+Files: seahub/* seafobj/* seafdav/* seafevents/*
 Copyright: 2012-2026 Seafile Ltd.
 License: Apache-2.0
 
