@@ -1,3 +1,13 @@
+seafile-server (13.0.25-1~beta5) unstable; urgency=medium
+
+  * seaf-fuse.service: writable ConfigurationDirectory, a read-only one implies a mount namespace that keeps the fuse mount from the host
+  * seafevents.conf template: list the SEAHUB EMAIL, STATISTICS and FILE HISTORY sections with their defaults
+  * seaf-gc: list --rm-fs in the usage text
+  * Proxy examples: route /notification and /notification/ping to the notification server with the prefix stripped, check both in CI
+  * Units: order after a local MariaDB/MySQL, redis or memcached
+
+ -- dionysius <dragon.dionysius@gmail.com>  Fri, 09 Oct 2026 16:04:00 +0200
+
 seafile-server (13.0.25-1~beta4) unstable; urgency=medium
 
   [ wdclub ]
