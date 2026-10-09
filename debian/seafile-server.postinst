@@ -12,4 +12,14 @@ if [ "$1" = "configure" ]; then
   ucf --three-way /usr/share/seafile-server/seafdav.conf /etc/seafile/seafdav.conf
 fi
 
+# Upgrade from < 13.0.28-1~: seaf-server.service also wants the units using it, and
+# seafile.target instead of multi-user.target wants seafdav. Re-create their links.
+if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.0.28-1~"; then
+  for unit in seaf-fileserver seahub seafevents seafdav; do
+    if deb-systemd-helper --quiet was-enabled "$unit.service"; then
+      deb-systemd-helper reenable "$unit.service" >/dev/null || true
+    fi
+  done
+fi
+
 #DEBHELPER#

@@ -6,9 +6,9 @@
 [Unit]
 Description=Seafile WebDAV server (seafdav)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-After=network.target seaf-server.service seafile-migrate.service
-Requires=seafile-migrate.service
-Wants=seaf-server.service
+PartOf=seafile.target
+After=network.target seafile-migrate.service seaf-server.service seafile.target
+Requires=seafile-migrate.service seaf-server.service
 # A database or cache on this host starts before and stops after this unit.
 After=mariadb.service mysql.service redis-server.service memcached.service
 
@@ -101,4 +101,4 @@ RestrictRealtime=true
 RemoveIPC=true
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=seafile.target seaf-server.service

@@ -1,0 +1,30 @@
+#!/bin/sh
+# Runs as root around seafile-migrate (its ExecStartPre=+ and ExecStartPost=+): when a
+# schema change is pending, stops the running units that require seafile-migrate and,
+# once the migration succeeded, starts the same units again.
+set -eu
+state="$RUNTIME_DIRECTORY/stopped-units"
+case "${1:-}" in
+stop)
+  /usr/lib/seafile/bin/seaf-dbctl pending || exit 0
+  running=""
+  for unit in $(systemctl show --property=RequiredBy --value seafile-migrate.service); do
+    if systemctl --quiet is-active "$unit"; then
+      running="$running $unit"
+    fi
+  done
+  [ -n "$running" ] || exit 0
+  echo "$running" > "$state"
+  echo "seafile-migrate: stopping$running for the schema change"
+  systemctl stop $running
+  ;;
+start)
+  [ -f "$state" ] || exit 0
+  # without --no-block this would wait for the units, which wait for this unit
+  systemctl --no-block start $(cat "$state")
+  ;;
+*)
+  echo "usage: $0 stop|start" >&2
+  exit 2
+  ;;
+esac

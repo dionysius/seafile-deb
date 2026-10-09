@@ -1,6 +1,7 @@
 usr/lib/seafile
 usr/lib/seahub/venv
 debian/install/scripts/seafile-migrate usr/lib/seafile/bin
+debian/install/scripts/seafile-migrate-units usr/lib/seafile/bin
 debian/install/scripts/seaf-dbctl usr/lib/seafile/bin
 debian/install/scripts/seahub-migrate usr/lib/seahub/bin
 # admin tools patched (debian/patches) to this packaging's paths; on PATH via seafile-server.links

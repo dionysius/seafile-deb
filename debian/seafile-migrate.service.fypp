@@ -9,13 +9,20 @@ Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-de
 After=network.target
 # A database or cache on this host starts before and stops after this unit.
 After=mariadb.service mysql.service redis-server.service memcached.service
+# Every start of a dependent starts it, often several in quick succession.
+StartLimitIntervalSec=0
 
 [Service]
 # No RemainAfterExit: re-run on every start of the dependents, a no-op once at version.
 Type=oneshot
 # seahub-migrate's django logs to the console instead of log files
 Environment=SEAFILE_LOG_TO_STDOUT=true
+# As root (+): stop the running dependents before a schema change and start them again
+# after it succeeded; the migration itself runs as the service user.
+ExecStartPre=+/usr/lib/seafile/bin/seafile-migrate-units stop
 ExecStart=/usr/lib/seafile/bin/seafile-migrate
+ExecStartPost=+/usr/lib/seafile/bin/seafile-migrate-units start
+RuntimeDirectory=seafile-migrate
 WorkingDirectory=/var/lib/seafile
 
 ## Permissions and directories
