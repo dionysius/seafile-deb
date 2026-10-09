@@ -34,7 +34,7 @@ RestartSec=5s
 ## Permissions and directories
 User=seafile
 Group=seafile
-ConfigurationDirectory=seafile::ro
+ConfigurationDirectory=seafile
 ConfigurationDirectoryMode=0500
 StateDirectory=seafile seafile/seafile-fuse
 StateDirectoryMode=0750
