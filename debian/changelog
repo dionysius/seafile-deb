@@ -1,3 +1,9 @@
+seafile-server (13.0.25-2) unstable; urgency=medium
+
+  * first release!
+
+ -- dionysius <dragon.dionysius@gmail.com>  Fri, 09 Oct 2026 18:11:32 +0200
+
 seafile-server (13.0.25-1~beta6) unstable; urgency=medium
 
   * seafevents: patch out the redundant .lower() on the interval option, it crashed seafevents on the int default whenever SEAHUB EMAIL was enabled without an interval (upstream's configs and docs always set one)
