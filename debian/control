@@ -56,11 +56,11 @@ Package: seafile-server
 Architecture: any
 Pre-Depends: ${misc:Pre-Depends},
 Depends: python3-pymysql,
-         redis-server | memcached,
          seafile-server-data (= ${source:Version}),
          ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends},
+Recommends: redis-server,
 Suggests: default-mysql-server | virtual-mysql-server,
           nginx | caddy | apache2,
 Built-Using: ${misc:Built-Using},
