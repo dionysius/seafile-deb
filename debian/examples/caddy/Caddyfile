@@ -12,8 +12,8 @@ seafile.example.com {
 		}
 	}
 
-	# notification server (websocket)
-	handle_path /notification/* {
+	# notification server (websocket); handle_path strips the path prefix
+	handle_path /notification* {
 		reverse_proxy 127.0.0.1:8083
 	}
 

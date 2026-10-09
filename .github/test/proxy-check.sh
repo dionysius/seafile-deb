@@ -2,7 +2,7 @@
 # Exercise the stack through the shipped nginx example (/usr/share/doc/seafile-server/examples)
 # with a self-signed certificate under a local hostname: browser-style login (CSRF needs Host
 # and X-Forwarded-Proto), every asset of the login and library pages, an upload and download
-# through /seafhttp, a thumbnail, the notification websocket upgrade and WebDAV through
+# through /seafhttp, a thumbnail, the notification websocket and ping, and WebDAV through
 # /seafdav (enabling seafdav.service). Run after boot-check.sh; sets the public address in
 # seafile.env and restarts the stack.
 #
@@ -88,10 +88,12 @@ http -H "Authorization: Token $T" -F file=@/tmp/proxytest.png -F parent_dir=/ "$
 code=$(http -b "$cj" "$B/thumbnail/$RID/256/proxytest.png")
 [ "$code" = 200 ] && ok "thumbnail" || fail "thumbnail" "HTTP $code"
 
-info "Notification websocket"
+info "Notification server"
 code=$(curl -sSk -o /dev/null -w '%{http_code}' --max-time 3 --http1.1 -H "Connection: Upgrade" -H "Upgrade: websocket" \
-  -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "$B/notification/" 2>/dev/null)
+  -H "Sec-WebSocket-Version: 13" -H "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" "$B/notification" 2>/dev/null)
 [ "$code" = 101 ] && ok "websocket upgrade via /notification" || fail "websocket upgrade via /notification" "HTTP $code"
+code=$(http "$B/notification/ping")
+[ "$code" = 200 ] && ok "notification ping via /notification/ping" || fail "notification ping via /notification/ping" "HTTP $code"
 
 info "WebDAV through /seafdav (seafdav.service, disabled by default)"
 systemctl enable --now seafdav.service
