@@ -5,7 +5,7 @@ Description: seafevents: drop the .lower() on the interval option, it fails on t
  without it reaches this. parse_interval already returns an int as is and
  lowercases a string.
 Author: dionysius <dragon.dionysius@gmail.com>
-Forwarded: no
+Forwarded: https://github.com/haiwen/seafevents/pull/671
 --- a/seafevents/tasks/seahub_email_sender.py
 +++ b/seafevents/tasks/seahub_email_sender.py
 @@ -41,7 +41,7 @@
