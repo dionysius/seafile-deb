@@ -1,3 +1,11 @@
+seafile-server (13.0.28-2) unstable; urgency=medium
+
+  * Drop the upgrade code for the 13.0.25 alpha and beta prereleases
+  * seafile-migrate stops the running units for a schema change and starts them again once it succeeded; every unit requires seafile-migrate, those using seaf-server also require and are wanted by it, seafdav joins seafile.target, an upgrade restarts seafile.target once
+  * seafile-migrate: seahub-migrate creates the seafevents tables, no django migration
+
+ -- dionysius <dragon.dionysius@gmail.com>  Fri, 09 Oct 2026 23:34:12 +0200
+
 seafile-server (13.0.28-1) unstable; urgency=medium
 
   * watch: track the 13.0 line, list tags via the GitHub API
