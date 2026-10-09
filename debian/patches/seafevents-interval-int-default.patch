@@ -1,0 +1,30 @@
+Description: seafevents: drop the .lower() on the interval option, it fails on the int default
+ With the option absent, enabling SEAHUB EMAIL or the WeChat Work/DingTalk notice
+ sender crashed seafevents at startup with AttributeError. Upstream's generated
+ seafevents.conf and the manual's examples always set interval, so only a config
+ without it reaches this. parse_interval already returns an int as is and
+ lowercases a string.
+Author: dionysius <dragon.dionysius@gmail.com>
+Forwarded: no
+--- a/seafevents/tasks/seahub_email_sender.py
++++ b/seafevents/tasks/seahub_email_sender.py
+@@ -41,7 +41,7 @@
+         self._enabled = True
+ 
+         # [ send email interval ]
+-        interval = get_opt_from_conf_or_env(config, section_name, key_interval, default=default_interval).lower()
++        interval = get_opt_from_conf_or_env(config, section_name, key_interval, default=default_interval)
+         interval = parse_interval(interval, default_interval)
+ 
+         logging.debug('send seahub email interval: %s sec', interval)
+--- a/seafevents/tasks/work_weixin_notice_sender.py
++++ b/seafevents/tasks/work_weixin_notice_sender.py
+@@ -45,7 +45,7 @@
+         # notice send interval
+         if config.has_section(section_name):
+             interval = get_opt_from_conf_or_env(config, section_name, key_interval,
+-                                                default=default_interval).lower()
++                                                default=default_interval)
+             interval = parse_interval(interval, default_interval)
+         else:
+             interval = default_interval
