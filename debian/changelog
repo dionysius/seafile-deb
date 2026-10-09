@@ -1,3 +1,14 @@
+seafile-server (13.0.25-1~beta4) unstable; urgency=medium
+
+  [ wdclub ]
+  * seaf-dbctl: abort on real sql errors instead of advancing the stamp over them
+
+  [ dionysius ]
+  * Config templates: OnlyOffice, Collabora Online/Office Online Server and SeaDoc settings
+  * Config templates: packaging internals last, drop settings without effect in the community build, fileserver subgroups as comments
+
+ -- dionysius <dragon.dionysius@gmail.com>  Fri, 09 Oct 2026 10:43:29 +0200
+
 seafile-server (13.0.25-1~beta3) unstable; urgency=medium
 
   * Ship no translation or C sources, install records, unused django apps, admin and rest_framework templates and static files or pycryptodome's self-test in the venv
