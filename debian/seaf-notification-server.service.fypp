@@ -8,6 +8,8 @@ Description=Seafile real-time notification server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
 After=network.target seaf-server.service seafile.target
+# A database or cache on this host starts before and stops after this unit.
+After=mariadb.service mysql.service redis-server.service memcached.service
 
 # If running behind a reverse proxy - running on this system - consider ordering it before also:
 #Before=nginx.service

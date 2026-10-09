@@ -12,10 +12,8 @@ After=network.target seafile-migrate.service seafile.target
 Requires=seafile-migrate.service
 # If you want to expose the server to the network directly, you may find the following useful:
 #After=network-online.target
-
-# If the MySQL/MariaDB server runs on this system, order after it:
-#After=mariadb.service
-#Requires=mariadb.service
+# A database or cache on this host starts before and stops after this unit.
+After=mariadb.service mysql.service redis-server.service memcached.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]

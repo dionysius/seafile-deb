@@ -10,6 +10,8 @@ PartOf=seafile.target
 After=network.target seaf-server.service seafile-migrate.service seafile.target
 Requires=seafile-migrate.service
 Wants=seaf-server.service
+# A database or cache on this host starts before and stops after this unit.
+After=mariadb.service mysql.service redis-server.service memcached.service
 
 # Refer to the manpages `systemd.service` and `systemd.exec` for detailed documentation on each option.
 [Service]

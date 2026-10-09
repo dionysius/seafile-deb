@@ -7,9 +7,8 @@
 Description=Seafile database initialisation and upgrade
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 After=network.target
-# If the MySQL/MariaDB server runs on this system, order after it:
-#After=mariadb.service
-#Requires=mariadb.service
+# A database or cache on this host starts before and stops after this unit.
+After=mariadb.service mysql.service redis-server.service memcached.service
 
 [Service]
 # No RemainAfterExit: re-run on every start of the dependents, a no-op once at version.
