@@ -1,12 +1,6 @@
 #!/bin/sh
 set -e
 
-# Finalize upgrade from < 13.0.25-1~alpha9~: collected assets now ship in the package,
-# thumbnails live in /var/cache/seafile
-if [ "$1" = "configure" ] && dpkg --compare-versions "$2" lt "13.0.25-1~alpha9~"; then
-  rm -rf /var/lib/seafile/seahub-data/assets /var/lib/seafile/seahub-data/thumbnail
-fi
-
 # Always provide --three-way for ucf comparison (unable to configure, rest of dh_ucf still valid and
 # it should not prompt twice for the same file since the original is cached by ucf)
 if [ "$1" = "configure" ]; then
@@ -18,39 +12,4 @@ if [ "$1" = "configure" ]; then
   ucf --three-way /usr/share/seafile-server/seafdav.conf /etc/seafile/seafdav.conf
 fi
 
-# Upgrade from < 13.0.25-1~beta2~: the units are named after their upstream program and the
-# server units are wanted by seafile.target (seafile.service before alpha12, seafile-server.service
-# until beta1). Carry each old unit's enabled and running state over to its new name; stop the
-# old ones before the units below try-restart, or their Wants= starts seaf-server.service next
-# to them.
-if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.0.25-1~beta2~"; then
-  for rename in seafile:seaf-server seafile-server:seaf-server \
-      seafile-fileserver:seaf-fileserver seafile-notification:seaf-notification-server; do
-    old=${rename%%:*}.service new=${rename#*:}.service
-    if [ -d /run/systemd/system ] && systemctl --quiet is-active "$old"; then
-      deb-systemd-invoke stop "$old" >/dev/null || true
-      start_units="${start_units:-} $new"
-    fi
-    if deb-systemd-helper --quiet debian-installed "$old"; then
-      # a state file without links makes the debhelper section below leave it disabled
-      deb-systemd-helper --quiet was-enabled "$old" || deb-systemd-helper update-state "$new" >/dev/null || true
-      deb-systemd-helper purge "$old" >/dev/null || true
-    fi
-  done
-  for unit in seahub seafevents; do
-    if deb-systemd-helper --quiet was-enabled "$unit.service"; then
-      deb-systemd-helper reenable "$unit.service" >/dev/null || true
-    fi
-  done
-  # seafile-migrate only runs through its dependents now, not at boot on its own
-  deb-systemd-helper purge seafile-migrate.service >/dev/null || true
-fi
-
 #DEBHELPER#
-
-if [ -n "${start_units:-}" ]; then
-  deb-systemd-invoke start $start_units >/dev/null || true
-fi
-
-# /etc/seafile is 0500 seafile:seafile via tmpfiles: only the service user and root
-# reach the config; the seafile group is for data access. The units mount it read-only.
