@@ -1,6 +1,6 @@
 #!/bin/bash
-# Bring the ccnet/seafile databases to the installed version, then hand off
-# to seahub's own (django) migration. Version comparison, the data's version
+# Bring the ccnet/seafile/seahub databases to the installed version, then let
+# seahub-migrate create the seafevents tables. Version comparison, the data's version
 # stamp and the schema itself are all owned by seaf-dbctl; this only decides
 # whether to call its init or upgrade, based on whether a stamp exists yet.
 # Re-run any number of times: once the stamp matches the installed version,
@@ -46,6 +46,6 @@ fi
 # seaf-server expects an (empty) default library template directory
 mkdir -p "$SEAFILE_DATA_DIR/library-template"
 
-log "running seahub migration"
+log "creating seafevents tables"
 /usr/lib/seahub/bin/seahub-migrate
 log "done"
