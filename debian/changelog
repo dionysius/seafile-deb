@@ -1,3 +1,10 @@
+seafile-server (13.0.25-1~beta6) unstable; urgency=medium
+
+  * seafevents: patch out the redundant .lower() on the interval option, it crashed seafevents on the int default whenever SEAHUB EMAIL was enabled without an interval (upstream's configs and docs always set one)
+  * Recommend redis-server instead of depending on redis-server | memcached: with memcached, seaf-server and the file server send no repo size tasks, so quota usage and quota alert emails stay empty and metrics stay empty; the 14.0 manual strongly recommends switching to redis
+
+ -- dionysius <dragon.dionysius@gmail.com>  Fri, 09 Oct 2026 17:37:52 +0200
+
 seafile-server (13.0.25-1~beta5) unstable; urgency=medium
 
   * seaf-fuse.service: writable ConfigurationDirectory, a read-only one implies a mount namespace that keeps the fuse mount from the host
