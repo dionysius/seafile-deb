@@ -209,7 +209,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  from seahub.constants import PERMISSION_READ_WRITE
  from seahub.utils.db_api import SeafileDB
  from seahub.onlyoffice.settings import ENABLE_ONLYOFFICE, ONLYOFFICE_FILE_EXTENSION
-@@ -967,7 +967,7 @@
+@@ -966,7 +966,7 @@
      # get logo path
      from seahub.utils.mail import SmimeEmailMessage
      logo_path = LOGO_PATH
@@ -218,7 +218,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
      if os.path.exists(custom_logo_file):
          logo_path = CUSTOM_LOGO_PATH
  
-@@ -1389,7 +1389,7 @@
+@@ -1388,7 +1388,7 @@
      logo_path = LOGO_PATH
  
      # custom logo
