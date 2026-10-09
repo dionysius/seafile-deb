@@ -51,7 +51,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
 -    else
 -        echo "$(basename ${script_name}) [--dry-run | -D] [--rm-deleted | -r] [repo-id1] [repo-id2]"
 -    fi 
-+    echo "$(basename ${script_name}) [--dry-run | -D] [--rm-deleted | -r] [repo-id1] [repo-id2]"
++    echo "$(basename ${script_name}) [--dry-run | -D] [--rm-deleted | -r] [--rm-fs | -R] [repo-id1] [repo-id2]"
      echo ""
  }
  
