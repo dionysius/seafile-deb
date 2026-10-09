@@ -1,3 +1,12 @@
+seafile-server (13.0.28-1) unstable; urgency=medium
+
+  * watch: track the 13.0 line, list tags via the GitHub API
+  * update to [13.0.28](https://github.com/haiwen/seafile-server/releases/tag/v13.0.28-server)
+  * copyright: libsearpc is no longer a component
+  * Refresh seahub-media-fhs-paths.patch for 13.0.28
+
+ -- dionysius <dragon.dionysius@gmail.com>  Fri, 09 Oct 2026 19:13:00 +0200
+
 seafile-server (13.0.25-2) unstable; urgency=medium
 
   * first release!
