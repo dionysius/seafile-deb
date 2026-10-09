@@ -186,6 +186,18 @@ def check():
     sys.exit(0 if _schema_initialised() else 1)
 
 
+def pending():
+    # exit 0 when init or upgrade would change the schema; a same-series stamp advance
+    # or a refused downgrade does not
+    last = _read_stamp()
+    if last is None:
+        sys.exit(0)
+    target = _installed_version()
+    if _major_minor(last) == _major_minor(target) or _dpkg_cmp(target, "lt", last):
+        sys.exit(1)
+    sys.exit(0)
+
+
 def init():
     if _read_stamp() is not None:
         return  # already initialised, nothing to do
@@ -251,12 +263,14 @@ def main():
     args = sys.argv[1:]
     if args == ["check"]:
         check()
+    elif args == ["pending"]:
+        pending()
     elif args == ["init"]:
         init()
     elif args and args[0] == "upgrade" and len(args) <= 2:
         upgrade(args[1] if len(args) == 2 else None)
     else:
-        sys.exit(f"usage: {sys.argv[0]} check|init|upgrade [<target-version>]")
+        sys.exit(f"usage: {sys.argv[0]} check|pending|init|upgrade [<target-version>]")
 
 
 if __name__ == "__main__":

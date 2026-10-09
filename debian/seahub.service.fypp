@@ -7,9 +7,8 @@
 Description=Seahub (Seafile web frontend)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seaf-server.service seafile-migrate.service seafile.target
-Wants=seaf-server.service
-Requires=seafile-migrate.service
+After=network.target seafile-migrate.service seaf-server.service seafile.target
+Requires=seafile-migrate.service seaf-server.service
 # A database or cache on this host starts before and stops after this unit.
 After=mariadb.service mysql.service redis-server.service memcached.service
 
@@ -95,4 +94,4 @@ RestrictRealtime=true
 RemoveIPC=true
 
 [Install]
-WantedBy=seafile.target
+WantedBy=seafile.target seaf-server.service

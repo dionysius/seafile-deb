@@ -295,12 +295,14 @@ override_dh_installsystemd-arch:
 # stopping it on upgrade would take its Requires= dependents down with it
 	dh_installsystemd -pseafile-server --name=seafile-migrate --no-start --no-stop-on-upgrade seafile-migrate.service
 # the bundle, installed disabled: the admin enables it once the database and secrets are
-# configured; its members restart on their own after upgrade
-	dh_installsystemd -pseafile-server --name=seafile --no-enable --no-start --no-stop-on-upgrade seafile.target
+# configured. Restarting it after upgrade restarts its members in one transaction, so
+# seafile-migrate runs once.
+	dh_installsystemd -pseafile-server --name=seafile --no-enable --no-start --restart-after-upgrade seafile.target
 	for u in $(BUNDLE_UNITS); do \
-		dh_installsystemd -pseafile-server --name=$$u --no-start --restart-after-upgrade $$u.service || exit 1; done
-# optional, outside seafile.target
-	dh_installsystemd -pseafile-server --name=seafdav --no-enable --no-start --restart-after-upgrade seafdav.service
+		dh_installsystemd -pseafile-server --name=$$u --no-start --no-stop-on-upgrade --no-restart-after-upgrade $$u.service || exit 1; done
+# optional member of seafile.target, installed disabled
+	dh_installsystemd -pseafile-server --name=seafdav --no-enable --no-start --no-stop-on-upgrade --no-restart-after-upgrade seafdav.service
+# independent of seafile.target, so stopping or restarting it never unmounts
 	dh_installsystemd -pseafile-fuse --name=seaf-fuse --no-enable --no-start --restart-after-upgrade seaf-fuse.service
 
 execute_before_dh_installsystemd-arch:

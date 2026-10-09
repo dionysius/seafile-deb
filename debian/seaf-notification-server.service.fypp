@@ -7,7 +7,8 @@
 Description=Seafile real-time notification server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seaf-server.service seafile.target
+After=network.target seafile-migrate.service seaf-server.service seafile.target
+Requires=seafile-migrate.service
 # A database or cache on this host starts before and stops after this unit.
 After=mariadb.service mysql.service redis-server.service memcached.service
 
