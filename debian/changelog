@@ -1,3 +1,9 @@
+seafile-server (13.0.28-3) unstable; urgency=medium
+
+  * Update licenses: list the bundled third-party code under its own licenses, filter out code without a license to redistribute on import
+
+ -- dionysius <dragon.dionysius@gmail.com>  Sat, 10 Oct 2026 17:41:21 +0200
+
 seafile-server (13.0.28-2) unstable; urgency=medium
 
   * Drop the upgrade code for the 13.0.25 alpha and beta prereleases
