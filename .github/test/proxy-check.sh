@@ -120,9 +120,11 @@ for u in $(grep -oE '(src|href)="/:dir_browser/[^"]+"' /tmp/davlist.html | sed -
   n=$((n+1)); c=$(http "${D[@]}" "$B$u"); [ "$c" = 200 ] || { bad=$((bad+1)); echo "  $c $u"; }
 done
 [ "$n" -gt 0 ] && [ "$bad" = 0 ] && ok "webdav directory listing ($n assets)" || fail "webdav directory listing" "$bad of $n assets failing"
-# a second account, active on a rerun as well, loses webdav access once deactivated
+# a second account, active on a rerun as well, loses webdav access once deactivated; the
+# admin api addresses it by its internal id, not the contact email it logs in with
 U=davuser@example.com; UD=(-u "$U:davuser-password-123")
 http -H "Authorization: Token $T" -d "email=$U&password=davuser-password-123" "$B/api/v2.1/admin/users/" >/dev/null
+U=$(curl -sSk -H "Authorization: Token $T" "$B/api/v2.1/admin/search-user/?query=$U" | grep -oE '"email": ?"[^"]+@auth\.local"' | head -n 1 | sed -E 's/.*"([^"]+)"$/\1/')
 http -X PUT -H "Authorization: Token $T" -d "is_active=true" "$B/api/v2.1/admin/users/$U/" >/dev/null
 code=$(http "${UD[@]}" -X PROPFIND -H "Depth: 0" "$B/seafdav/")
 [ "$code" = 207 ] && ok "webdav admits an active user" || fail "webdav admits an active user" "HTTP $code"
