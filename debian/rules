@@ -176,9 +176,10 @@ override_dh_auto_install-arch:
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
 	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|$$)' | sed 's/.*/  "&",/'; \
 	  echo '  "django-pylibmc>=0.6",'; \
+	  echo '  "pytz",'; \
 	  echo ']'; } > $(HUBDEST)/pyproject.toml
-# django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend, declared as a
-# dependency in none of the three requirements.txt above
+# django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend; pytz: imported
+# by seafevents; neither is declared in the three requirements.txt above
 # libmemcached-dev (Build-Depends) is only for this step: uv still builds django-pylibmc's
 # own pylibmc dependency from source here even though it's discarded and replaced below
 	cd $(HUBDEST) && $(UV) lock --python python3
