@@ -40,9 +40,6 @@ export UV_CACHE_DIR = $(CURDIR)/debian/.uvcache
 # keep npm's cache inside the build tree
 export npm_config_cache = $(CURDIR)/debian/.npmcache
 
-# --with-mysql helper
-MARIADB_CONFIG := $(or $(wildcard /usr/bin/mariadb_config),/usr/bin/mysql_config)
-
 # go: caches inside the build tree, no toolchain downloads
 export GOFLAGS = -mod=mod -trimpath
 export GOCACHE = $(CURDIR)/debian/.gocache
@@ -99,7 +96,7 @@ override_dh_auto_configure-arch:
 
 # seafile-server (the source root)
 	./autogen.sh
-	./configure --prefix=$(SEAFPREFIX) --with-mysql=$(MARIADB_CONFIG)
+	./configure --prefix=$(SEAFPREFIX) --with-mysql=/usr/bin/mysql_config
 
 override_dh_auto_configure-indep:
 # Build-Depends cannot express "nodejs with npm" (nodesource bundles it, debian splits it)
@@ -178,10 +175,8 @@ override_dh_auto_install-arch:
 	  echo 'requires-python = ">=3.11"'; echo 'dependencies = ['; \
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
 	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|$$)' | sed 's/.*/  "&",/'; \
-	  echo '  "pyOpenSSL>=24",'; \
 	  echo '  "django-pylibmc>=0.6",'; \
 	  echo ']'; } > $(HUBDEST)/pyproject.toml
-# pyOpenSSL floor: uv otherwise resolves a 22.x incompatible with current cryptography
 # django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend, declared as a
 # dependency in none of the three requirements.txt above
 # libmemcached-dev (Build-Depends) is only for this step: uv still builds django-pylibmc's
