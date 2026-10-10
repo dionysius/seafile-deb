@@ -5,6 +5,11 @@ Comment:
  This source package pulls in several upstream repositories by tag as additional
  components, each unpacked into its own directory: libevhtp/, seahub/,
  seafobj/, seafdav/ and seafevents/ (all from https://github.com/haiwen).
+ .
+ The import (filter in debian/gbp.conf) leaves out files that carry no license
+ granting redistribution: seahub/media/js/GStarSDK.js (Gstarsoft DWG viewer,
+ only used with ENABLE_CAD) and seahub/thirdpart/weworkapi/ (Tencent sample
+ code, unused).
 
 Files: *
 Copyright: 2012-2026 Seafile Ltd.
@@ -14,13 +19,134 @@ Files: python/*
 Copyright: 2012-2026 Seafile Ltd.
 License: Apache-2.0
 
-Files: seahub/* seafobj/* seafdav/* seafevents/*
+Files: m4/ax_lib_sqlite3.m4
+Copyright: 2008 Mateusz Loskot <mateusz@loskot.net>
+License: FSFAP
+
+Files: m4/glib-gettext.m4
+Copyright: 1995-2002 Free Software Foundation, Inc.
+           2001-2004 Red Hat, Inc.
+License: GPL-2+ with Autoconf exception
+
+Files: seahub/* seafobj/* seafevents/*
 Copyright: 2012-2026 Seafile Ltd.
+License: Apache-2.0
+
+Files: seahub/seahub/auth/*
+Copyright: Django Software Foundation and individual contributors
+License: BSD-3-clause
+
+Files: seahub/seahub/avatar/*
+Copyright: 2008 Eric Florenzano
+License: BSD-3-clause
+
+Files: seahub/seahub/krb5_auth/*
+Copyright: 2013 Hypo Lin
+License: Expat
+
+Files: seahub/seahub/password_session/*
+Copyright: 2014 Albert Tugushev
+License: Expat
+
+Files: seahub/seahub/base/profile.py
+Copyright: 2013 Omar Bohsali
+           2012-2016 Seafile Ltd.
+License: Expat
+
+Files: seahub/seahub/utils/rooturl.py
+Copyright: 2007-2009 Christian Hammond
+           2012-2016 Seafile Ltd.
+License: Expat
+
+Files: seahub/thirdpart/constance/*
+Copyright: 2009-2017 Jazzband
+License: BSD-3-clause
+
+Files: seahub/thirdpart/registration/*
+Copyright: 2007-2013 James Bennett
+           2014-2016 Andrew Cutler, Stephen DiCato, and others
+License: BSD-3-clause
+
+Files: seahub/thirdpart/shibboleth/*
+Copyright: 2014 Brown University Library
+License: Expat
+
+Files: seahub/thirdpart/termsandconditions/*
+Copyright: 2019 Tim L. White and other contributors
+License: BSD-3-clause
+
+Files: seahub/media/bootstrap/* seahub/media/css/seafile-ui.css
+Copyright: 2011-2024 The Bootstrap Authors
+           2011-2022 Twitter, Inc.
+License: Expat
+
+Files: seahub/static/scripts/lib/jquery.min.js
+Copyright: OpenJS Foundation and other contributors
+License: Expat
+
+Files: seahub/media/js/pdf/*
+Copyright: 2012-2023 Mozilla Foundation
+License: Apache-2.0
+
+Files: seahub/media/js/pdf/web/standard_fonts/Foxit*
+Copyright: 2014 PDFium Authors
+License: BSD-3-clause
+
+Files: seahub/media/js/pdf/web/standard_fonts/Liberation*
+Copyright: 2010 Google Corporation
+           2012 Red Hat, Inc.
+License: OFL-1.1
+
+Files: seahub/media/js/map/cluster.js
+Copyright: baidu_openmap
+License: ISC
+Comment: @bmapgl-plugin/cluster 0.0.7 from npm, which declares the ISC license.
+
+Files: seahub/media/js/mathjax/*
+Copyright: The MathJax Consortium
+License: Apache-2.0
+
+Files: seahub/media/assets/*
+Copyright: 2012-2026 Seafile Ltd. and the authors of the bundled npm packages
+License: Apache-2.0 and Expat
+Comment: Prebuilt copy of seahub/frontend and media; the build deletes it and generates it
+ from source, the binary package lists its npm licenses in THIRD-PARTY-LICENSES.txt.
+
+Files: seafdav/*
+Copyright: 2009-2024 Martin Wendt
+           2005 Ho Chun Wei
+           2012-2026 Seafile Ltd.
+License: Expat
+
+Files: seafdav/tests/davclient.py
+Copyright: 2006-2007 Open Source Applications Foundation
 License: Apache-2.0
 
 Files: libevhtp/*
 Copyright: 2010-2011 Mark Ellzey
 License: BSD-3-clause
+
+Files: libevhtp/compat/sys/queue.h.in
+Copyright: 1991, 1993 The Regents of the University of California
+License: BSD-3-clause
+
+Files: libevhtp/compat/sys/tree.h.in
+Copyright: 2002 Niels Provos <provos@citi.umich.edu>
+License: BSD-2-clause
+
+Files: libevhtp/contrib/git_changelog.py
+Copyright: 2008 Marcus D. Hanwell <marcus@cryos.org>
+License: GPL-2+
+
+Files: libevhtp/oniguruma/*
+Copyright: 2002-2009 K.Kosako <sndgk393 AT ybb DOT ne DOT jp>
+License: BSD-2-clause
+
+Files: libevhtp/oniguruma/st.c libevhtp/oniguruma/st.h
+Copyright: Peter Moore @ UCB
+License: public-domain
+ This is a public domain general purpose hash table package written by Peter
+ Moore @ UCB.
 
 Files: debian/*
 Copyright: 2026 dionysius <dragon.dionysius@gmail.com>
@@ -39,7 +165,7 @@ License: AGPL-3+OpenSSL
  well as that of the covered work.
  .
  On Debian systems, the complete text of the GNU Affero General Public License
- version 3 can be found in "/usr/share/common-licenses/AGPL-3".
+ version 3 can be found in "/usr/share/common-licenses/AGPL-3.0".
 
 License: Apache-2.0
  On Debian systems, the complete text of the Apache License version 2.0 can be
@@ -66,6 +192,67 @@ License: BSD-3-clause
  IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+ 1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ POSSIBILITY OF SUCH DAMAGE.
+
+License: FSFAP
+ Copying and distribution of this file, with or without modification, are
+ permitted in any medium without royalty provided the copyright notice and this
+ notice are preserved. This file is offered as-is, without any warranty.
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify it under
+ the terms of the GNU General Public License as published by the Free Software
+ Foundation; either version 2 of the License, or (at your option) any later
+ version.
+ .
+ On Debian systems, the complete text of the GNU General Public License version
+ 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: GPL-2+ with Autoconf exception
+ This file is free software, distributed under the terms of the GNU General
+ Public License. As a special exception to the GNU General Public License, this
+ file may be distributed as part of a program that contains a configuration
+ script generated by Autoconf, under the same distribution terms as the rest of
+ that program.
+ .
+ On Debian systems, the complete text of the GNU General Public License version
+ 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: ISC
+ Permission to use, copy, modify, and/or distribute this software for any
+ purpose with or without fee is hereby granted, provided that the above
+ copyright notice and this permission notice appear in all copies.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+ REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+ INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+ OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+ THIS SOFTWARE.
+
+License: OFL-1.1
+ On Debian systems, the complete text of the SIL Open Font License version 1.1
+ can be found in "/usr/share/common-licenses/OFL-1.1".
 
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining a copy of
