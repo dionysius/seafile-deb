@@ -1,16 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { permission } from '../../utils/constants';
-import TextTranslation from '../../utils/text-translation';
-import ItemDropdownMenu from '../dropdown-menu/item-dropdown-menu';
-import { Utils, isMobile } from '../../utils/utils';
-import { gettext } from '@/utils/constants';
+import { permission } from '@/utils/constants';
+import TextTranslation from '@/utils/text-translation';
+import { Utils } from '@/utils/utils';
 import OpIcon from '../../components/op-icon';
+import CustomDropdown from '../dropdown';
 import Icon from '../icon';
 
 const LEFT_INDENT = 20;
 
 const propTypes = {
+  idx: PropTypes.number,
   userPerm: PropTypes.string,
   node: PropTypes.object.isRequired,
   currentPath: PropTypes.string.isRequired,
@@ -157,10 +157,6 @@ class TreeNodeView extends React.Component {
     this.props.unfreezeItem();
   };
 
-  onMenuItemClick = (operation, event, node) => {
-    this.props.onMenuItemClick(operation, node);
-  };
-
   onItemMouseDown = (event) => {
     event.stopPropagation();
     if (event.button === 2) {
@@ -182,7 +178,8 @@ class TreeNodeView extends React.Component {
     let icon = '';
     let type = '';
     if (node.object.type === 'dir') {
-      icon = <Icon symbol="folder" className="sf3-font-folder-icon" />;
+      const { isExpanded } = node;
+      icon = <Icon symbol={isExpanded ? 'folder-open' : 'folder'} className="sf3-font-folder-icon" />;
       type = 'dir';
     } else {
       let index = node.object.name.lastIndexOf('.');
@@ -239,6 +236,16 @@ class TreeNodeView extends React.Component {
     return menuList;
   };
 
+  getMenuList = () => {
+    return this.calculateMenuList(this.props.node).map(item => {
+      if (item === 'Divider') return item;
+      return {
+        ...item,
+        onClick: () => this.props.onMenuItemClick(item.key, this.props.node)
+      };
+    });
+  };
+
   renderChildren = () => {
     let { node } = this.props;
     if (!node.hasChildren()) {
@@ -246,9 +253,10 @@ class TreeNodeView extends React.Component {
     }
     return (
       <div className="children">
-        {node.children.map(item => {
+        {node.children.map((item, idx) => {
           return (
             <TreeNodeView
+              idx={idx}
               key={item.path}
               node={item}
               leftIndent={this.props.leftIndent + LEFT_INDENT}
@@ -277,7 +285,7 @@ class TreeNodeView extends React.Component {
   };
 
   render() {
-    let { currentPath, node, isNodeMenuShow, userPerm, leftIndent } = this.props;
+    let { idx, currentPath, node, isNodeMenuShow, userPerm, leftIndent } = this.props;
     let { type, icon } = this.getNodeTypeAndIcon();
     let hlClass = this.state.isHighlight ? 'tree-node-inner-hover ' : '';
     if (node.path === currentPath) {
@@ -294,7 +302,6 @@ class TreeNodeView extends React.Component {
         <div
           type={type}
           className={`tree-node-inner text-nowrap ${hlClass} ${node.path === '/' ? 'hide' : ''} ${this.state.isNodeDropShow ? 'tree-node-drop' : ''}`}
-          title={node.object.name}
           onMouseEnter={this.onMouseEnter}
           onMouseOver={this.onMouseOver}
           onMouseLeave={this.onMouseLeave}
@@ -307,6 +314,7 @@ class TreeNodeView extends React.Component {
         >
           <div
             className="tree-node-text"
+            title={node.object.name}
             draggable={this.canDrag}
             onDragStart={this.onNodeDragStart}
             onDragEnter={this.onNodeDragEnter}
@@ -314,14 +322,15 @@ class TreeNodeView extends React.Component {
             onDragOver={this.onNodeDragMove}
             onDrop={this.onNodeDrop}
             style={{ paddingLeft: leftIndent + 5 }}
-          >{node.object.name}
+          >
+            {node.object.name}
           </div>
           <div className="left-icon" style={{ left: leftIndent - 40 }}>
             {type === 'dir' && (!node.isLoaded || (node.isLoaded && node.hasChildren())) && (
               <OpIcon
-                className={`folder-toggle-icon ${node.isExpanded ? 'rotate-90' : ''}`}
-                symbol="right_arrow"
-                title={node.isExpanded ? gettext('Fold') : gettext('Unfold')}
+                id="tree-node-fold-btn"
+                className={`folder-toggle-icon ${node.isExpanded ? '' : 'rotate-270'}`}
+                symbol="down"
                 onMouseDown={e => e.stopPropagation()}
                 op={this.onLoadToggle}
               />
@@ -330,14 +339,11 @@ class TreeNodeView extends React.Component {
           </div>
           {isNodeMenuShow && ((userPerm === 'rw' || permission || isCustomPermission) && this.state.isShowOperationMenu) && (
             <div className="right-icon">
-              <ItemDropdownMenu
-                item={this.props.node}
-                toggleClass={'sf3-font sf3-font-more'}
-                getMenuList={this.calculateMenuList}
-                onMenuItemClick={this.onMenuItemClick}
+              <CustomDropdown
+                target={`tree-node-dropdown-btn-${idx}`}
+                items={this.getMenuList()}
                 freezeItem={this.props.freezeItem}
                 unfreezeItem={this.unfreezeItem}
-                menuStyle={isMobile ? { zIndex: 1050 } : {}}
               />
             </div>
           )}

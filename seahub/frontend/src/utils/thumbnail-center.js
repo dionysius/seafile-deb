@@ -1,4 +1,4 @@
-import { seafileAPI } from '../utils/seafile-api';
+import { seafileAPI } from '@/api/seafile-api';
 import { thumbnailDefaultSize } from '../utils/constants';
 
 class ThumbnailCenter {
@@ -46,4 +46,6 @@ const imageThumbnailCenter = new ThumbnailCenter();
 
 const videoThumbnailCenter = new ThumbnailCenter();
 
-export { imageThumbnailCenter, videoThumbnailCenter };
+const richTextThumbnailCenter = new ThumbnailCenter();
+
+export { imageThumbnailCenter, videoThumbnailCenter, richTextThumbnailCenter };

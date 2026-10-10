@@ -1,19 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import RepoListView from './repo-list-view';
+import { MODE_TYPE_MAP } from '@/constants';
+import { gettext, mediaUrl } from '@/utils/constants';
+import Icon from '../icon';
+import Loading from '../loading';
+import FavoritesListView from './favorites-list-view';
 import RecentlyUsedListView from './recently-used-list-view';
-import { gettext } from '../../utils/constants';
+import RepoListView from './repo-list-view';
 import SearchedListView from './searched-list-view';
 import { SearchStatus } from './searcher';
-import { MODE_TYPE_MAP } from '../../constants';
-import Loading from '../loading';
-import OpIcon from '../op-icon';
 
 const RepoListWrapper = (props) => {
   const {
     mode, isShowFile = true, fileSuffixes = [], currentPath, isCurrentRepoShow, currentRepoInfo, selectedRepo,
     selectedPath, isOtherRepoShow, selectedItemInfo, repoList,
-    searchStatus, searchResults, onSearchedItemClick, onSearchedItemDoubleClick, selectedSearchedRepo, newFolderName, initToShowChildren
+    searchStatus, searchResults, onSearchedItemClick, onSearchedItemDoubleClick, selectedSearchedRepo, newFolderName, initToShowChildren,
+    currentSearchedItem, currentSearchedIndex, enableSearchedListDocumentKeyboardNavigation, isKeyboardSelectionActive
   } = props;
 
   const onScroll = (event) => {
@@ -23,23 +25,51 @@ const RepoListWrapper = (props) => {
   const renderSearchResults = () => {
     switch (searchStatus) {
       case SearchStatus.LOADING:
-        return <Loading />;
+        return (
+          <div className="file-chooser-search-loading">
+            <Loading />
+          </div>
+        );
       case SearchStatus.RESULTS:
         return (
           <>
             {searchResults.length === 0 ? (
-              <div className='search-results-none text-center'>{gettext('No results matching')}</div>
+              <div className="file-chooser-search-empty text-center">
+                <img
+                  src={`${mediaUrl}img/no-results.png`}
+                  alt=""
+                  className="file-chooser-search-empty-img"
+                />
+                <div className="file-chooser-search-empty-text">
+                  {gettext('No results matching')}
+                </div>
+              </div>
             ) : (
               <SearchedListView
                 searchResults={searchResults}
                 onItemClick={onSearchedItemClick}
                 onSearchedItemDoubleClick={onSearchedItemDoubleClick}
+                selectedItemInfo={currentSearchedItem}
+                currentIndex={currentSearchedIndex}
+                enableDocumentKeyboardNavigation={enableSearchedListDocumentKeyboardNavigation}
+                isKeyboardSelectionActive={isKeyboardSelectionActive}
               />
             )}
           </>
         );
       default:
-        return null;
+        return (
+          <div className="file-chooser-search-empty text-center">
+            <img
+              src={`${mediaUrl}img/start-searching.png`}
+              alt=""
+              className="file-chooser-search-empty-img"
+            />
+            <div className="file-chooser-search-empty-text">
+              {gettext('Enter characters to start searching')}
+            </div>
+          </div>
+        );
     }
   };
 
@@ -50,11 +80,9 @@ const RepoListWrapper = (props) => {
           <>
             <div className="list-view">
               <div className="file-chooser-list-view-header">
-                <OpIcon
-                  className={`item-toggle sf3-font ${isCurrentRepoShow ? 'sf3-font-down' : 'sf3-font-down rotate-270 d-inline-block'}`}
-                  op={props.onCurrentRepoToggle}
-                  title={isCurrentRepoShow ? gettext('Fold') : gettext('Unfold')}
-                />
+                <span className="item-toggle tree-node-icon icon" onClick={props.onCurrentRepoToggle}>
+                  <Icon symbol="down" className={isCurrentRepoShow ? '' : 'rotate-270'} />
+                </span>
                 <span className="library">{gettext('Current Library')}</span>
               </div>
               {(isCurrentRepoShow && currentRepoInfo) &&
@@ -74,11 +102,9 @@ const RepoListWrapper = (props) => {
             </div>
             <div className="list-view">
               <div className="file-chooser-list-view-header">
-                <OpIcon
-                  className={`item-toggle sf3-font ${isOtherRepoShow ? 'sf3-font-down' : 'sf3-font-down rotate-270 d-inline-block'}`}
-                  op={props.onOtherRepoToggle}
-                  title={isOtherRepoShow ? gettext('Fold') : gettext('Unfold')}
-                />
+                <span className="item-toggle tree-node-icon icon" onClick={props.onOtherRepoToggle}>
+                  <Icon symbol="down" className={isOtherRepoShow ? '' : 'rotate-270'} />
+                </span>
                 <span className="library">{gettext('Other Libraries')}</span>
               </div>
               {isOtherRepoShow &&
@@ -119,7 +145,9 @@ const RepoListWrapper = (props) => {
           <div className="file-chooser-container">
             <div className="list-view">
               <div className="file-chooser-list-view-header">
-                <span className="item-toggle sf3-font sf3-font-down" aria-hidden="true"></span>
+                <span className="item-toggle tree-node-icon icon" onClick={props.onOtherRepoToggle}>
+                  <Icon symbol="down" className={isOtherRepoShow ? '' : 'rotate-270'} />
+                </span>
                 <span className="library">{gettext('Libraries')}</span>
               </div>
               <RepoListView
@@ -162,8 +190,17 @@ const RepoListWrapper = (props) => {
             />
           </div>
         )}
-        {mode === MODE_TYPE_MAP.SEARCH_RESULTS && (
+        {mode === MODE_TYPE_MAP.FAVORITES && (
           <div className="list-view">
+            <FavoritesListView
+              currentRepoInfo={currentRepoInfo}
+              repoList={repoList}
+              onDirentItemClick={props.handleClickDirent}
+            />
+          </div>
+        )}
+        {mode === MODE_TYPE_MAP.SEARCH_RESULTS && (
+          <div className="list-view file-chooser-search-list-view">
             {renderSearchResults()}
           </div>
         )}
@@ -195,6 +232,10 @@ RepoListWrapper.propTypes = {
   selectedSearchedRepo: PropTypes.object,
   newFolderName: PropTypes.string,
   initToShowChildren: PropTypes.bool,
+  currentSearchedItem: PropTypes.object,
+  currentSearchedIndex: PropTypes.number,
+  enableSearchedListDocumentKeyboardNavigation: PropTypes.bool,
+  isKeyboardSelectionActive: PropTypes.bool,
 };
 
 export default RepoListWrapper;

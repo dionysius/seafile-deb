@@ -1,4 +1,4 @@
-import { generatorBase64Code, generateUniqueId, getWikPageLink } from '../../../../pages/wiki2/utils/index.js';
+import { generatorBase64Code, generateUniqueId, getWikPageLink } from '@/pages/wiki2/utils/index.js';
 
 describe('generatorBase64Code', () => {
   it('should generate a base64 code of length 4 by default', () => {
@@ -35,17 +35,30 @@ describe('generateUniqueId', () => {
 
 describe('getWikPageLink', () => {
   it('returns the correct URL', () => {
-    const originalLocation = window.location;
-    // Mock window.location
-    delete window.location;
-    window.location = {
-      origin: 'https://cloud.seafile.com',
-      pathname: '/wikis/6cbbded99bd272796a2/7Lj3/'
-    };
+    const serviceURL = 'https://cloud.seafile.com';
+    const url = 'https://cloud.seafile.com/wikis/6cbbded99bd272796a2/7Lj3/';
     const pageId = 'y4Jw';
     const expectedUrl = 'https://cloud.seafile.com/wikis/6cbbded99bd272796a2/y4Jw/';
-    expect(getWikPageLink(pageId)).toBe(expectedUrl);
-    // Restore original window.location
-    window.location = originalLocation;
+    expect(getWikPageLink(serviceURL, url, pageId)).toBe(expectedUrl);
+  });
+});
+
+describe('getWikPageLink', () => {
+  it('returns the correct URL', () => {
+    const serviceURL = 'https://dev.seafile.com/seahub';
+    const url = 'https://dev.seafile.com/seahub/wikis/6cbbded99bd272796a2/7Lj3/';
+    const pageId = 'y4Jw';
+    const expectedUrl = 'https://dev.seafile.com/seahub/wikis/6cbbded99bd272796a2/y4Jw/';
+    expect(getWikPageLink(serviceURL, url, pageId)).toBe(expectedUrl);
+  });
+});
+
+describe('getWikPageLink with a port', () => {
+  it('preserves the port and service path', () => {
+    const serviceURL = 'http://127.0.0.1:8080/seahub';
+    const url = 'http://127.0.0.1:8080/seahub/wikis/6cbbded99bd272796a2/7Lj3/';
+    const pageId = 'y4Jw';
+    const expectedUrl = 'http://127.0.0.1:8080/seahub/wikis/6cbbded99bd272796a2/y4Jw/';
+    expect(getWikPageLink(serviceURL, url, pageId)).toBe(expectedUrl);
   });
 });

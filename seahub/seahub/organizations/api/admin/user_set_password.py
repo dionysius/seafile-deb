@@ -19,7 +19,9 @@ from seahub.base.accounts import User
 from seahub.profile.models import Profile
 from seahub.utils import IS_EMAIL_CONFIGURED, send_html_email
 from seahub.base.templatetags.seahub_tags import email2nickname
+from seahub.utils.auth import user_local_password_enabled
 
+import seahub.settings as settings
 from seahub.settings import INIT_PASSWD, SEND_EMAIL_ON_RESETTING_USER_PASSWD
 
 from seahub.organizations.views import org_user_exists
@@ -38,8 +40,9 @@ class OrgAdminUserSetPassword(APIView):
         """
         # resource check
         org_id = int(org_id)
-        if not ccnet_api.get_org_by_id(org_id):
-            error_msg = f'Organization {org_id} not found.' % org_id
+        org = ccnet_api.get_org_by_id(org_id)
+        if not org:
+            error_msg = f'Organization {org_id} not found.'
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
 
         try:
@@ -47,6 +50,9 @@ class OrgAdminUserSetPassword(APIView):
         except User.DoesNotExist:
             error_msg = f'User {email} not found.'
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        if not user_local_password_enabled(user):
+            return api_error(status.HTTP_400_BAD_REQUEST, _('Unable to reset password.'))
 
         user_nickname = email2nickname(email)
         if not org_user_exists(org_id, email):
@@ -87,5 +93,22 @@ class OrgAdminUserSetPassword(APIView):
 
             reset_tip = _('Successfully reset password to %(passwd)s for user %(user)s.') \
                 % {'passwd': new_password, 'user': user_nickname}
+
+        if settings.ENABLE_RISK_CONTROL:
+            from seahub.utils import risk_control_statistics
+            message = {
+                'api_type': 'org_admin_reset_user_password',
+                'admin_username': request.user.username,
+                'admin_name': email2nickname(request.user.username),
+                'org_id': int(org_id),
+                'org_name': org.org_name,
+                'email':  profile.contact_email if profile and profile.contact_email else '',
+                'username': user.username,
+                'name': email2nickname(email),
+            }
+            try:
+                risk_control_statistics(message)
+            except Exception as e:
+                logger.error('Publish risk-control-statistics msg %s error: %s', message, e)
 
         return Response({'reset_tip': reset_tip})

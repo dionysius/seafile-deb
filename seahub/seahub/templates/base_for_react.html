@@ -21,9 +21,10 @@
 <link rel="icon" href="{{ MEDIA_URL }}{{ favicon_path }}" type="image/x-icon" id="favicon">
 <link rel="apple-touch-icon" href="{{ MEDIA_URL }}{{ apple_touch_icon_path }}">
 <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/sf_font3/iconfont.css" />
-<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seafile-ui.css?t=20251118" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seafile-ui.css?t=20260821" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/haiwen-font/iconfont.css?t=20260804" />
 
-<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seahub_react.css?t=20250806" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seahub_react.css?t=20260811" />
 <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}seafile-editor/seafile-editor-font.css" />
 <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}sdoc-editor/sdoc-editor-font.css" />
 {% block extra_style %}{% endblock %}
@@ -109,6 +110,7 @@
             shareLinkForceUsePassword: {% if share_link_force_use_password %} true {% else %} false {% endif %},
             shareLinkPasswordMinLength: {{ share_link_password_min_length }},
             shareLinkPasswordStrengthLevel: {{ share_link_password_strength_level }},
+            shareLinkAlwaysSendPasswordSeparately: {% if share_link_always_send_password_separately %} true {% else %} false {% endif %},
             sideNavFooterCustomHtml: "{{ side_nav_footer_custom_html|safe|escapejs }}",
             helpLink: "{{ help_link }}",
             aboutDialogCustomHtml: "{{ about_dialog_custom_html|safe|escapejs }}",
@@ -167,6 +169,7 @@
             isOrgContext: {% if org is not None %} true {% else %} false {% endif %},
             enableMetadataManagement: {% if enable_metadata_management %} true {% else %} false {% endif %},
             enableSeafileAI: {% if enable_seafile_ai %} true {% else %} false {% endif %},
+            chatAndSearchAvailable: {% if chat_and_search_available %} true {% else %} false {% endif %},
             enableFaceRecognition: {% if enable_face_recognition %} true {% else %} false {% endif %},
             isMultiTenancy: {% if multi_tenancy %} true {% else %} false {% endif %},
             isSeafilePlus: {% if is_seafile_plus %} true {% else %} false {% endif %},
@@ -178,6 +181,8 @@
             baiduMapKey: '{{ baidu_map_key }}',
             googleMapKey: '{{ google_map_key }}',
             googleMapId: '{{ google_map_id }}',
+            enableThumbnailServer: {% if enable_thumbnal_server %} true {% else %} false {% endif %},
+            enableStorageClasses: {% if enable_storage_classes %} true {% else %} false {% endif %},
             canUseGlobalAddressBook: {% if user.permissions.can_use_global_address_book %} true {% else %} false {% endif %}
         }
      };

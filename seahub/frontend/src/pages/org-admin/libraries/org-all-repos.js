@@ -1,18 +1,18 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
-import { Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
-import { Utils } from '../../../utils/utils';
-import { orgAdminAPI } from '../../../utils/org-admin-api';
-import { gettext, siteRoot, orgID } from '../../../utils/constants';
-import toaster from '../../../components/toast/index';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
-import ModalPortal from '../../../components/modal-portal';
-import TransferDialog from '../../../components/dialog/transfer-dialog';
 import { navigate } from '@gatsbyjs/reach-router';
-import OrgAdminRepo from '../../../models/org-admin-repo';
-import MainPanelTopbar from '../main-panel-topbar';
+import PropTypes from 'prop-types';
+import { orgAdminAPI } from '@/api/org-admin-api';
+import MainPanelTopbar from '@/components/admin/layout/main-panel-topbar';
+import TransferDialog from '@/components/dialog/transfer-dialog';
+import CustomDropdown from '@/components/dropdown';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import ModalPortal from '@/components/modal-portal';
+import Paginator from '@/components/paginator';
+import toaster from '@/components/toast/index';
+import OrgAdminRepo from '@/models/org-admin-repo';
+import { gettext, siteRoot, orgID } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import ReposNav from './org-repo-nav';
 
 
@@ -59,7 +59,7 @@ class Content extends Component {
       return <p className="error text-center">{errorMsg}</p>;
     } else {
       const emptyTip = (
-        <EmptyTip text={gettext('No libraries')}/>
+        <EmptyTip text={gettext('No libraries')} />
       );
       const table = (
         <Fragment>
@@ -136,7 +136,7 @@ class RepoItem extends React.Component {
     this.state = {
       highlight: false,
       showMenu: false,
-      isItemMenuShow: false,
+      isDropdownFrozen: false,
       isTransferDialogShow: false,
     };
   }
@@ -159,25 +159,21 @@ class RepoItem extends React.Component {
     }
   };
 
-  onDropdownToggleClick = (e) => {
-    this.toggleOperationMenu(e);
+  handleDropdownOpen = () => {
+    this.props.onFreezedItem();
+    this.setState({ isDropdownFrozen: true, showMenu: true, highlight: true });
   };
 
-  toggleOperationMenu = (e) => {
-    e.stopPropagation();
-    this.setState(
-      { isItemMenuShow: !this.state.isItemMenuShow }, () => {
-        if (this.state.isItemMenuShow) {
-          this.props.onFreezedItem();
-        } else {
-          this.setState({
-            highlight: false,
-            showMenu: false,
-          });
-          this.props.onUnfreezedItem();
-        }
-      }
-    );
+  handleDropdownClose = () => {
+    this.props.onUnfreezedItem();
+    this.setState({ isDropdownFrozen: false, highlight: false, showMenu: false });
+  };
+
+  getMenuItems = () => {
+    return [
+      { key: 'delete', label: gettext('Delete'), onClick: this.toggleDelete },
+      { key: 'transfer', label: gettext('Transfer'), onClick: this.toggleTransfer },
+    ];
   };
 
   toggleDelete = () => {
@@ -213,7 +209,7 @@ class RepoItem extends React.Component {
 
   render() {
     let { repo } = this.props;
-    let isOperationMenuShow = this.state.showMenu;
+    let isOperationMenuShow = this.state.showMenu || this.state.isDropdownFrozen;
     let iconTitle = repo.encrypted ? gettext('Encrypted library') : gettext('Read-Write library');
     return (
       <Fragment>
@@ -225,25 +221,15 @@ class RepoItem extends React.Component {
           <td>{`${repo.file_count} / ${Utils.bytesToSize(repo.size)}`}</td>
           <td>{repo.repoID}</td>
           <td><a href={this.renderRepoOwnerHref(repo)}>{repo.ownerName}</a></td>
-          <td className="text-center cursor-pointer">
-            {isOperationMenuShow &&
-            <Dropdown isOpen={this.state.isItemMenuShow} toggle={this.toggleOperationMenu}>
-              <DropdownToggle
-                tag="i"
-                role="button"
-                className="op-icon sf3-font-more sf3-font"
-                title={gettext('More operations')}
-                aria-label={gettext('More operations')}
-                data-toggle="dropdown"
-                aria-expanded={this.state.isItemMenuShow}
-                onClick={this.onDropdownToggleClick}
+          <td className="text-center">
+            {isOperationMenuShow && (
+              <CustomDropdown
+                items={this.getMenuItems()}
+                triggerClassName="op-icon"
+                freezeItem={this.handleDropdownOpen}
+                unfreezeItem={this.handleDropdownClose}
               />
-              <DropdownMenu>
-                <DropdownItem onClick={this.toggleDelete}>{gettext('Delete')}</DropdownItem>
-                <DropdownItem onClick={this.toggleTransfer}>{gettext('Transfer')}</DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-            }
+            )}
           </td>
         </tr>
         {this.state.isTransferDialogShow && (
@@ -373,7 +359,7 @@ class OrgAllRepos extends Component {
   render() {
     return (
       <Fragment>
-        <MainPanelTopbar />
+        <MainPanelTopbar {...this.props} />
         <div className="main-panel-center flex-row">
           <div className="cur-view-container">
             <ReposNav

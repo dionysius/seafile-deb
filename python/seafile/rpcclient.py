@@ -629,6 +629,10 @@ class SeafServerThreadedRpcClient(NamedPipeClient):
     def get_virtual_repo(origin_repo, path, owner):
         pass
 
+    @searpc_func("int", ["string", "string"])
+    def set_base_commit(repo_id, base_commit):
+        pass
+
     # system default library
     @searpc_func("string", [])
     def get_system_default_repo_id():
@@ -867,10 +871,6 @@ class SeafServerThreadedRpcClient(NamedPipeClient):
 
     @searpc_func("objlist", ["string", "string", "int", "int"])
     def search_emailusers(self, source, email_patt, start, limit):
-        pass
-
-    @searpc_func("objlist", ["string", "int", "int"])
-    def search_ldapusers(self, keyword, start, limit):
         pass
 
     @searpc_func("int64", ["string"])

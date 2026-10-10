@@ -1,29 +1,29 @@
 import React, { Component } from 'react';
-import dayjs from 'dayjs';
 import MediaQuery from 'react-responsive';
 import { Modal } from 'reactstrap';
-import { Utils } from '../../utils/utils';
-import wikiAPI from '../../utils/wiki-api';
-import SDocServerApi from '../../utils/sdoc-server-api';
-import { wikiId, siteRoot, lang, isWiki2, seadocServerUrl, wikiPermission, gettext } from '../../utils/constants';
-import WikiConfig from './models/wiki-config';
-import toaster from '../../components/toast';
-import SidePanel from './side-panel';
-import MainPanel from './main-panel';
-import PageUtils from './wiki-nav/page-utils';
-import LocalStorage from '../../utils/local-storage-utils';
-import { DEFAULT_PAGE_NAME } from './constant';
-import { eventBus } from '../../components/common/event-bus';
-import { throttle, getNamePaths } from './utils';
-import ResizeBar from '../../components/resize-bar';
+import { EventBus } from '@seafile/seafile-sdoc-editor';
+import dayjs from 'dayjs';
+import throttle from 'lodash.throttle';
+import SDocServerApi from '@/api/sdoc-server-api';
+import wikiAPI from '@/api/wiki-api';
+import { eventBus } from '@/components/event-bus';
+import ResizeBar from '@/components/resize-bar';
 import {
   DRAG_HANDLER_HEIGHT, INIT_SIDE_PANEL_RATE, MAX_SIDE_PANEL_RATE_IN_WIKI, MIN_SIDE_PANEL_RATE
-} from '../../components/resize-bar/constants';
+} from '@/components/resize-bar/constants';
+import toaster from '@/components/toast';
+import { wikiId, siteRoot, lang, isWiki2, seadocServerUrl, wikiPermission } from '@/utils/constants';
+import LocalStorage from '@/utils/local-storage-utils';
+import { Utils } from '@/utils/utils';
+import MainPanel from './main-panel';
+import WikiConfig from './models/wiki-config';
+import SidePanel from './side-panel';
+import { getNamePaths } from './utils';
+import PageUtils from './wiki-nav/page-utils';
 
-import '../../css/layout.css';
-import '../../css/side-panel.css';
-import '../../css/toolbar.css';
-import '../../css/search.css';
+import '@/css/layout.css';
+import '@/css/toolbar.css';
+import '@/css/search.css';
 import './wiki.css';
 
 dayjs.locale(lang);
@@ -56,15 +56,13 @@ class Wiki extends Component {
     this.dragHandlerRef = React.createRef();
   }
 
-  UNSAFE_componentWillMount() {
-    if (!Utils.isDesktop()) {
-      this.setState({ isSidePanelOpen: true });
-    }
-  }
-
   componentDidMount() {
     this.getWikiConfig();
     window.addEventListener('popstate', this.onPopstate);
+    const eventBus = EventBus.getInstance();
+    this.unsubscribeOpenWikiPageLink = eventBus.subscribe('open_wiki_page_id_link', ({ page_id }) => {
+      this.setCurrentPage(page_id);
+    });
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -77,6 +75,7 @@ class Wiki extends Component {
 
   componentWillUnmount() {
     window.removeEventListener('popstate', this.onPopState);
+    this.unsubscribeOpenWikiPageLink && this.unsubscribeOpenWikiPageLink();
   }
 
   onPopstate = (e) => {
@@ -90,7 +89,7 @@ class Wiki extends Component {
   };
 
   setNavConfig = (config, wikiRepoId) => {
-    const { pages } = config;
+    const { pages, navigation } = config;
     const newPages = JSON.parse(JSON.stringify(pages));
     newPages.map((item) => {
       const { path, isDir } = getNamePaths(config, item.id);
@@ -102,7 +101,8 @@ class Wiki extends Component {
       return item;
     });
     window.wiki.config['navConfig'] = {
-      pages: newPages
+      pages: newPages,
+      navigation,
     };
   };
 
@@ -124,13 +124,15 @@ class Wiki extends Component {
         wikiRepoId,
       }, () => {
         let pageId = this.getFirstPageId(config);
+        let openedByUrl = false;
         // opened by url
         const urlPageId = location.pathname.split('/').filter(item => !!item).pop();
         if (urlPageId && urlPageId.length === 4 && PageUtils.getPageById(config.pages, urlPageId)) {
           pageId = urlPageId;
+          openedByUrl = true;
         }
         if (pageId) {
-          this.setCurrentPage(pageId);
+          this.setCurrentPage(pageId, undefined, openedByUrl);
         }
       });
     }).catch((error) => {
@@ -145,15 +147,6 @@ class Wiki extends Component {
   updateWikiConfig = (wikiConfig) => {
     this.setState({ config: new WikiConfig(wikiConfig || {}) });
   };
-
-  updatePageNameToServer = throttle((wikiConfig) => {
-    wikiAPI.updateWiki2Config(wikiId, JSON.stringify(wikiConfig)).then(res => {
-      // nothing todo
-    }).catch((error) => {
-      let errorMsg = Utils.getErrorMsg(error);
-      toaster.danger(errorMsg);
-    });
-  }, 1000);
 
   updatePageLock = (pageId, locked) => {
     wikiAPI.updateWiki2PageLock(wikiId, pageId, locked).then(res => {
@@ -182,21 +175,6 @@ class Wiki extends Component {
       let errorMsg = Utils.getErrorMsg(error);
       toaster.danger(errorMsg);
     });
-  };
-
-  saveWikiConfig = (wikiConfig, isUpdateBySide = false) => {
-    this.setState({
-      config: new WikiConfig(wikiConfig),
-      isUpdateBySide,
-    }, () => {
-      this.updatePageNameToServer(wikiConfig);
-    });
-
-    if (isUpdateBySide) {
-      setTimeout(() => {
-        this.setState({ isUpdateBySide: false });
-      }, 300);
-    }
   };
 
   getFirstPageId = (config) => {
@@ -335,10 +313,7 @@ class Wiki extends Component {
     }
   };
 
-  onUpdatePage = (pageId, newPage, isUpdateBySide) => {
-    if (newPage.name === '') {
-      newPage.name = gettext(DEFAULT_PAGE_NAME);
-    }
+  getNewWikiConfigs = (pageId, newPage) => {
     if (this.state.currentPageId === pageId) {
       this.updateDocumentTitle(newPage.name);
     }
@@ -350,8 +325,52 @@ class Wiki extends Component {
       }
       return page;
     });
+
     const newConfig = { ...config, pages: newPages };
-    this.saveWikiConfig(newConfig, isUpdateBySide);
+    return newConfig;
+  };
+
+  updatePageConfig = (pageId, newPage) => {
+    wikiAPI.updateWiki2PageConfig(wikiId, pageId, newPage).then(res => {
+      // nothing todo
+    }).catch((error) => {
+      let errorMsg = Utils.getErrorMsg(error);
+      toaster.danger(errorMsg);
+    });
+  };
+
+  updatePageConfigByThrottle = throttle((pageId, newPage) => {
+    wikiAPI.updateWiki2PageConfig(wikiId, pageId, newPage).then(res => {
+      // nothing todo
+    }).catch((error) => {
+      let errorMsg = Utils.getErrorMsg(error);
+      toaster.danger(errorMsg);
+    });
+  }, 1000);
+
+  onUpdatePageName = (pageId, name) => {
+    const newConfig = this.getNewWikiConfigs(pageId, { name });
+    this.setState({
+      config: new WikiConfig(newConfig),
+      isUpdateBySide: true,
+    }, () => {
+      this.updatePageConfig(pageId, { name });
+    });
+
+    setTimeout(() => {
+      this.setState({ isUpdateBySide: false });
+    }, 300);
+  };
+
+  onUpdatePageConfig = (pageId, newPage) => {
+    const wikiConfig = this.getNewWikiConfigs(pageId, newPage);
+    this.setState({ config: new WikiConfig(wikiConfig) }, () => {
+      if (newPage.icon || newPage.cover_img_url) {
+        this.updatePageConfig(pageId, newPage);
+        return;
+      }
+      this.updatePageConfigByThrottle(pageId, newPage);
+    });
   };
 
   updateDocumentTitle = (newTitle) => {
@@ -416,7 +435,7 @@ class Wiki extends Component {
           getWikiConfig={this.getWikiConfig}
           setCurrentPage={this.setCurrentPage}
           getCurrentPageId={this.getCurrentPageId}
-          onUpdatePage={this.onUpdatePage}
+          onUpdatePageName={this.onUpdatePageName}
           style={sidePanelStyle}
         />
         {isDesktop &&
@@ -440,7 +459,7 @@ class Wiki extends Component {
           permission={this.state.permission}
           seadoc_access_token={this.state.seadoc_access_token}
           assets_url={this.state.assets_url}
-          onUpdatePage={this.onUpdatePage}
+          onUpdatePageConfig={this.onUpdatePageConfig}
           currentPageLocked={this.state.currentPageLocked}
           updatePageLock={this.updatePageLock}
           setCurrentPage={this.setCurrentPage}

@@ -1,14 +1,16 @@
 import logging
 import time
 from threading import Thread, Event
+from requests.exceptions import RequestException
 from seafevents.seasearch.index_store.index_manager import IndexManager
 from seafevents.seasearch.index_store.repo_file_index import RepoFileIndex
 from seafevents.seasearch.index_store.repo_status_index import RepoStatusIndex
 from seafevents.seasearch.utils.constants import REPO_STATUS_FILE_INDEX_NAME, SHARD_NUM, REPO_TYPE_WIKI
 from seafevents.seasearch.utils.seasearch_api import SeaSearchAPI
 from seafevents.repo_data import repo_data
-from seafevents.utils import parse_bool, get_opt_from_conf_or_env, parse_interval
+from seafevents.utils import get_opt_from_conf_or_env, parse_interval
 from seafevents.events.metrics import handle_metric_timing
+from seafevents.app.config import ENABLE_SEARCH, IS_PRO_VERSION, SEARCH_ENGINE
 
 
 logger = logging.getLogger('seasearch')
@@ -28,28 +30,22 @@ class RepoFileIndexUpdater(object):
     def _parse_config(self, config):
         """Parse file index update related parts of events.conf"""
         section_name = 'SEASEARCH'
-        key_enabled = 'enabled'
         key_seasearch_url = 'seasearch_url'
         key_seasearch_token = 'seasearch_token'
         key_index_interval = 'interval'
 
         default_index_interval = 30 * 60 # 30 min
 
-        if not config.has_section(section_name):
+        if not IS_PRO_VERSION or not ENABLE_SEARCH or SEARCH_ENGINE != 'seasearch':
             return
 
-        # [ enabled ]
-        enabled = get_opt_from_conf_or_env(config, section_name, key_enabled, default=False)
-        enabled = parse_bool(enabled)
-        if not enabled:
-            return
         self._enabled = True
 
         seasearch_url = get_opt_from_conf_or_env(
-            config, section_name, key_seasearch_url
+            config, section_name, key_seasearch_url, 'SEASEARCH_URL'
         )
         seasearch_token = get_opt_from_conf_or_env(
-            config, section_name, key_seasearch_token
+            config, section_name, key_seasearch_token, 'SEASEARCH_TOKEN'
         )
         interval = get_opt_from_conf_or_env(config, section_name, key_index_interval,
                                             default=default_index_interval)
@@ -161,6 +157,8 @@ class RepoFileIndexUpdaterTimer(Thread):
                 logger.info('starts to update seasearch file index...')
                 try:
                     update_repo_file_indexes(self.repo_status_file_index, self.repo_file_index, self.index_manager, self.repo_data)
+                except RequestException as e:
+                    logger.error('SeaSearch request failed; aborting this file-index update pass: %s', e)
                 except Exception as e:
                     logger.exception('periodical update seasearch file index error: %s', e)
 

@@ -1,8 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Alert, Modal, ModalBody, ModalFooter, Button, Form, FormGroup, Label, Input } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import Icon from '../../icon';
 
 const propTypes = {
   toggleDialog: PropTypes.func.isRequired,
@@ -97,9 +98,11 @@ class SysAdminAddOrgDialog extends React.Component {
               <Input value={name} onChange={this.inputName} />
             </FormGroup>
             <FormGroup>
-              <Label>
+              <Label className="d-flex align-items-center">
                 {gettext('Owner')}
-                <span className="small text-secondary ml-1 sf3-font sf3-font-tips" title={gettext('Owner can use admin panel in an organization, must be a new account.')}></span>
+                <span className="small text-secondary ml-1 d-inline-flex align-items-center" title={gettext('Owner can use admin panel in an organization, must be a new account.')}>
+                  <Icon symbol="about" />
+                </span>
               </Label>
               <Input value={email} onChange={this.inputEmail} />
             </FormGroup>

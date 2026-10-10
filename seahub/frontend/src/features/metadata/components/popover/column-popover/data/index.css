@@ -1,0 +1,8 @@
+.sf-metadata-column-popover .sf-metadata-column-data-settings {
+  background-color: var(--bs-body-secondary-bg);
+  margin: 0 -1rem -1rem;
+}
+
+.sf-metadata-column-popover .sf-metadata-column-data-settings .selected-option {
+  background: transparent;
+}

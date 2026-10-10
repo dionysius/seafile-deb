@@ -1,13 +1,13 @@
-import { stateDebug } from '../utils/debug';
-import SocketClient from './socket-client';
 import { CaptureUpdateAction, getSceneVersion, reconcileElements, restoreElements } from '@excalidraw/excalidraw';
-import { CURSOR_SYNC_TIMEOUT, LOAD_IMAGES_TIMEOUT } from '../constants';
 import throttle from 'lodash.throttle';
-import EventBus from '../utils/event-bus';
+import { CURSOR_SYNC_TIMEOUT, LOAD_IMAGES_TIMEOUT } from '../constants';
 import FileManager from '../data/file-manager';
 import { loadFilesFromServer, saveFilesToServer } from '../data/server-storage';
-import { updateStaleImageStatuses } from '../utils/exdraw-utils';
+import { stateDebug } from '../utils/debug';
 import { isInitializedImageElement } from '../utils/element-utils';
+import EventBus from '../utils/event-bus';
+import { updateStaleImageStatuses } from '../utils/exdraw-utils';
+import SocketClient from './socket-client';
 
 const STATE = {
   IDLE: 'idle',
@@ -151,7 +151,7 @@ class SocketManager {
     const firstOpBeginTime = this.pendingOperationBeginTimeList[0];
 
     const isExceedExecuteTime = (lastOpBeginTime - firstOpBeginTime) / 1000 > 30 ? true : false;
-    if (isExceedExecuteTime || this.pendingOperationList.length > 200) {
+    if (isExceedExecuteTime || this.pendingOperationList.length > 500) {
       this.dispatchConnectState('pending_operations_exceed_limit');
     }
 
@@ -298,12 +298,15 @@ class SocketManager {
   dispatchConnectState = (type, message) => {
     if (type === 'reconnect') {
       this.state = STATE.IDLE;
+      if (this.pendingOperationList.length > 0) {
+        this.sendOperations();
+      }
     }
 
     if (type === 'disconnect') {
       // current state is sending
       if (this._sendingOperation) {
-        this.pendingOperationList.unshift(this._sendingOperations.slice());
+        this.pendingOperationList.unshift(this._sendingOperation);
         this._sendingOperation = null;
       }
       stateDebug(`State Changed: ${this.state} -> ${STATE.DISCONNECT}`);
@@ -314,8 +317,10 @@ class SocketManager {
   };
 
   static destroy = () => {
+    if (this.instance?.socketClient) {
+      this.instance.socketClient.close();
+    }
     this.instance = null;
-    this.socketClient.close();
   };
 
 }

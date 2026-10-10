@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
-import { gettext } from '../../utils/constants';
+import { gettext } from '@/utils/constants';
 import InternalLinkDialog from '../dialog/internal-link-dialog';
 import OpIcon from '../op-icon';
 
@@ -31,8 +31,10 @@ class InternalLinkOperation extends React.Component {
     return (
       <Fragment>
         <OpIcon
-          className="op-icon file-internal-link sf3-font sf3-font-link"
-          title={title}
+          id="file-internal-link"
+          className="file-internal-link"
+          symbol="link"
+          tooltip={title}
           op={this.onInternalLinkDialogToggle}
         />
         {isShowInternalLinkDialog && (

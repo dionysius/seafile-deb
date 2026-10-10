@@ -619,7 +619,7 @@ class NewDBConfigurator(AbstractDBConfigurator):
 
     def create_db(self, db_name):
         cursor = self.root_conn.cursor()
-        sql = '''CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET UTF8''' \
+        sql = '''CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4''' \
               % db_name
 
         try:
@@ -875,7 +875,7 @@ class SeafileConfigurator(AbstractConfigurator):
         with open(self.seafile_conf, 'w') as fp:
             fp.write('[fileserver]\nport=%d\n' % self.fileserver_port)
 
-        # self.generate_db_conf()
+        self.generate_db_conf()
 
         ## use default seafile-data path: seafile_data_dir=${TOPDIR}/seafile-data
 
@@ -893,13 +893,13 @@ class SeafileConfigurator(AbstractConfigurator):
         db_section = 'database'
         if not config.has_section(db_section):
             config.add_section(db_section)
-        config.set(db_section, 'type', 'mysql')
-        config.set(db_section, 'host', db_config.mysql_host)
-        config.set(db_section, 'port', str(db_config.mysql_port))
-        config.set(db_section, 'user', db_config.seafile_mysql_user)
-        config.set(db_section, 'password', db_config.seafile_mysql_password)
-        config.set(db_section, 'db_name', db_config.seafile_db_name)
-        config.set(db_section, 'connection_charset', 'utf8')
+        # config.set(db_section, 'type', 'mysql')
+        # config.set(db_section, 'host', db_config.mysql_host)
+        # config.set(db_section, 'port', str(db_config.mysql_port))
+        # config.set(db_section, 'user', db_config.seafile_mysql_user)
+        # config.set(db_section, 'password', db_config.seafile_mysql_password)
+        # config.set(db_section, 'db_name', db_config.seafile_db_name)
+        config.set(db_section, 'connection_charset', 'utf8mb4')
 
         Utils.write_config(config, self.seafile_conf)
 
@@ -1342,8 +1342,7 @@ seafdav_config = SeafDavConfigurator()
 gunicorn_config = GunicornConfigurator()
 seahub_config = SeahubConfigurator()
 user_manuals_handler = UserManualHandler()
-if env_mgr.is_pro:
-    pro_config = ProfessionalConfigurator()
+pro_config = ProfessionalConfigurator()
 # Would be created after AbstractDBConfigurator.ask_use_existing_db()
 db_config = None
 need_pause = True
@@ -1489,8 +1488,7 @@ def main():
     ccnet_config.ask_questions()
     seafile_config.ask_questions()
     seahub_config.ask_questions()
-    if env_mgr.is_pro:
-        pro_config.ask_questions()
+    pro_config.ask_questions()
 
     # pylint: disable=redefined-variable-type
     if not db_config:
@@ -1509,9 +1507,7 @@ def main():
     seafdav_config.generate()
     gunicorn_config.generate()
     seahub_config.generate()
-    if env_mgr.is_pro:
-        pro_config.generate()
-        pro_config.do_syncdb()
+    pro_config.generate()
 
     ccnet_config.do_syncdb()
     seafile_config.do_syncdb()

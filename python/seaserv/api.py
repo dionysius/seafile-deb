@@ -684,7 +684,7 @@ class SeafileAPI(object):
         """
         return seafserv_threaded_rpc.check_permission_by_path(repo_id, path, user)
 
-    def is_repo_syncable(self, repo_id, user, repo_perm):
+    def is_repo_syncable(self, repo_id, user, repo_perm, client=None):
         """
         Check if the permission of the repo is syncable.
         """
@@ -767,6 +767,9 @@ class SeafileAPI(object):
 
     def get_virtual_repo(self, origin_repo, path, owner):
         return seafserv_threaded_rpc.get_virtual_repo(origin_repo, path, owner)
+
+    def set_base_commit(self, repo_id, base_commit):
+        return seafserv_threaded_rpc.set_base_commit(repo_id, base_commit)
 
     # Clean trash
 
@@ -969,12 +972,6 @@ class CcnetAPI(object):
     def get_ancestor_groups(self, group_id):
         return ccnet_threaded_rpc.get_ancestor_groups(group_id)
 
-    def search_ldapusers(self, keyword, start, limit):
-        """
-        Search for users whose name contains @keyword directly from LDAP server.
-        """
-        return ccnet_threaded_rpc.search_ldapusers(keyword, start, limit)
-    
     def count_emailusers(self, source):
         """
         Return the number of active users by source.

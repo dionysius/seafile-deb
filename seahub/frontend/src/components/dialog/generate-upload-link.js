@@ -1,16 +1,17 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import { Button, Form, FormGroup, Label, Input, InputGroup, Alert } from 'reactstrap';
 import copy from 'copy-to-clipboard';
 import dayjs from 'dayjs';
-import { Button, Form, FormGroup, Label, Input, InputGroup, Alert } from 'reactstrap';
-import { gettext, shareLinkForceUsePassword, shareLinkPasswordMinLength, shareLinkPasswordStrengthLevel, canSendShareLinkEmail, uploadLinkExpireDaysMin, uploadLinkExpireDaysMax, uploadLinkExpireDaysDefault } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
-import UploadLink from '../../models/upload-link';
-import toaster from '../toast';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import UploadLink from '@/models/upload-link';
+import { gettext, shareLinkForceUsePassword, shareLinkPasswordMinLength, shareLinkPasswordStrengthLevel, canSendShareLinkEmail, uploadLinkExpireDaysMin, uploadLinkExpireDaysMax, uploadLinkExpireDaysDefault } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../icon';
 import SendLink from '../send-link';
-import SharedLink from '../shared-link';
 import SetLinkExpiration from '../set-link-expiration';
+import SharedLink from '../shared-link';
+import toaster from '../toast';
 
 const propTypes = {
   itemPath: PropTypes.string.isRequired,
@@ -32,6 +33,8 @@ class GenerateUploadLink extends React.Component {
       passwordVisible: false,
       password: '',
       passwordnew: '',
+      description: '',
+      isShowDescriptionInput: false,
       storedPasswordVisible: false,
       sharedUploadInfo: null,
       isSendLinkShown: false,
@@ -106,13 +109,26 @@ class GenerateUploadLink extends React.Component {
     });
   };
 
+  inputDescription = (e) => {
+    this.setState({
+      description: e.target.value
+    });
+  };
+
+  onDescriptionInputChecked = () => {
+    this.setState({
+      isShowDescriptionInput: !this.state.isShowDescriptionInput,
+      description: ''
+    });
+  };
+
   generateUploadLink = () => {
     let isValid = this.validateParamsInput();
     if (isValid) {
       this.setState({ errorInfo: '' });
 
       let { itemPath, repoID } = this.props;
-      let { password, isExpireChecked, expType, expireDays, expDate } = this.state;
+      let { password, isExpireChecked, expType, expireDays, expDate, description } = this.state;
 
       let expirationTime = '';
       if (isExpireChecked) {
@@ -123,7 +139,7 @@ class GenerateUploadLink extends React.Component {
         }
       }
 
-      seafileAPI.createUploadLink(repoID, itemPath, password, expirationTime).then((res) => {
+      seafileAPI.createUploadLink(repoID, itemPath, password, expirationTime, description).then((res) => {
         let sharedUploadInfo = new UploadLink(res.data);
         this.setState({ sharedUploadInfo: sharedUploadInfo });
       }).catch(error => {
@@ -303,8 +319,8 @@ class GenerateUploadLink extends React.Component {
                     <Button
                       aria-label={this.state.storedPasswordVisible ? gettext('Hide') : gettext('Show')}
                       onClick={this.toggleStoredPasswordVisible}
-                      className={`link-operation-icon eye-icon sf3-font sf3-font-eye${this.state.storedPasswordVisible ? '' : '-slash'}`}
                     >
+                      <Icon symbol={this.state.storedPasswordVisible ? 'eye' : 'eye-slash'} className="link-operation-icon eye-icon" />
                     </Button>
                   </InputGroup>
                 </dd>
@@ -339,9 +355,10 @@ class GenerateUploadLink extends React.Component {
                       <Button
                         aria-label={gettext('Edit')}
                         title={gettext('Edit')}
-                        className="link-operation-icon sf3-font sf3-font-rename"
+                        className="link-operation-icon"
                         onClick={this.editExpirationToggle}
                       >
+                        <Icon symbol="rename" />
                       </Button>
                     </InputGroup>
                   )}
@@ -355,6 +372,7 @@ class GenerateUploadLink extends React.Component {
           <SendLink
             linkType='uploadLink'
             token={sharedUploadInfo.token}
+            hasPassword={!!sharedUploadInfo.password}
             toggleSendLink={this.toggleSendLink}
             closeShareDialog={this.props.closeShareDialog}
           />
@@ -366,17 +384,11 @@ class GenerateUploadLink extends React.Component {
       <Form className="generate-upload-link">
         <FormGroup check>
           <Label check>
-            {shareLinkForceUsePassword ? (
-              <Label check>
-                <Input type="checkbox" className="form-check-input" checked readOnly disabled />
-                <span>{gettext('Add password protection')}</span>
-              </Label>
-            ) : (
-              <Label check>
-                <Input type="checkbox" onChange={this.addPassword} onKeyDown={Utils.onKeyDown} />
-                <span>{gettext('Add password protection')}</span>
-              </Label>
-            )}
+            {shareLinkForceUsePassword ?
+              <Input type="checkbox" className="form-check-input" checked readOnly disabled /> :
+              <Input type="checkbox" onChange={this.addPassword} onKeyDown={Utils.onKeyDown} />
+            }
+            <span>{gettext('Add password protection')}</span>
           </Label>
           {this.state.showPasswordInput &&
           <div className="ml-4">
@@ -386,10 +398,10 @@ class GenerateUploadLink extends React.Component {
               <InputGroup style={{ width: inputWidth }}>
                 <Input id="passwd" type={this.state.passwordVisible ? 'text' : 'password'} value={this.state.password || ''} onChange={this.inputPassword} />
                 <Button onClick={this.togglePasswordVisible}>
-                  <i className={`link-operation-icon sf3-font sf3-font-eye${this.state.passwordVisible ? '' : '-slash'}`}></i>
+                  <Icon symbol={this.state.passwordVisible ? 'eye' : 'eye-slash'} className="link-operation-icon" />
                 </Button>
-                <Button onClick={this.generatePassword}>
-                  <i className="link-operation-icon sf3-font sf3-font-magic"></i>
+                <Button className="d-flex align-items-center" onClick={this.generatePassword}>
+                  <Icon symbol="magic" className="link-operation-icon" />
                 </Button>
               </InputGroup>
             </FormGroup>
@@ -429,6 +441,31 @@ class GenerateUploadLink extends React.Component {
             />
           </div>
           }
+        </FormGroup>
+        <FormGroup check>
+          <Label check>
+            <Input
+              type="checkbox"
+              checked={this.state.isShowDescriptionInput}
+              onChange={this.onDescriptionInputChecked}
+              onKeyDown={Utils.onKeyDown}
+            />
+            <span>{gettext('Add description')}</span>
+          </Label>
+          {this.state.isShowDescriptionInput && (
+            <div className="ml-4">
+              <FormGroup>
+                <Label htmlFor="msg">{gettext('Description')}</Label>
+                <textarea
+                  className="form-control w-75"
+                  id="msg"
+                  value={this.state.description}
+                  onChange={this.inputDescription}
+                >
+                </textarea>
+              </FormGroup>
+            </div>
+          )}
         </FormGroup>
         {this.state.errorInfo && <Alert color="danger" className="mt-2">{this.state.errorInfo}</Alert>}
         <Button color="primary" className="generate-link-btn" onClick={this.generateUploadLink}>{gettext('Generate')}</Button>

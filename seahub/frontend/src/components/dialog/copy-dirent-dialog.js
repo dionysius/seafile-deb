@@ -1,14 +1,14 @@
 import React from 'react';
+import { Modal } from 'reactstrap';
 import PropTypes from 'prop-types';
-import { Modal, ModalHeader } from 'reactstrap';
-import Searcher from '../file-chooser/searcher';
-import SelectDirentBody from './select-dirent-body';
-import { MODE_TYPE_MAP } from '../../constants';
-import { Utils } from '../../utils/utils';
-import { seafileAPI } from '../../utils/seafile-api';
-import { gettext, isPro } from '../../utils/constants';
-import { RepoInfo } from '../../models';
+import { seafileAPI } from '@/api/seafile-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { MODE_TYPE_MAP } from '@/constants';
+import { RepoInfo } from '@/models';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import toaster from '../toast';
+import SelectDirentBody from './select-dirent-body';
 
 const propTypes = {
   path: PropTypes.string.isRequired,
@@ -35,13 +35,13 @@ class CopyDirent extends React.Component {
       selectedPath: '',
       selectedSearchedRepo: null,
       selectedSearchedItem: { repoID: '', filePath: '' },
+      currentSearchedIndex: -1,
+      isKeyboardSelectionActive: false,
       searchStatus: '',
       searchResults: [],
-      showSearchBar: false,
       errMessage: '',
       initToShowChildren: false,
     };
-    this.lastMode = MODE_TYPE_MAP.ONLY_CURRENT_LIBRARY;
   }
 
   componentDidMount() {
@@ -188,10 +188,6 @@ class CopyDirent extends React.Component {
   updateMode = (mode) => {
     if (mode === this.state.mode) return;
 
-    if (mode !== MODE_TYPE_MAP.SEARCH_RESULTS) {
-      this.lastMode = mode;
-    }
-
     const isShowChildren = mode === MODE_TYPE_MAP.ONLY_CURRENT_LIBRARY || mode === MODE_TYPE_MAP.SEARCH_RESULTS;
     this.setState({
       mode,
@@ -202,7 +198,6 @@ class CopyDirent extends React.Component {
       this.setState({
         selectedSearchedRepo: null,
         searchResults: [],
-        showSearchBar: false,
       });
     }
 
@@ -210,76 +205,111 @@ class CopyDirent extends React.Component {
       this.setState({
         selectedSearchedRepo: null,
         searchResults: [],
-        showSearchBar: false,
       });
     }
 
-    this.setState({ selectedSearchedItem: { repoID: '', filePath: '' } });
+    this.setState({
+      selectedSearchedItem: { repoID: '', filePath: '' },
+      currentSearchedIndex: -1,
+      isKeyboardSelectionActive: false,
+    });
   };
 
   onUpdateSearchStatus = (status) => {
+    if (this.state.mode !== MODE_TYPE_MAP.SEARCH_RESULTS) return;
+
     this.setState({ searchStatus: status });
   };
 
   onUpdateSearchResults = (results) => {
-    if (results.length > 0) {
-      const firstResult = results[0];
-      this.setState({
-        selectedRepo: new RepoInfo(firstResult),
-        selectedPath: firstResult.path
-      });
-    }
-    this.setState({ searchResults: results });
-  };
+    if (this.state.mode !== MODE_TYPE_MAP.SEARCH_RESULTS) return;
 
-  onOpenSearchBar = () => {
-    this.setState({ showSearchBar: true });
-  };
-
-  onCloseSearchBar = () => {
-    const mode = this.lastMode;
     this.setState({
-      mode,
-      searchStatus: '',
-      searchResults: [],
-      selectedSearchedRepo: null,
-      showSearchBar: false,
-      selectedPath: this.props.path,
-      initToShowChildren: mode === MODE_TYPE_MAP.ONLY_CURRENT_LIBRARY,
+      searchResults: results,
+      selectedRepo: null,
+      selectedPath: '',
+      selectedSearchedItem: { repoID: '', filePath: '' },
+      currentSearchedIndex: -1,
+      isKeyboardSelectionActive: false,
     });
   };
 
-  onSearchedItemClick = (item) => {
-    item['type'] = item.is_dir ? 'dir' : 'file';
-    let repo = new RepoInfo(item);
-    this.onDirentItemClick(repo, item.path, item);
+  selectSearchedItem = (item, index, options = {}) => {
+    const { isKeyboardSelectionActive = false } = options;
+    this.setState({
+      selectedRepo: new RepoInfo(item),
+      selectedPath: item.path,
+      selectedSearchedItem: { repoID: item.repo_id, filePath: item.path },
+      currentSearchedIndex: index,
+      isKeyboardSelectionActive,
+      errMessage: '',
+    });
+  };
+
+  onOpenSearchBar = () => {
+    this.setState({
+      mode: MODE_TYPE_MAP.SEARCH_RESULTS,
+      searchStatus: '',
+      searchResults: [],
+      selectedPath: '',
+      initToShowChildren: true,
+      selectedSearchedItem: { repoID: '', filePath: '' },
+      currentSearchedIndex: -1,
+      isKeyboardSelectionActive: false,
+    });
+  };
+
+  onSearchedItemClick = (item, index) => {
+    const resultIndex = typeof index === 'number'
+      ? index
+      : this.state.searchResults.findIndex(result => result.repo_id === item.repo_id && result.path === item.path);
+    this.selectSearchedItem(item, resultIndex, { isKeyboardSelectionActive: false });
+  };
+
+  onSearchInputArrowKeyDown = (key) => {
+    const { searchResults, currentSearchedIndex } = this.state;
+    if (searchResults.length === 0) return;
+
+    const nextIndex = key === 'ArrowDown'
+      ? (currentSearchedIndex < 0 ? 0 : (currentSearchedIndex + 1) % searchResults.length)
+      : (currentSearchedIndex < 0 ? searchResults.length - 1 : (currentSearchedIndex - 1 + searchResults.length) % searchResults.length);
+
+    this.selectSearchedItem(searchResults[nextIndex], nextIndex, { isKeyboardSelectionActive: true });
+  };
+
+  onSearchInputEnterKeyDown = () => {
+    if (this.state.selectedPath) {
+      this.handleSubmit();
+      return;
+    }
+
+    const { currentSearchedIndex, searchResults } = this.state;
+    if (currentSearchedIndex < 0 || !searchResults[currentSearchedIndex]) return;
+
+    this.selectSearchedItem(searchResults[currentSearchedIndex], currentSearchedIndex, { isKeyboardSelectionActive: true });
   };
 
   onSearchedItemDoubleClick = (item) => {
-    if (item.type !== 'dir') return;
+    const itemType = item.type || (item.is_dir ? 'dir' : 'file');
+    if (itemType !== 'dir') return;
 
     seafileAPI.getRepoInfo(item.repo_id).then(res => {
       const repoInfo = new RepoInfo(res.data);
       const path = item.path.substring(0, item.path.length - 1);
       const mode = item.repo_id === this.props.repoID ? MODE_TYPE_MAP.ONLY_CURRENT_LIBRARY : MODE_TYPE_MAP.ONLY_OTHER_LIBRARIES;
-      this.lastMode = mode;
       this.setState({
         mode,
         selectedRepo: repoInfo,
         selectedSearchedRepo: repoInfo,
         selectedPath: path,
         selectedSearchedItem: { repoID: item.repo_id, filePath: path },
-        showSearchBar: mode === MODE_TYPE_MAP.ONLY_OTHER_LIBRARIES,
+        currentSearchedIndex: -1,
         initToShowChildren: true,
       });
     }).catch(err => {
       const errMessage = Utils.getErrorMsg(err);
       toaster.danger(errMessage);
     });
-  };
-
-  selectSearchedItem = (item) => {
-    this.setState({ selectedSearchedItem: item });
   };
 
   onDirentItemClick = (repo, selectedPath) => {
@@ -311,7 +341,7 @@ class CopyDirent extends React.Component {
 
   render() {
     const { dirent, selectedDirentList, isMultipleOperation, path } = this.props;
-    const { mode, currentRepo, selectedRepo, selectedPath, showSearchBar, searchStatus, searchResults, selectedSearchedRepo } = this.state;
+    const { mode, currentRepo, selectedRepo, selectedPath, searchStatus, searchResults, selectedSearchedRepo } = this.state;
 
     const copiedDirent = dirent || selectedDirentList[0];
     const { permission } = copiedDirent;
@@ -319,34 +349,9 @@ class CopyDirent extends React.Component {
 
     return (
       <Modal className="custom-modal" isOpen={true} toggle={this.toggle}>
-        <ModalHeader toggle={this.toggle}
-          close={
-            <div className="header-buttons">
-              <button type="button" className="close seahub-modal-btn" data-dismiss="modal" aria-label={gettext('Close')} title={gettext('Close')} onClick={this.toggle}>
-                <span className="seahub-modal-btn-inner">
-                  <i className="sf3-font sf3-font-x-01" aria-hidden="true"></i>
-                </span>
-              </button>
-              {(isPro && !showSearchBar) &&
-                <button type="button" className="close seahub-modal-btn" data-dismiss="modal" aria-label={gettext('Search')} title={gettext('Search')} onClick={this.onOpenSearchBar}>
-                  <span className="seahub-modal-btn-inner">
-                    <i className="sf3-font sf3-font-search" aria-hidden="true"></i>
-                  </span>
-                </button>
-              }
-            </div>
-          }
-        >
+        <SeahubModalHeader toggle={this.toggle}>
           {isMultipleOperation ? this.renderTitle() : <div dangerouslySetInnerHTML={{ __html: this.renderTitle() }} className="d-flex"></div>}
-          {(isPro && showSearchBar) &&
-            <Searcher
-              onUpdateMode={this.updateMode}
-              onUpdateSearchStatus={this.onUpdateSearchStatus}
-              onUpdateSearchResults={this.onUpdateSearchResults}
-              onClose={this.onCloseSearchBar}
-            />
-          }
-        </ModalHeader>
+        </SeahubModalHeader>
         <SelectDirentBody
           mode={mode}
           currentRepo={currentRepo}
@@ -361,17 +366,22 @@ class CopyDirent extends React.Component {
           setErrMessage={this.setErrMessage}
           handleSubmit={this.handleSubmit}
           onUpdateMode={this.updateMode}
+          onOpenSearch={this.onOpenSearchBar}
+          onUpdateSearchStatus={this.onUpdateSearchStatus}
+          onUpdateSearchResults={this.onUpdateSearchResults}
           searchStatus={searchStatus}
           searchResults={searchResults}
+          onSearchInputArrowKeyDown={this.onSearchInputArrowKeyDown}
+          onSearchInputEnterKeyDown={this.onSearchInputEnterKeyDown}
           selectedSearchedItem={this.state.selectedSearchedItem}
-          onSelectedSearchedItem={this.selectSearchedItem}
+          currentSearchedIndex={this.state.currentSearchedIndex}
+          isKeyboardSelectionActive={this.state.isKeyboardSelectionActive}
           onSearchedItemClick={this.onSearchedItemClick}
           onSearchedItemDoubleClick={this.onSearchedItemDoubleClick}
           selectedSearchedRepo={selectedSearchedRepo}
           onSelectSearchedRepo={this.selectSearchedRepo}
           onAddFolder={this.props.onAddFolder}
           initToShowChildren={this.state.initToShowChildren}
-          fetchRepoInfo={this.fetchRepoInfo}
         />
       </Modal>
     );

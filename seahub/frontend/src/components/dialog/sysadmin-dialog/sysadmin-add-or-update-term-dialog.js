@@ -1,12 +1,12 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Button, Modal, ModalBody, ModalFooter, Input, Alert, FormGroup, Label } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
 import TermsPreviewWidget from '../../terms-preview-widget';
 import TermsEditorDialog from '../terms-editor-dialog';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
 
-import '../../../css/terms-conditions-editor.css';
+import './terms-conditions-editor.css';
 
 const propTypes = {
   isUpdate: PropTypes.bool,
@@ -136,6 +136,7 @@ class AddOrUpdateTermDialog extends React.Component {
             {this.state.errMsg && <Alert color="danger">{this.state.errMsg}</Alert>}
           </ModalBody>
           <ModalFooter>
+            <Button color="secondary" onClick={this.props.toggle}>{gettext('Cancel')}</Button>
             <Button color="primary" onClick={this.addTerm}>{gettext('Submit')}</Button>
           </ModalFooter>
         </Modal>

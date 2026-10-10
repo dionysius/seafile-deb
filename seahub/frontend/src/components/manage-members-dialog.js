@@ -1,19 +1,20 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Button, InputGroup, InputGroupText, Input, Modal, ModalBody } from 'reactstrap';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
-import { Utils } from '../utils/utils';
-import { gettext } from '../utils/constants';
-import { seafileAPI } from '../utils/seafile-api';
-import UserSelect from './user-select';
-import toaster from './toast';
-import Loading from './loading';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import { eventBus } from './event-bus';
 import GroupMembers from './group-members';
-import SelectUsersIcon from './select-members-to-share-with';
-import { eventBus } from './common/event-bus';
+import Icon from './icon';
+import Loading from './loading';
 import OpIcon from './op-icon';
+import SelectUsersIcon from './select-members-to-share-with';
+import toaster from './toast';
+import UserSelect from './user-select';
 
-import '../css/manage-members-dialog.css';
+import '@/css/manage-members-dialog.css';
 
 const propTypes = {
   toggleManageMembersDialog: PropTypes.func,
@@ -179,19 +180,19 @@ class ManageMembersDialog extends React.Component {
         <ModalBody className="pb-0">
           <p className="mb-2">{gettext('Add group member')}</p>
           <div className='add-members'>
-            <div className="position-relative">
+            <div className="position-relative w-100">
               <UserSelect
                 placeholder={gettext('Search users')}
                 onSelectChange={this.onSelectChange}
                 selectedUsers={this.state.selectedUsers}
                 isMulti={true}
-                className="add-members-select"
+                className="add-members-select m-100"
               />
               <SelectUsersIcon onClick={this.props.toggleDepartmentDetailDialog} />
             </div>
             {this.state.selectedUsers.length > 0 ?
-              <Button color="primary" onClick={this.addGroupMember}>{gettext('Submit')}</Button> :
-              <Button color="primary" disabled>{gettext('Submit')}</Button>
+              <Button color="primary" onClick={this.addGroupMember} className="ml-3 flex-shrink-0">{gettext('Submit')}</Button> :
+              <Button color="primary" disabled className="ml-3 flex-shrink-0">{gettext('Submit')}</Button>
             }
           </div>
           {errMessage.length > 0 &&
@@ -200,7 +201,7 @@ class ManageMembersDialog extends React.Component {
           {groupMembers.length > 10 &&
             <InputGroup className={`search-group-members rounded ${searchActive ? 'active' : ''}`}>
               <InputGroupText>
-                <i className="sf3-font sf3-font-search"></i>
+                <Icon symbol="search" />
               </InputGroupText>
               <Input
                 type="text"
@@ -214,7 +215,7 @@ class ManageMembersDialog extends React.Component {
               {keyword && (
                 <InputGroupText>
                   <OpIcon
-                    className="sf2-icon-x1"
+                    symbol="close"
                     title={gettext('Clear')}
                     op={this.clearSearch}
                   />

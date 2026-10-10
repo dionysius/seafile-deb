@@ -1,0 +1,17 @@
+.sf-metadata-rate-editor {
+  width: 100%;
+  align-items: center;
+}
+
+.sf-metadata-rate-item {
+  cursor: pointer;
+}
+
+.sf-metadata-rate-item.active {
+  opacity: 1 !important;
+}
+
+.sf-metadata-rate-item .seafile-multicolor-icon {
+  color: inherit;
+  font-size: 16px;
+}

@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { Tooltip } from 'reactstrap';
-import { isMobile, Utils } from '../../../../../../utils/utils';
-import { gettext } from '../../../../../../utils/constants';
+import PropTypes from 'prop-types';
+import OpIcon from '@/components/op-icon';
+import Tooltip from '@/components/tooltip';
+import { gettext } from '@/utils/constants';
+import { isMobile, Utils } from '@/utils/utils';
 import { SEQUENCE_COLUMN_WIDTH } from '../../../../constants/grid';
 
 import './index.css';
@@ -38,17 +39,15 @@ class ActionsCell extends Component {
   getLockedRowTooltip = () => {
     const { recordId } = this.props;
     return (
-      <Tooltip
-        target={`action-cell-${recordId}`}
-        placement='bottom'
-        isOpen={this.state.isLockedRowTooltipShow}
-        fade={false}
-        hideArrow={true}
-        className="readonly-cell-tooltip"
-      >
-        {gettext('The row is locked and cannot be modified')}
-      </Tooltip>
+      <Tooltip target={`action-cell-${recordId}`} placement='bottom' className="readonly-cell-tooltip">{gettext('The row is locked and cannot be modified')}</Tooltip>
     );
+  };
+
+  handleShowExpandedProps = () => {
+    const { onShowRowDetails, recordId } = this.props;
+    if (onShowRowDetails) {
+      onShowRowDetails(recordId);
+    }
   };
 
   getRecordNo = () => {
@@ -56,7 +55,7 @@ class ActionsCell extends Component {
   };
 
   render() {
-    const { isSelected, isLastFrozenCell, height, recordId, canModify = true } = this.props;
+    const { isSelected, isLastFrozenCell, height, recordId, canModifyRow = true, recordDraggable } = this.props;
     const cellStyle = {
       height,
       width: SEQUENCE_COLUMN_WIDTH,
@@ -66,11 +65,11 @@ class ActionsCell extends Component {
       <div
         className={classnames('sf-table-cell column actions-cell', { 'table-last--frozen': isLastFrozenCell })}
         id={`action-cell-${recordId}`}
-        style={{ ...cellStyle }}
+        style={cellStyle}
         onMouseEnter={this.onCellMouseEnter}
         onMouseLeave={this.onCellMouseLeave}
       >
-        {(this.props.recordDraggable && canModify) &&
+        {(recordDraggable && canModifyRow) &&
           <div
             draggable
             className="drag-handler"
@@ -79,24 +78,29 @@ class ActionsCell extends Component {
           </div>
         }
         {!isSelected && <div className="sf-table-column-content row-index text-truncate">{this.getRecordNo()}</div>}
-        <div className="sf-table-column-content actions-checkbox">
-          <div className="select-cell-checkbox-container">
-            <input
-              id={`select-cell-checkbox-${recordId}`}
-              className="select-cell-checkbox form-check-input"
-              type='checkbox'
-              name='row-selection'
-              checked={isSelected || false}
-              onChange={this.props.onSelectRecord}
-              onKeyDown={Utils.onKeyDown}
-            />
-            <label
-              htmlFor={`select-cell-checkbox-${recordId}`}
-              title={gettext('Select')}
-              aria-label={gettext('Select')}
-            >
-            </label>
-          </div>
+        <div className="action-cell-content">
+          <label
+            className="sf-table-column-content actions-checkbox"
+            htmlFor={`select-cell-checkbox-${recordId}`}
+            title={gettext('Select')}
+            aria-label={gettext('Select')}
+          >
+            <div className="select-cell-checkbox-container">
+              <input
+                id={`select-cell-checkbox-${recordId}`}
+                className="select-cell-checkbox form-check-input"
+                type='checkbox'
+                name='row-selection'
+                checked={isSelected || false}
+                onClick={this.props.onSelectRecord}
+                onKeyDown={Utils.onKeyDown}
+                readOnly
+              />
+            </div>
+          </label>
+          {this.props.onShowRowDetails && (
+            <OpIcon id={`row-expand-icon-${recordId}`} symbol="expand" className="row-expand" tooltip={gettext('Expand')} op={this.handleShowExpandedProps} onKeyDown={Utils.onKeyDown} />
+          )}
         </div>
         {/* {this.getLockedRowTooltip()} */}
       </div>
@@ -115,6 +119,7 @@ ActionsCell.propTypes = {
   onSelectRecord: PropTypes.func,
   handleDragStart: PropTypes.func,
   canModify: PropTypes.bool,
+  onShowRowDetails: PropTypes.func,
 };
 
 export default ActionsCell;

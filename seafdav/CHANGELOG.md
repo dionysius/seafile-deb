@@ -1,6 +1,30 @@
 # Changelog
 
-## 4.3.0 / Unreleased
+## 4.3.4 / Unreleased
+
+## 4.3.3 / 2024-05-04
+
+- Deprecate Python 3.8 (EOL: 2024-10-14)
+- Build Windows installer with Python 3.12
+- Update to Cheroot 10.8
+- [#315](https://github.com/mar10/wsgidav/issues/315) CHANGELOG.md is installed into the virtualenv or prefix root directory
+
+## 4.3.2 / 2024-03-29
+
+- [#318](https://github.com/mar10/wsgidav/issues/318) Error when used with lxml
+- Test with Python 3.12
+- Update to black 24.3
+- Use ruff instead of flake8
+
+## 4.3.1 / 2024-03-24
+
+- New option `suppress_version_info` to suppress WsgiDAV's version info in
+  responses (default: false).
+- #298: `--root` argument honors `fs_dav_provider` configuration.
+- #301: `_DAVResource` should have `is_link()` method to avoid dir_browser issues.
+- #308: remove defusedxml dependency.
+
+## 4.3.0 / 2023-09-24
 
 - BREAKING:
   - See option `fs_dav_provider.follow_symlinks` below.
@@ -17,7 +41,7 @@
   [symlinks may be a security risk](https://serverfault.com/questions/244592/followsymlinks-on-apache-why-is-it-a-security-risk).<br>
   File resources that are symlinks are still enumerated and listed by the
   directory browser. However trying to access content will raise '403 Forbidden'
-  Pass _follow_symlinks=True_ to the FilesystemProvider constructor or yaml configration
+  Pass _follow_symlinks=True_ to the FilesystemProvider constructor or yaml configuration
   to restore the previous behavior.
 - Add `fs_dav_provider.shadow_map`, which can be used to blend in a favicon
   when context is opened inline (#230)

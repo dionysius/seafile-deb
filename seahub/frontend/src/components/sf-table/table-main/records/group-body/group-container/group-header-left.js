@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
 import IconBtn from '../../../../../icon-btn';
-import GroupTitle from './group-title';
 import { GROUP_HEADER_HEIGHT } from '../../../../constants/group';
 import { GROUP_FROZEN_HEADER as Z_INDEX_GROUP_FROZEN_HEADER } from '../../../../constants/z-index';
-import { gettext } from '../../../../../../utils/constants';
+import GroupTitle from './group-title';
 
 class GroupHeaderLeft extends Component {
 
@@ -32,7 +32,7 @@ class GroupHeaderLeft extends Component {
       >
         <IconBtn
           className={classnames('group-toggle-btn', { 'hide': !isExpanded })}
-          symbol="drop-down"
+          symbol="down"
           onClick={this.props.onExpandGroupToggle}
         />
         <GroupTitle
@@ -41,10 +41,8 @@ class GroupHeaderLeft extends Component {
           cellValue={cell_value}
         />
         <div className="group-rows-count">
-          <div className="group-rows-count-content">
-            {level === maxLevel && <span className="count-title">{gettext('Count')}</span>}
-            <span className="count-num">{count}</span>
-          </div>
+          {level === maxLevel && <span className="count-title">{gettext('Count')}</span>}
+          <span className="count-num">{count}</span>
         </div>
       </div>
     );

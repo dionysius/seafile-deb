@@ -1,17 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { CAPTURE_INFO_SHOW_KEY } from '@/constants';
+import Formatter from '@/features/metadata/components/formatter';
+import MetadataDetails from '@/features/metadata/components/metadata-details';
+import { CellType, PRIVATE_COLUMN_KEY } from '@/features/metadata/constants';
+import { useMetadataDetails } from '@/features/metadata/hooks/metadata-details';
+import { getCellValueByColumn, getDateDisplayString, decimalToExposureTime } from '@/features/metadata/utils/cell';
+import { useMetadataStatus } from '@/hooks';
+import { gettext } from '@/utils/constants';
+import ObjectUtils from '@/utils/object';
+import { Utils } from '@/utils/utils';
 import DetailItem from '../../detail-item';
-import Collapse from './collapse';
-import Formatter from '../../../../metadata/components/formatter';
-import { CellType, PRIVATE_COLUMN_KEY } from '../../../../metadata/constants';
-import { gettext } from '../../../../utils/constants';
-import { Utils } from '../../../../utils/utils';
-import { MetadataDetails, useMetadataDetails } from '../../../../metadata';
-import ObjectUtils from '../../../../utils/object';
-import { getCellValueByColumn, getDateDisplayString, decimalToExposureTime } from '../../../../metadata/utils/cell';
-import { useMetadataStatus } from '../../../../hooks';
-import { CAPTURE_INFO_SHOW_KEY } from '../../../../constants';
 import People from '../../people';
+import Collapse from './collapse';
 import FileTag from './file-tag';
 
 import './index.css';
@@ -73,11 +74,11 @@ const FileDetails = React.memo(({ repoID, dirent, path, direntDetail, isShowRepo
   let component = (
     <>
       <DetailItem field={sizeField} className="sf-metadata-property-detail-formatter">
-        <Formatter field={sizeField} value={Utils.bytesToSize(direntDetail.size)} />
+        <Formatter column={sizeField} value={Utils.bytesToSize(direntDetail.size)} />
       </DetailItem>
       <DetailItem field={lastModifierField} className="sf-metadata-property-detail-formatter">
         <Formatter
-          field={lastModifierField}
+          column={lastModifierField}
           value={direntDetail.last_modifier_email}
           collaborators={[{
             name: direntDetail.last_modifier_name,
@@ -88,7 +89,7 @@ const FileDetails = React.memo(({ repoID, dirent, path, direntDetail, isShowRepo
         />
       </DetailItem >
       <DetailItem field={lastModifiedTimeField} className="sf-metadata-property-detail-formatter">
-        <Formatter field={lastModifiedTimeField} value={direntDetail.last_modified}/>
+        <Formatter column={lastModifiedTimeField} value={direntDetail.last_modified}/>
       </DetailItem>
       {isShowRepoTags && window.app.pageOptions.enableFileTags && !enableMetadata && (
         <DetailItem field={tagsField} className="sf-metadata-property-detail-formatter">
@@ -102,7 +103,7 @@ const FileDetails = React.memo(({ repoID, dirent, path, direntDetail, isShowRepo
           />
         </DetailItem>
       )}
-      {enableMetadata && <MetadataDetails readOnly={readOnly} tagsData={tagsData} />}
+      {enableMetadata && <MetadataDetails repoID={repoID} readOnly={readOnly} tagsData={tagsData} />}
     </>
   );
 
@@ -165,5 +166,7 @@ FileDetails.propTypes = {
   tagsData: PropTypes.object,
   onFileTagChanged: PropTypes.func,
 };
+
+FileDetails.displayName = 'FileDetails';
 
 export default FileDetails;

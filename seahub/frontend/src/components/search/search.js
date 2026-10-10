@@ -1,24 +1,26 @@
 import React, { Component, Fragment } from 'react';
-import axios from 'axios';
-import PropTypes from 'prop-types';
-import isHotkey from 'is-hotkey';
-import classnames from 'classnames';
 import MediaQuery from 'react-responsive';
-import { seafileAPI } from '../../utils/seafile-api';
-import searchAPI from '../../utils/search-api';
-import { gettext } from '../../utils/constants';
+import axios from 'axios';
+import classnames from 'classnames';
+import isHotkey from 'is-hotkey';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import searchAPI from '@/api/search-api';
+import { PRIVATE_FILE_TYPE, SEARCH_FILTER_BY_DATE_OPTION_KEY, SEARCH_FILTER_BY_DATE_TYPE_KEY, SEARCH_FILTERS_KEY, SEARCH_FILTERS_SHOW_KEY } from '@/constants';
+import { SEARCH_MASK, SEARCH_CONTAINER } from '@/constants/zIndexes';
+import { CollaboratorsProvider } from '@/features/metadata/hooks/collaborators';
+import { gettext, mediaUrl } from '@/utils/constants';
+import { debounce, Utils } from '@/utils/utils';
+import Icon from '../icon';
+import Loading from '../loading';
+import OpIcon from '../op-icon';
+import toaster from '../toast';
+import Tooltip from '../tooltip';
+import SearchedItemDetails from './details';
+import SearchFilters from './search-filters';
 import SearchResultItem from './search-result-item';
 import SearchResultLibrary from './search-result-library';
-import { debounce, Utils } from '../../utils/utils';
-import toaster from '../toast';
-import Loading from '../loading';
-import { SEARCH_MASK, SEARCH_CONTAINER } from '../../constants/zIndexes';
-import { PRIVATE_FILE_TYPE, SEARCH_FILTER_BY_DATE_OPTION_KEY, SEARCH_FILTER_BY_DATE_TYPE_KEY, SEARCH_FILTERS_KEY, SEARCH_FILTERS_SHOW_KEY } from '../../constants';
-import SearchFilters from './search-filters';
 import SearchTags from './search-tags';
-import IconBtn from '../icon-btn';
-import SearchedItemDetails from './details';
-import { CollaboratorsProvider } from '../../metadata';
 
 const propTypes = {
   repoID: PropTypes.string,
@@ -34,10 +36,29 @@ const INITIAL_PAGE_SIZE = 20;
 const MAX_ITEMS = 100;
 const LOAD_MORE_THRESHOLD = 100;
 const controlKey = Utils.isMac() ? '⌘' : 'Ctrl';
+const searchScope = {
+  REPO: 'repo',
+  FOLDER: 'folder',
+  ALL: 'all',
+};
 
 const isEnter = isHotkey('enter');
 const isUp = isHotkey('up');
 const isDown = isHotkey('down');
+
+const getResultItemKey = (item) => `${item.repo_id}\u0000${item.path}`;
+
+const deduplicateResultItems = (items) => {
+  const itemKeys = new Set();
+
+  return items.filter((item) => {
+    const itemKey = getResultItemKey(item);
+    if (itemKeys.has(itemKey)) return false;
+
+    itemKeys.add(itemKey);
+    return true;
+  });
+};
 
 class Search extends Component {
 
@@ -75,7 +96,7 @@ class Search extends Component {
       hasMore: false,
       isLoadingMore: false,
       totalCount: 0,
-      isFolderSearch: false,
+      searchType: '', // searchScope.REPO, searchScope.FOLDER, searchScope.ALL
     };
     this.highlightRef = null;
     this.source = null; // used to cancel request;
@@ -120,6 +141,8 @@ class Search extends Component {
   }
 
   componentWillUnmount() {
+    this.debouncedSearch.cancel();
+    this.debouncedRepoSearch.cancel();
     document.removeEventListener('keydown', this.onDocumentKeydown);
     document.removeEventListener('compositionstart', this.onCompositionStart);
     document.removeEventListener('compositionend', this.onCompositionEnd);
@@ -160,20 +183,20 @@ class Search extends Component {
   };
 
   loadMore = () => {
-    const { hasMore, isLoadingMore, inputValue, isFolderSearch, resultItems } = this.state;
+    const { hasMore, isLoadingMore } = this.state;
     if (!hasMore || isLoadingMore) return;
 
-    if (inputValue.trim() === '') return;
+    if (!this.queryData?.q) return;
 
-    const isPublic = this.props.isPublic;
-    const queryData = this.buildSearchParams({
-      q: inputValue,
-      search_repo: isPublic ? this.queryData?.search_repo : this.props.repoID || 'all',
-      search_ftypes: 'all',
-      ...(isFolderSearch && this.props.path && this.props.path !== '/' ? { search_path: this.props.path } : {}),
-    });
-
-    const remainingItems = MAX_ITEMS - resultItems.length;
+    // SeaSearch returns the first `count` results regardless of page. Re-request
+    // the complete display limit with the original query instead of treating this
+    // as a conventional second page. This also keeps the selected search scope,
+    // path and filters unchanged while loading more.
+    const queryData = {
+      ...this.queryData,
+      page: 1,
+      per_page: MAX_ITEMS,
+    };
 
     this.setState({ isLoadingMore: true }, () => {
       if (this.source) {
@@ -181,47 +204,45 @@ class Search extends Component {
       }
       this.source = seafileAPI.getSource();
 
-      this.sendLoadMoreRequest(queryData, this.source.token, remainingItems);
+      this.sendLoadMoreRequest(queryData, this.source.token);
     });
   };
 
-  sendLoadMoreRequest = (queryData, cancelToken, remainingItems) => {
+  sendLoadMoreRequest = (queryData, cancelToken) => {
     const isPublic = this.props.isPublic;
 
     if (isPublic) {
-      seafileAPI.searchFilesInPublishedRepo(queryData.search_repo, queryData.q, 2, remainingItems, queryData.search_filename_only).then(res => {
+      seafileAPI.searchFilesInPublishedRepo(queryData.search_repo, queryData.q, queryData.page, queryData.per_page, queryData.search_filename_only).then(res => {
         this.source = null;
         const newItems = this.formatResultItems(res.data.results);
 
-        this.setState(prevState => ({
-          resultItems: [...prevState.resultItems, ...newItems],
+        this.setState({
+          resultItems: newItems,
           hasMore: false,
           isLoadingMore: false,
-          page: 2,
+          page: queryData.page,
           totalCount: res.data.total,
-        }));
+        });
       }).catch(error => {
         this.handleLoadMoreError(error);
       });
     } else {
-      this.loadMoreNormalSearch(queryData, cancelToken, remainingItems);
+      this.loadMoreNormalSearch(queryData, cancelToken);
     }
   };
 
-  loadMoreNormalSearch = (queryData, cancelToken, remainingItems) => {
-    queryData['per_page'] = remainingItems;
-    queryData['page'] = 2;
+  loadMoreNormalSearch = (queryData, cancelToken) => {
     seafileAPI.searchFiles(queryData, cancelToken).then(res => {
       this.source = null;
       const newItems = this.formatResultItems(res.data.results);
 
-      this.setState(prevState => ({
-        resultItems: [...prevState.resultItems, ...newItems],
+      this.setState({
+        resultItems: newItems,
         hasMore: false,
         isLoadingMore: false,
-        page: 2,
+        page: queryData.page,
         totalCount: res.data.total,
-      }));
+      });
     }).catch(error => {
       this.handleLoadMoreError(error);
     });
@@ -236,6 +257,7 @@ class Search extends Component {
   };
 
   onDocumentKeydown = (e) => {
+    if (e.target.closest('.search-filter-menu, .search-filter')) return;
     if (isHotkey('mod+k')(e)) {
       e.preventDefault();
       this.onFocusHandler();
@@ -274,6 +296,7 @@ class Search extends Component {
 
     // 01 init search, display and highlight recent search results
     if (this.state.showRecent) {
+      const visitedItems = JSON.parse(localStorage.getItem(this.storeKey)) || [];
       if (highlightIndex > 0) {
         this.setState({ highlightIndex: highlightIndex - 1 }, () => {
           if (this.highlightRef) {
@@ -283,6 +306,8 @@ class Search extends Component {
             }
           }
         });
+      } else {
+        this.setState({ highlightIndex: visitedItems.length - 1 });
       }
       return;
     }
@@ -324,6 +349,8 @@ class Search extends Component {
           }
         }
       });
+    } else {
+      this.setState({ highlightIndex: resultItems.length - 1 });
     }
   };
 
@@ -346,6 +373,8 @@ class Search extends Component {
             }
           }
         });
+      } else {
+        this.setState({ highlightIndex: 0 });
       }
       return;
     }
@@ -391,6 +420,8 @@ class Search extends Component {
           }
         }
       });
+    } else {
+      this.setState({ highlightIndex: 0 });
     }
   };
 
@@ -451,7 +482,11 @@ class Search extends Component {
     if (item.is_dir === true) {
       this.resetToDefault();
     }
-    this.keepVisitedItem(item);
+    // keep visited item in both global localStorage and current repo localStorage
+    this.keepVisitedItem(item, '');
+    if (this.props.repoID) {
+      this.keepVisitedItem(item, this.props.repoID);
+    }
     this.props.onSearchedClick(item);
   };
 
@@ -470,21 +505,17 @@ class Search extends Component {
     });
   };
 
-  keepVisitedItem = (targetItem) => {
-    let targetIndex;
+  /**
+   * save visited item in localStorage
+   * @param {object} targetItem - The visited item
+   * @param {string} savedRepoID - The saved repo ID. If empty string, save in global localStorage.
+   */
+  keepVisitedItem = (targetItem, savedRepoID) => {
     const { repo_id: targetRepoID, path: targetPath } = targetItem;
-    const storeKey = 'sfVisitedSearchItems' + targetRepoID;
-    const items = JSON.parse(localStorage.getItem(storeKey)) || [];
-    for (let i = 0, len = items.length; i < len; i++) {
-      const { repo_id, path } = items[i];
-      if (repo_id == targetRepoID && path == targetPath) {
-        targetIndex = i;
-        break;
-      }
-    }
-    if (targetIndex != undefined) {
-      items.splice(targetIndex, 1);
-    }
+    const storeKey = 'sfVisitedSearchItems' + savedRepoID;
+    const items = (JSON.parse(localStorage.getItem(storeKey)) || []).filter(({ repo_id, path }) => {
+      return repo_id !== targetRepoID || path !== targetPath;
+    });
     items.unshift(targetItem);
     if (items.length > 50) { // keep 50 items at most
       items.pop();
@@ -492,28 +523,64 @@ class Search extends Component {
     localStorage.setItem(storeKey, JSON.stringify(items));
   };
 
+  debouncedSearch = debounce((newValue) => {
+    const activeSearchType = this.state.searchType;
+    if (this.isChineseInput === false) {
+      this.setState({
+        inputValue: newValue,
+        isLoading: true,
+        highlightIndex: 0,
+      }, () => {
+        switch (activeSearchType) {
+          case searchScope.FOLDER:
+            this.searchFolder();
+            break;
+          case searchScope.REPO:
+            this.searchRepo();
+            break;
+          case searchScope.ALL:
+            this.searchAllRepos();
+            break;
+          default:
+            this.setState({ isLoading: false });
+            break;
+        }
+      });
+    }
+  }, 300);
+
+  debouncedRepoSearch = debounce((newValue) => {
+    if (this.isChineseInput === false) {
+      this.getRepoSearchResult(newValue);
+    }
+  }, 300);
+
   onChangeHandler = (event) => {
     const newValue = event.target.value;
     if (this.state.showRecent) {
       this.setState({ showRecent: false });
     }
     this.setState({ value: newValue, isCloseShow: newValue.length > 0 });
-    setTimeout(() => {
-      const trimmedValue = newValue.trim();
-      const isInRepo = this.props.repoID;
-      if (this.isChineseInput === false && this.state.inputValue !== newValue) {
-        this.setState({
-          inputValue: newValue,
-          isLoading: false,
-          highlightIndex: 0,
-          isResultGotten: false,
-        }, () => {
-          if (!isInRepo && trimmedValue !== '') {
-            this.getRepoSearchResult(newValue);
-          }
-        });
-      }
-    }, 1);
+
+    if (newValue.trim() === '') {
+      this.debouncedSearch.cancel();
+      this.debouncedRepoSearch.cancel();
+      this.setState({
+        inputValue: '',
+        isSearching: false,
+        resultItems: [],
+        isResultGotten: false,
+        searchType: '',
+      });
+      return;
+    }
+    this.setState({ inputValue: newValue, isSearching: false });
+
+    if (this.state.isResultGotten) {
+      this.debouncedSearch(newValue);
+    } else {
+      !this.props.repoID && this.debouncedRepoSearch(newValue);
+    }
   };
 
   handleError = (e) => {
@@ -521,7 +588,7 @@ class Search extends Component {
       let errMessage = Utils.getErrorMsg(e);
       toaster.danger(errMessage);
     }
-    this.setState({ isLoading: false });
+    this.setState({ isLoading: false, resultItems: [] });
   };
 
   getRepoSearchResult = (query_str) => {
@@ -532,10 +599,6 @@ class Search extends Component {
     this.source = seafileAPI.getSource();
 
     if (query_str.trim() === '') return;
-    this.setState({
-      isLoading: true,
-      resultItems: [],
-    });
     searchAPI.searchRepos(query_str.trim()).then(res => {
       this.setState({
         resultItems: this.formatResultItems(res.data.results),
@@ -556,20 +619,24 @@ class Search extends Component {
       resultItems: [],
       highlightIndex: 0,
     });
+    const normalizedQueryData = {
+      ...queryData,
+      q: queryData.q.trim(),
+    };
     this.source = seafileAPI.getSource();
-    this.sendInitialRequest(queryData, this.source.token);
+    this.sendInitialRequest(normalizedQueryData, this.source.token);
   };
 
   sendInitialRequest = (queryData, cancelToken) => {
     let isPublic = this.props.isPublic;
-    this.queryData = queryData;
+    this.queryData = { ...queryData };
 
     if (isPublic) {
       seafileAPI.searchFilesInPublishedRepo(queryData.search_repo, queryData.q, 1, INITIAL_PAGE_SIZE, queryData.search_filename_only).then(res => {
         this.source = null;
         if (res.data.total > 0) {
           const newItems = this.formatResultItems(res.data.results);
-          const hasMore = newItems.length > 0 && newItems.length < MAX_ITEMS;
+          const hasMore = this.hasMoreResults(res.data, newItems.length);
           this.setState({
             resultItems: newItems,
             isResultGotten: true,
@@ -597,13 +664,16 @@ class Search extends Component {
   };
 
   onInitialSearch = (queryData, cancelToken) => {
-    queryData['per_page'] = INITIAL_PAGE_SIZE;
-    queryData['page'] = 1;
-    seafileAPI.searchFiles(queryData, cancelToken).then(res => {
+    const initialQueryData = {
+      ...queryData,
+      per_page: INITIAL_PAGE_SIZE,
+      page: 1,
+    };
+    seafileAPI.searchFiles(initialQueryData, cancelToken).then(res => {
       this.source = null;
       if (res.data.total > 0) {
         const newItems = this.formatResultItems(res.data.results);
-        const hasMore = newItems.length > 0 && newItems.length < MAX_ITEMS;
+        const hasMore = this.hasMoreResults(res.data, newItems.length);
         this.setState({
           resultItems: newItems,
           isResultGotten: true,
@@ -643,10 +713,21 @@ class Search extends Component {
       items[i]['mtime'] = data[i].mtime || '';
       items[i]['repo_owner_email'] = data[i].repo_owner_email || '';
     }
-    return items;
+    return deduplicateResultItems(items);
   }
 
+  hasMoreResults = (result, itemCount) => {
+    if (itemCount === 0 || itemCount >= MAX_ITEMS) return false;
+
+    // SeaSearch reports only the count returned in this response and always
+    // returns has_more=false. A full initial batch is therefore the only signal
+    // that a larger top-N request may produce more visible results.
+    return result.has_more || result.total > itemCount || itemCount === INITIAL_PAGE_SIZE;
+  };
+
   resetToDefault() {
+    this.debouncedSearch.cancel();
+    this.debouncedRepoSearch.cancel();
     this.setState({
       width: '',
       value: '',
@@ -662,7 +743,6 @@ class Search extends Component {
       hasMore: false,
       isLoadingMore: false,
       totalCount: 0,
-      isFolderSearch: false,
       page: 0,
       filters: {
         search_filename_only: false,
@@ -674,11 +754,14 @@ class Search extends Component {
           end: null,
         },
         suffixes: '',
-      }
+      },
+      searchType: '',
     });
   }
 
   onClearSearch = () => {
+    this.debouncedSearch.cancel();
+    this.debouncedRepoSearch.cancel();
     this.setState({
       value: '',
       inputValue: '',
@@ -690,7 +773,7 @@ class Search extends Component {
       hasMore: false,
       isLoadingMore: false,
       totalCount: 0,
-      isFolderSearch: false,
+      searchType: '',
       page: 0,
     });
   };
@@ -708,21 +791,22 @@ class Search extends Component {
     const filteredItems = this.filterByCreator(resultItems);
     if (isLoading) {
       return <Loading />;
-    }
-    else if (this.state.inputValue.trim().length === 0) {
-      return <div className="search-result-none">{gettext('Type characters to start search')}</div>;
-    }
-    else if (!isResultGotten) {
-      return this.renderSearchTypes(this.state.inputValue.trim());
-    }
-    else if (filteredItems.length > 0) {
-      return this.renderResults(filteredItems);
-    }
-    else {
+    } else if (this.state.inputValue.trim().length === 0) {
       return (
-        <div className="search-result-none">
-          <h4 className="search-results-title text-start">{gettext('Files')}</h4>
-          {gettext('No results matching')}
+        <div className="search-result-none search-result-start-searching-tip">
+          <img className='none-image' src={`${mediaUrl}img/start-searching.png`} alt="" width="48" height="48" />
+          <span className='none-tip'>{gettext('Enter characters to start searching')}</span>
+        </div>
+      );
+    } else if (!isResultGotten) {
+      return this.renderSearchTypes(this.state.inputValue.trim());
+    } else if (filteredItems.length > 0) {
+      return this.renderResults(filteredItems);
+    } else {
+      return (
+        <div className="search-result-none search-result-no-results-tip">
+          <img className='none-image' src={`${mediaUrl}img/no-results.png`} alt="" width="48" height="48" />
+          <span className='none-tip'>{gettext('No results matching')}</span>
         </div>
       );
     }
@@ -741,10 +825,12 @@ class Search extends Component {
               tabIndex={0}
               onKeyDown={Utils.onKeyDown}
             >
-              <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+              <span className="search-icon-left input-icon-addon">
+                <Icon symbol="search" />
+              </span>
               {inputValue}
               <span className="search-types-text">{gettext('in all libraries')}</span>
-              <i className="sf3-font sf3-font-enter"></i>
+              <Icon symbol="enter" className="search-types-enter-icon" />
             </div>
           </div>
           {resultItems.length > 0 && (
@@ -779,75 +865,50 @@ class Search extends Component {
       if (path && path !== '/' && !this.props.isViewFile && !isMetadataView && !isTagView) {
         return (
           <div className="search-types">
-            <div
-              className={`search-types-repo ${highlightIndex === 0 ? 'search-types-highlight' : ''}`}
-              onClick={this.searchRepo}
-              tabIndex={0}
-              role="button"
-              aria-pressed={highlightIndex === 0}
-              onKeyDown={Utils.onKeyDown}
-            >
-              <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+            <div className={`search-types-repo ${highlightIndex === 0 ? 'search-types-highlight' : ''}`} onClick={this.searchRepo} tabIndex={0}>
+              <span className="search-icon-left input-icon-addon">
+                <Icon symbol="search" />
+              </span>
               {inputValue}
               <span className="search-types-text">{gettext('in this library')}</span>
-              {highlightIndex === 0 && <i className="sf3-font sf3-font-enter"></i>}
+              {highlightIndex === 0 && <Icon symbol="enter" className="search-types-enter-icon" />}
             </div>
-            <div
-              className={`search-types-folder ${highlightIndex === 1 ? 'search-types-highlight' : ''}`}
-              onClick={this.searchFolder}
-              tabIndex={0}
-              role="button"
-              aria-pressed={highlightIndex === 1}
-              onKeyDown={Utils.onKeyDown}
-            >
-              <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+            <div className={`search-types-folder ${highlightIndex === 1 ? 'search-types-highlight' : ''}`} onClick={this.searchFolder} tabIndex={0}>
+              <span className="search-icon-left input-icon-addon">
+                <Icon symbol="search" />
+              </span>
               {inputValue}
               <span className="search-types-text">{gettext('in this folder')}</span>
-              {highlightIndex === 1 && <i className="sf3-font sf3-font-enter"></i>}
+              {highlightIndex === 1 && <Icon symbol="enter" className="search-types-enter-icon" />}
             </div>
-            <div
-              className={`search-types-repos ${highlightIndex === 2 ? 'search-types-highlight' : ''}`}
-              onClick={this.searchAllRepos}
-              tabIndex={0}
-              role="button"
-              aria-pressed={highlightIndex === 2}
-              onKeyDown={Utils.onKeyDown}
-            >
-              <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+            <div className={`search-types-repos ${highlightIndex === 2 ? 'search-types-highlight' : ''}`} onClick={this.searchAllRepos} tabIndex={0}>
+              <span className="search-icon-left input-icon-addon">
+                <Icon symbol="search" />
+              </span>
               {inputValue}
               <span className="search-types-text">{gettext('in all libraries')}</span>
-              {highlightIndex === 2 && <i className="sf3-font sf3-font-enter"></i>}
+              {highlightIndex === 2 && <Icon symbol="enter" className="search-types-enter-icon" />}
             </div>
           </div>
         );
       } else {
         return (
           <div className="search-types">
-            <div
-              className={`search-types-repo ${highlightIndex === 0 ? 'search-types-highlight' : ''}`}
-              onClick={this.searchRepo}
-              tabIndex={0}
-              role="button"
-              aria-pressed={highlightIndex === 0}
-              onKeyDown={Utils.onKeyDown}
-            >
-              <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+            <div className={`search-types-repo ${highlightIndex === 0 ? 'search-types-highlight' : ''}`} onClick={this.searchRepo} tabIndex={0}>
+              <span className="search-icon-left input-icon-addon">
+                <Icon symbol="search" />
+              </span>
               {inputValue}
               <span className="search-types-text">{gettext('in this library')}</span>
-              {highlightIndex === 0 && <i className="sf3-font sf3-font-enter"></i>}
+              {highlightIndex === 0 && <Icon symbol="enter" className="search-types-enter-icon" />}
             </div>
-            <div
-              className={`search-types-repos ${highlightIndex === 1 ? 'search-types-highlight' : ''}`}
-              onClick={this.searchAllRepos}
-              tabIndex={0}
-              role="button"
-              aria-pressed={highlightIndex === 1}
-              onKeyDown={Utils.onKeyDown}
-            >
-              <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+            <div className={`search-types-repos ${highlightIndex === 1 ? 'search-types-highlight' : ''}`} onClick={this.searchAllRepos} tabIndex={0}>
+              <span className="search-icon-left input-icon-addon">
+                <Icon symbol="search" />
+              </span>
               {inputValue}
               <span className="search-types-text">{gettext('in all libraries')}</span>
-              {highlightIndex === 1 && <i className="sf3-font sf3-font-enter"></i>}
+              {highlightIndex === 1 && <Icon symbol="enter" className="search-types-enter-icon" />}
             </div>
           </div>
         );
@@ -858,34 +919,34 @@ class Search extends Component {
   searchRepo = () => {
     const { value } = this.state;
     const queryData = {
-      q: value,
+      q: value.trim(),
       search_repo: this.props.repoID,
       search_ftypes: 'all',
     };
-    this.setState({ isFolderSearch: false });
+    this.setState({ searchType: searchScope.REPO });
     this.getSearchResult(this.buildSearchParams(queryData));
   };
 
   searchFolder = () => {
     const { value } = this.state;
     const queryData = {
-      q: value,
+      q: value.trim(),
       search_repo: this.props.repoID,
       search_ftypes: 'all',
       search_path: this.props.path,
     };
-    this.setState({ isFolderSearch: true });
+    this.setState({ searchType: searchScope.FOLDER });
     this.getSearchResult(this.buildSearchParams(queryData));
   };
 
   searchAllRepos = () => {
     const { value } = this.state;
     const queryData = {
-      q: value,
+      q: value.trim(),
       search_repo: 'all',
       search_ftypes: 'all',
     };
-    this.setState({ isFolderSearch: false });
+    this.setState({ searchType: searchScope.ALL });
     this.getSearchResult(this.buildSearchParams(queryData));
   };
 
@@ -1085,8 +1146,10 @@ class Search extends Component {
           <div className="search">
             <div className={`search-mask ${isMaskShow ? 'show' : 'hide'}`} onClick={this.onCloseHandler} style={isMaskShow ? { zIndex: SEARCH_MASK } : {}}></div>
             <div className={`search-container ${isMaskShow ? 'show' : ''}`} style={isMaskShow ? { zIndex: SEARCH_CONTAINER } : {}}>
-              <div className={`input-icon ${isMaskShow ? 'mb-1' : ''}`}>
-                <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+              <div className="input-icon">
+                <span className="search-icon-left input-icon-addon">
+                  <Icon symbol="search" />
+                </span>
                 <input
                   type="text"
                   className="form-control search-input"
@@ -1099,27 +1162,28 @@ class Search extends Component {
                   autoComplete="off"
                   ref={this.inputRef}
                 />
-                {isCloseShow &&
+                {isCloseShow && (
                   <button
+                    id="clear-search-btn"
                     type="button"
-                    className="search-icon-right sf3-font sf3-font-x-01"
+                    className="search-icon-right"
                     onClick={this.onClearSearch}
                     aria-label={gettext('Clear search')}
-                    title={gettext('Clear search')}
                   >
+                    <Icon symbol="close" />
+                    <Tooltip target="clear-search-btn">{gettext('Clear search')}</Tooltip>
                   </button>
+                )
                 }
                 {isMaskShow && (
-                  <IconBtn
-                    symbol="filter-circled"
+                  <OpIcon
+                    id="search-filter-btn"
+                    symbol="search-filter"
                     size={20}
                     className={classnames('search-icon-right input-icon-addon search-filter-controller', { 'active': isFilterControllerActive })}
-                    onClick={this.handleFiltersShow}
-                    title={isFiltersShow ? gettext('Hide advanced search') : gettext('Show advanced search')}
+                    op={this.handleFiltersShow}
+                    tooltip={isFiltersShow ? gettext('Hide advanced search') : gettext('Show advanced search')}
                     aria-label={isFiltersShow ? gettext('Hide advanced search') : gettext('Show advanced search')}
-                    tabIndex={0}
-                    role="button"
-                    onKeyDown={Utils.onKeyDown}
                   />
                 )}
               </div>
@@ -1140,14 +1204,16 @@ class Search extends Component {
         </MediaQuery>
         <MediaQuery query="(max-width: 767.8px)">
           <div className="search-icon-container">
-            <i className="search-icon sf3-font sf3-font-search" onClick={this.onSearchToggle}></i>
+            <span className="search-icon" onClick={this.onSearchToggle}>
+              <Icon symbol="search" />
+            </span>
           </div>
           {this.state.isSearchInputShow &&
             <div className="search">
               <div className={`search-mask ${isMaskShow ? '' : 'hide'}`} onClick={this.onCloseHandler} style={{ zIndex: SEARCH_MASK }}></div>
               <div className="search-container" style={{ zIndex: SEARCH_CONTAINER }}>
                 <div className="input-icon">
-                  <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+                  <Icon className="search-icon-left input-icon-addon" symbol="search" />
                   <input
                     type="text"
                     className="form-control search-input"
@@ -1159,16 +1225,16 @@ class Search extends Component {
                     onChange={this.onChangeHandler}
                     autoComplete="off"
                   />
-                  {this.state.isCloseShow &&
-                    <button
-                      type="button"
-                      className="search-icon-right input-icon-addon sf3-font sf3-font-x-01"
-                      onClick={this.onClearSearch}
+                  {this.state.isCloseShow && (
+                    <OpIcon
+                      id="clear-search-btn"
+                      symbol="close"
+                      className="search-icon-right input-icon-addon"
+                      op={this.onClearSearch}
+                      tooltip={gettext('Clear search')}
                       aria-label={gettext('Clear search')}
-                      title={gettext('Clear search')}
-                    >
-                    </button>
-                  }
+                    />
+                  )}
                 </div>
                 <div className="search-result-container dropdown-search-result-container">
                   {this.renderSearchResult()}

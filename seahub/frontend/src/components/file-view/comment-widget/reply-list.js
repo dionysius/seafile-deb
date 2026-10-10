@@ -1,10 +1,11 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { SeafileCommentEditor } from '@seafile/comment-editor';
 import dayjs from 'dayjs';
-import { gettext } from '../../../utils/constants';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { Utils } from '../../../utils/utils';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import OpIcon from '@/components/op-icon';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import toaster from '../../toast';
 import CommentItem from './comment-item';
 import ReplyItem from './reply-item';
@@ -70,7 +71,7 @@ class ReplyList extends React.Component {
   };
 
   checkParticipant = (email) => {
-    return this.props.participants.map((participant) => {return participant.email;}).includes(email);
+    return this.props.participants.map((participant) => { return participant.email; }).includes(email);
   };
 
   addParticipant = (email) => {
@@ -86,15 +87,11 @@ class ReplyList extends React.Component {
 
         <div className="seafile-comment-title">
           <div className="comments-panel-header-left">
-            <div className="goback sdoc-icon-btn ml-0 mr-1" onClick={this.props.clearCurrentComment}>
-              <i className="sdocfont sdoc-previous-page" style={{ transform: 'scale(1.2)' }}></i>
-            </div>
+            <OpIcon id="back-to-comment-list" className="op-icon" symbol="arrow-left" tooltip={gettext('Back')} op={this.props.clearCurrentComment} />
             <span className="title">{gettext('Comment details')}</span>
           </div>
           <div className="comments-panel-header-right">
-            <div className="sdoc-icon-btn" onClick={this.props.toggleCommentList}>
-              <i className="sdocfont sdoc-sm-close"></i>
-            </div>
+            <OpIcon id="comment-close" className="op-icon" symbol="close" tooltip={gettext('Close')} op={this.props.toggleCommentList} />
           </div>
         </div>
 
@@ -139,7 +136,7 @@ class ReplyList extends React.Component {
             insertContent={this.onSubmit}
             collaborators={this.props.relatedUsers ? this.props.relatedUsers : []}
             participants={this.props.participants ? this.props.participants : []}
-            addParticipants={(email) => {this.addParticipant(email);}}
+            addParticipants={(email) => { this.addParticipant(email); }}
           />
         </div>
       </div>

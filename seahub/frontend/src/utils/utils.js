@@ -1,13 +1,13 @@
+import React from 'react';
+import toaster from '@/components/toast';
+import { PRIVATE_FILE_TYPE } from '@/constants';
+import { compareTwoString } from './compare-two-string';
 import { mediaUrl, gettext, serviceURL, siteRoot, isPro, fileAuditEnabled, canGenerateShareLink, canGenerateUploadLink, shareLinkPasswordMinLength, username, folderPermEnabled, onlyofficeConverterExtensions, enableSeadoc, enableRepoSnapshotLabel,
   enableResetEncryptedRepoPassword, isEmailConfigured, isSystemStaff,
   enableOnlyoffice, onlyofficeEditFileExtension,
   enableOfficeWebApp, officeWebAppEditFileExtension, enableMultipleOfficeSuite, officeSuiteEditFileExtension } from './constants';
+import PermissionDeniedTip from './permission-denied-tip';
 import TextTranslation from './text-translation';
-import React from 'react';
-import toaster from '../components/toast';
-import PermissionDeniedTip from '../components/permission-denied-tip';
-import { compareTwoString } from './compare-two-string';
-import { PRIVATE_FILE_TYPE } from '../constants';
 
 export const Utils = {
 
@@ -88,6 +88,8 @@ export const Utils = {
     'flv': 'video.png',
     'wmv': 'video.png',
     'rmvb': 'video.png',
+    'm4v': 'video.png',
+    'mkv': 'video.png',
 
     // music file
     'mp3': 'music.png',
@@ -113,10 +115,12 @@ export const Utils = {
     'tiff': 'pic.png',
     'webp': 'pic.png',
     'jfif': 'pic.png',
+    'avif': 'pic.png',
     'exdraw': 'draw.png',
 
     // photoshop file
     'psd': 'psd.png',
+    'psb': 'psd.png',
 
     // zip file
     'zip': 'zip.png',
@@ -141,7 +145,7 @@ export const Utils = {
       return false;
     }
     const file_ext = filename.substr(filename.lastIndexOf('.') + 1).toLowerCase();
-    const image_exts = ['gif', 'jpeg', 'jpg', 'png', 'ico', 'bmp', 'tif', 'tiff', 'jfif', 'heic', 'webp', 'svg'];
+    const image_exts = ['gif', 'jpeg', 'jpg', 'png', 'ico', 'bmp', 'tif', 'tiff', 'jfif', 'heic', 'webp', 'svg', 'avif'];
     return image_exts.includes(file_ext);
   },
 
@@ -151,6 +155,10 @@ export const Utils = {
     }
     const file_ext = filename.substr(filename.lastIndexOf('.') + 1).toLowerCase();
     return file_ext === 'pdf';
+  },
+
+  epubCheck: function (filename) {
+    return Utils.getFileExtension(filename, true).toLowerCase() === 'epub';
   },
 
   getShareLinkPermissionList: function (itemType, permission, path, canEdit) {
@@ -258,7 +266,7 @@ export const Utils = {
       return false;
     }
     const file_ext = filename.substr(filename.lastIndexOf('.') + 1).toLowerCase();
-    return ['mp4', 'ogv', 'webm', 'mov'].includes(file_ext);
+    return ['mp4', 'ogv', 'webm', 'mov', 'm4v', 'mkv'].includes(file_ext);
   },
 
   checkDuplicatedNameInList: function (list, targetName) {
@@ -447,7 +455,15 @@ export const Utils = {
       size = Utils.isHiDPI() ? 48 : 24;
     }
     size = size > 24 ? 192 : 24;
-    return `${mediaUrl}img/folder${readonly ? '-read-only' : ''}${sharedOut ? '-shared-out' : ''}-${size}.png`;
+    if (sharedOut) {
+      return `${mediaUrl}img/folder-shared-out-${size}.png`;
+    }
+
+    if (readonly) {
+      return `${mediaUrl}img/folder-read-only-${size}.png`;
+    }
+
+    return `${mediaUrl}img/folder-${size}.png`;
   },
 
   getFileIconName: function (fileName) {
@@ -520,7 +536,7 @@ export const Utils = {
   getFolderOperationList: function (isRepoOwner, currentRepoInfo, dirent, isContextmenu) {
 
     let list = [];
-    const { SHARE, DOWNLOAD, DELETE, RENAME, MOVE, COPY, PERMISSION, OPEN_VIA_CLIENT, STAR, UNSTAR } = TextTranslation;
+    const { SHARE, DOWNLOAD, DELETE, RENAME, MOVE, COPY, PERMISSION, STAR, UNSTAR } = TextTranslation;
     const permission = dirent.permission;
     const { isCustomPermission, customPermission } = Utils.getUserPermission(permission);
 
@@ -580,7 +596,6 @@ export const Utils = {
       if (folderPermEnabled && ((isRepoOwner && currentRepoInfo.has_been_shared_out) || currentRepoInfo.is_admin)) {
         list.push('Divider', PERMISSION);
       }
-      list.push('Divider', OPEN_VIA_CLIENT);
     }
 
     if (permission == 'r' && !currentRepoInfo.encrypted) {
@@ -595,12 +610,26 @@ export const Utils = {
     return list;
   },
 
+  canDownloadFile: function (dirent) {
+    const { permission } = dirent;
+    const { isCustomPermission, customPermission } = Utils.getUserPermission(permission);
+    return (permission == 'rw' || permission == 'r') || (isCustomPermission && customPermission.permission.download);
+  },
+
+  canDeleteFile: function (dirent) {
+    const { permission } = dirent;
+    const { isCustomPermission, customPermission } = Utils.getUserPermission(permission);
+    const perm = (permission == 'rw' || permission == 'cloud-edit') || (isCustomPermission && customPermission.permission.delete);
+    const locked = !dirent.is_locked || (dirent.is_locked && dirent.locked_by_me);
+    return perm && locked;
+  },
+
   getFileOperationList: function (isRepoOwner, currentRepoInfo, dirent, isContextmenu) {
     let list = [];
     const {
       SHARE, DOWNLOAD, DELETE, RENAME, MOVE, COPY, UNLOCK, LOCK, UNFREEZE_DOCUMENT, FREEZE_DOCUMENT,
-      HISTORY, ACCESS_LOG, PROPERTIES, OPEN_VIA_CLIENT, ONLYOFFICE_CONVERT,
-      CONVERT_AND_EXPORT, CONVERT_TO_MARKDOWN, CONVERT_TO_DOCX, EXPORT_DOCX, CONVERT_TO_SDOC, EXPORT_SDOC,
+      HISTORY, ACCESS_LOG, PROPERTIES, OPEN_WITH, OPEN_WITH_DEFAULT, OPEN_VIA_CLIENT, OPEN_WITH_ONLYOFFICE, ONLYOFFICE_CONVERT,
+      CONVERT_AND_EXPORT, CONVERT_TO_MARKDOWN, CONVERT_TO_DOCX, EXPORT_DOCX, EXPORT_MARKDOWN, CONVERT_TO_SDOC, EXPORT_SDOC,
       STAR, UNSTAR, MORE
     } = TextTranslation;
     const permission = dirent.permission;
@@ -707,7 +736,7 @@ export const Utils = {
 
       if (dirent.name.endsWith('.sdoc')) {
         if (Utils.isDesktop()) {
-          let subOpList = [CONVERT_TO_MARKDOWN, CONVERT_TO_DOCX, EXPORT_DOCX, EXPORT_SDOC];
+          let subOpList = [CONVERT_TO_MARKDOWN, CONVERT_TO_DOCX, EXPORT_MARKDOWN, EXPORT_DOCX, EXPORT_SDOC];
           list.push({ ...CONVERT_AND_EXPORT, subOpList });
         } else {
           list.push(CONVERT_TO_MARKDOWN);
@@ -718,13 +747,26 @@ export const Utils = {
       }
     }
 
+    list.push('Divider');
+
+    let fileExt = Utils.getFileExtension(dirent.name, true);
+    if (currentRepoInfo.enable_onlyoffice && (fileExt == 'csv' || fileExt == 'pdf')) {
+      let subOpList = [];
+      subOpList.push(OPEN_WITH_DEFAULT, 'Divider', OPEN_WITH_ONLYOFFICE, OPEN_VIA_CLIENT);
+      list.push({ ...OPEN_WITH, subOpList });
+    } else {
+      let subOpList = [];
+      subOpList.push(OPEN_WITH_DEFAULT, 'Divider', OPEN_VIA_CLIENT);
+      list.push({ ...OPEN_WITH, subOpList });
+    }
+
     if (permission == 'rw') {
       let subOpList = [];
       subOpList.push(PROPERTIES, HISTORY);
       if (isPro && fileAuditEnabled) {
         subOpList.push(ACCESS_LOG);
       }
-      subOpList.push(OPEN_VIA_CLIENT);
+
       list.push({ ...MORE, subOpList });
     }
 
@@ -1366,6 +1408,56 @@ export const Utils = {
     return items;
   },
 
+  // sort starred items(repo, folder, file) for the "Favorites" page
+  sortFavorites: function (items, sortBy, sortOrder) {
+    const _this = this;
+    let comparator;
+
+    switch (`${sortBy}-${sortOrder}`) {
+      case 'name-asc':
+        comparator = function (a, b) {
+          var result = _this.compareTwoWord(a.obj_name, b.obj_name);
+          return result;
+        };
+        break;
+      case 'name-desc':
+        comparator = function (a, b) {
+          var result = _this.compareTwoWord(a.obj_name, b.obj_name);
+          return -result;
+        };
+        break;
+      case 'time-asc':
+        comparator = function (a, b) {
+          return a.mtime < b.mtime ? -1 : 1;
+        };
+        break;
+      case 'time-desc':
+        comparator = function (a, b) {
+          return a.mtime < b.mtime ? 1 : -1;
+        };
+        break;
+    }
+
+    items.sort((a, b) => {
+      if (a.is_dir && b.is_dir) {
+        if (a.path == '/' && b.path != '/') {
+          return -1;
+        }
+        if (a.path != '/' && b.path == '/') {
+          return 1;
+        }
+        return comparator(a, b);
+      } else if (a.is_dir && !b.is_dir) {
+        return -1;
+      } else if (!a.is_dir && b.is_dir) {
+        return 1;
+      } else {
+        return comparator(a, b);
+      }
+    });
+    return items;
+  },
+
   // sort dirents in shared folder
   sortDirentsInSharedDir: function (items, sortBy, sortOrder) {
     const _this = this;
@@ -1995,7 +2087,8 @@ export const validateName = (newName) => {
 
 export const debounce = (fn, delay, immediate) => {
   let timer = null;
-  return (...params) => {
+
+  const debounced = function (...params) {
     if (timer) {
       clearTimeout(timer);
     }
@@ -2008,6 +2101,15 @@ export const debounce = (fn, delay, immediate) => {
       }, delay);
     }
   };
+
+  debounced.cancel = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+
+  return debounced;
 };
 
 export const throttle = (func, delay) => {
@@ -2036,4 +2138,23 @@ export const getColorScheme = () => {
   const manualMode = localStorage.getItem('sf_color_mode');
   if (manualMode) return manualMode;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+export const updateImageThumbnail = (newThumbnailSrc) => {
+  const resArray = newThumbnailSrc?.split('/');
+  if (resArray[2] === '256') {
+    resArray[2] = '1024';
+  }
+  let adjustedThumbnailSrc = resArray.join('/');
+  if (!adjustedThumbnailSrc.startsWith('/')) {
+    adjustedThumbnailSrc = '/' + adjustedThumbnailSrc;
+  }
+  return adjustedThumbnailSrc;
+};
+
+export const isImageRotateable = (fileExt) => {
+  if (typeof fileExt !== 'string') {
+    return false;
+  }
+  return !['psd', 'heic', 'ico', 'svg', 'gif'].includes(fileExt.toLowerCase());
 };

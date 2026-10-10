@@ -1,22 +1,22 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Modal, ModalBody, TabContent, TabPane, Nav, NavItem, NavLink } from 'reactstrap';
-import { gettext, username, canGenerateShareLink, canGenerateUploadLink, canInvitePeople, additionalShareDialogNote, enableOCM, isPro, isSeafilePlus, canShareRepo, LARGE_DIALOG_STYLE } from '../../utils/constants';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext, username, canGenerateShareLink, canGenerateUploadLink, canInvitePeople, additionalShareDialogNote, enableOCM, isPro, isSeafilePlus, canShareRepo, LARGE_DIALOG_STYLE } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Loading from '../loading';
 import ShareLinkPanel from '../share-link-panel';
+import toaster from '../toast';
+import CustomPermissionManager from './custom-permission/custom-permission-manager';
 import GenerateUploadLink from './generate-upload-link';
-import ShareToUser from './share-to-user';
+import InternalLink from './internal-link';
 import ShareToGroup from './share-to-group';
 import ShareToInvitePeople from './share-to-invite-people';
 import ShareToOtherServer from './share-to-other-server';
-import InternalLink from './internal-link';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
-import Loading from '../loading';
-import toaster from '../toast';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
-import CustomPermissionManager from './custom-permission/custom-permission-manager';
+import ShareToUser from './share-to-user';
 
-import '../../css/share-link-dialog.css';
+import '@/css/share-link-dialog.css';
 
 const propTypes = {
   isGroupOwnedRepo: PropTypes.bool,
@@ -310,10 +310,12 @@ class ShareDialog extends React.Component {
   renderExternalShareMessage = () => {
     if (additionalShareDialogNote && (typeof additionalShareDialogNote) === 'object') {
       return (
-        <div className="external-share-message mt-2">
-          <h6>{additionalShareDialogNote.title}</h6>
-          <p style={{ fontSize: '14px', color: '#666' }} className="text-wrap m-0">{additionalShareDialogNote.content}</p>
-        </div>
+        <span
+          className="share-dialog-header-note"
+          title={`${additionalShareDialogNote.title}: ${additionalShareDialogNote.content}`}
+        >
+          {additionalShareDialogNote.title}: {additionalShareDialogNote.content}
+        </span>
       );
     }
     return null;
@@ -325,9 +327,11 @@ class ShareDialog extends React.Component {
       <div>
         <Modal isOpen={true} style={LARGE_DIALOG_STYLE} className="share-dialog" toggle={this.props.toggleDialog}>
           <SeahubModalHeader toggle={this.props.toggleDialog} tag="div">
-            <h5 className="text-truncate m-0">
-              {gettext('Share')} <span className="op-target" title={itemName}>{itemName}</span>
-            </h5>
+            <div className="share-dialog-header d-flex align-items-center w-100">
+              <h5 className="share-dialog-header-main text-truncate m-0">
+                {gettext('Share')} <span className="op-target" title={itemName}>{itemName}</span>
+              </h5>
+            </div>
             {this.renderExternalShareMessage()}
           </SeahubModalHeader>
           <ModalBody className="share-dialog-content" role="tablist">

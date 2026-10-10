@@ -10,6 +10,7 @@ RequestContext.
 
 import re
 import os
+import logging
 
 from django.conf import settings as dj_settings
 from django.utils.functional import lazy
@@ -27,8 +28,9 @@ from seahub.settings import SEAFILE_VERSION, SITE_DESCRIPTION, \
     PRIVACY_POLICY_LINK, TERMS_OF_SERVICE_LINK, ENABLE_SEADOC, THUMBNAIL_SIZE_FOR_GRID, \
     FILE_SERVER_ROOT, NOTIFICATION_SERVER_URL, \
     ENABLE_METADATA_MANAGEMENT, BAIDU_MAP_KEY, GOOGLE_MAP_KEY, GOOGLE_MAP_ID, \
-    ENABLE_SEAFILE_AI, ENABLE_NOTIFICATION_SERVER, OFFICE_SUITE_ENABLED_EDIT_FILE_TYPES, \
-    ENABLE_FACE_RECOGNITION
+    ENABLE_SEAFILE_AI, ENABLE_AI_CHAT, ENABLE_NOTIFICATION_SERVER, OFFICE_SUITE_ENABLED_EDIT_FILE_TYPES, ENABLE_THUMBNAIL_SERVER, \
+    ENABLE_FACE_RECOGNITION, ENABLE_STORAGE_CLASSES, SHARE_LINK_ALWAYS_SEND_PASSWORD_SEPARATELY
+
 from seahub.organizations.models import OrgAdminSettings
 from seahub.organizations.settings import ORG_ENABLE_ADMIN_CUSTOM_LOGO
 from seahub.onlyoffice.settings import ENABLE_ONLYOFFICE, \
@@ -38,6 +40,9 @@ from seahub.wopi.settings import ENABLE_OFFICE_WEB_APP, \
 from seahub.constants import DEFAULT_ADMIN
 from seahub.utils import get_site_name, get_service_url
 from seahub.avatar.templatetags.avatar_tags import api_avatar_url
+from seahub.ai.utils import verify_chat_ai_config
+
+logger = logging.getLogger(__name__)
 
 
 from seahub.utils import HAS_FILE_SEARCH, EVENTS_ENABLED, is_pro_version, ENABLE_REPO_AUTO_DEL, \
@@ -120,6 +125,7 @@ def base(request):
             login_bg_path = CUSTOM_LOGIN_BG_PATH
 
         avatar_url, is_default, date_uploaded = api_avatar_url(username)
+    chat_and_search_available = verify_chat_ai_config()
     result = {
         'seafile_version': SEAFILE_VERSION,
         'site_title': config.SITE_TITLE,
@@ -145,6 +151,7 @@ def base(request):
         'share_link_force_use_password': config.SHARE_LINK_FORCE_USE_PASSWORD,
         'share_link_password_min_length': config.SHARE_LINK_PASSWORD_MIN_LENGTH,
         'share_link_password_strength_level': config.SHARE_LINK_PASSWORD_STRENGTH_LEVEL,
+        'share_link_always_send_password_separately': SHARE_LINK_ALWAYS_SEND_PASSWORD_SEPARATELY,
         'repo_password_min_length': config.REPO_PASSWORD_MIN_LENGTH,
         'events_enabled': EVENTS_ENABLED,
         'sysadmin_extra_enabled': True if is_pro_version() else False,
@@ -186,9 +193,12 @@ def base(request):
         'enable_metadata_management': ENABLE_METADATA_MANAGEMENT,
         'enable_seadoc': ENABLE_SEADOC,
         'enable_seafile_ai': ENABLE_SEAFILE_AI,
+        'chat_and_search_available': chat_and_search_available,
         'enable_notification_server': ENABLE_NOTIFICATION_SERVER,
         'notification_server_url': NOTIFICATION_SERVER_URL,
+        'enable_thumbnal_server': ENABLE_THUMBNAIL_SERVER,
         'enable_face_recognition': ENABLE_FACE_RECOGNITION,
+        'enable_storage_classes': ENABLE_STORAGE_CLASSES
     }
 
     if ENABLE_METADATA_MANAGEMENT:

@@ -1,10 +1,12 @@
 import React, { Fragment } from 'react';
+import { Alert, FormGroup, Input, Label } from 'reactstrap';
 import PropTypes from 'prop-types';
-import { Alert, FormGroup, Input, Label, Tooltip } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
-import Loading from '../../loading';
+import Tooltip from '@/components/tooltip';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import BackIcon from '../../back-icon';
-import { Utils } from '../../../utils/utils';
+import Icon from '../../icon';
+import Loading from '../../loading';
 
 class CustomPermissionEditor extends React.Component {
   constructor(props) {
@@ -23,7 +25,6 @@ class CustomPermissionEditor extends React.Component {
         download_external_link: false,
       },
       errMessage: '',
-      tooltipOpen: false,
     };
   }
 
@@ -89,10 +90,6 @@ class CustomPermissionEditor extends React.Component {
       return;
     }
     this.props.onUpdateCustomPermission(permission_name, permission_desc, permission);
-  };
-
-  toggle = () => {
-    this.setState({ tooltipOpen: !this.state.tooltipOpen });
   };
 
   render() {
@@ -168,15 +165,8 @@ class CustomPermissionEditor extends React.Component {
                       onKeyDown={Utils.onKeyDown}
                     />
                     <span>{gettext('Modify')}</span>
-                    <span id="modify-tip" className="sf3-font sf3-font-tips ml-2" style={{ color: '#999' }}></span>
-                    <Tooltip
-                      toggle={this.toggle}
-                      delay={{ show: 0, hide: 0 }}
-                      target={'modify-tip'}
-                      placement='bottom'
-                      isOpen={this.state.tooltipOpen}>
-                      ({gettext('Modify includes modify file, move/rename file and folder')})
-                    </Tooltip>
+                    <span id="modify-tip" className="ml-2" style={{ color: '#999' }} aria-hidden="true"><Icon symbol="about" /></span>
+                    <Tooltip target='modify-tip' placement='bottom'>{gettext('Modify includes modify file, move/rename file and folder')}</Tooltip>
                   </Label>
                 </FormGroup>
                 <FormGroup check>

@@ -1,9 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, Modal, ModalBody, ModalFooter } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
 import UserSelect from '../../user-select';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
 
 const propTypes = {
   toggle: PropTypes.func.isRequired,
@@ -43,8 +43,8 @@ class AddMemberDialog extends React.Component {
           />
         </ModalBody>
         <ModalFooter>
-          <Button color="primary" onClick={this.handleSubmit}>{gettext('Submit')}</Button>
           <Button color="secondary" onClick={this.props.toggle}>{gettext('Cancel')}</Button>
+          <Button color="primary" onClick={this.handleSubmit}>{gettext('Submit')}</Button>
         </ModalFooter>
       </Modal>
     );

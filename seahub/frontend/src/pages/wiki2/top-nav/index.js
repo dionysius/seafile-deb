@@ -1,10 +1,10 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
+import CustomIcon from '@/components/custom-icon';
+import { gettext, mediaUrl } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import NavItemIcon from '../common/nav-item-icon';
-import CustomIcon from '../custom-icon';
-import { gettext, mediaUrl } from '../../../utils/constants';
 import { getPaths } from '../utils/index';
-import { Utils } from '../../../utils/utils';
 
 import './index.css';
 
@@ -26,7 +26,7 @@ function WikiTopNav({ config, currentPageId, setCurrentPage, currentPageLocked }
               onKeyDown={Utils.onKeyDown}
             >
               {item.icon ? <CustomIcon icon={item.icon} /> : <NavItemIcon symbol={'file'} disable={true} />}
-              <div className="d-flex align-items-center">
+              <div className="d-flex align-items-center overflow-hidden">
                 <span className='text-truncate' title={item.name} aria-label={item.name}>{item.name}</span>
               </div>
             </div>

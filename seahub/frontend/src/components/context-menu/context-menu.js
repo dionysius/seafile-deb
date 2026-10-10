@@ -1,10 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from 'reactstrap';
-import listener from './globalEventListener';
+import PropTypes from 'prop-types';
+import { Utils } from '@/utils/utils';
+import { DROPDOWN_SUBMENU_OFFSET_DEFAULT } from '../dropdown/utils';
+import Icon from '../icon';
 import { hideMenu } from './actions';
+import listener from './globalEventListener';
 import { callIfExists } from './helpers';
-import { Utils } from '../../utils/utils';
 
 const propTypes = {
   id: PropTypes.string.isRequired,
@@ -225,17 +227,17 @@ class ContextMenu extends React.Component {
                 className="w-100"
                 isOpen={this.state.isSubMenuShown && this.state.currentItem == menuItem.key}
                 toggle={this.toggleSubMenu}
-                onMouseMove={(e) => {e.stopPropagation();}}
+                onMouseMove={(e) => { e.stopPropagation(); }}
               >
                 <DropdownToggle
                   tag='span'
-                  className="dropdown-item font-weight-normal rounded-0 d-flex align-items-center"
+                  className="dropdown-item"
                   onMouseEnter={this.toggleSubMenuShown.bind(this, menuItem)}
                 >
                   <span className="mr-auto">{menuItem.value}</span>
-                  <i className="sf3-font-down sf3-font rotate-270"></i>
+                  <Icon symbol="down" className="rotate-270" />
                 </DropdownToggle>
-                <DropdownMenu>
+                <DropdownMenu modifiers={[DROPDOWN_SUBMENU_OFFSET_DEFAULT]}>
                   {menuItem.subOpList.map((item, index) => {
                     if (item == 'Divider') {
                       return <DropdownItem key={index} divider />;
@@ -252,7 +254,7 @@ class ContextMenu extends React.Component {
             return (
               <button
                 key={index}
-                className="seafile-contextmenu-item dropdown-item"
+                className="dropdown-item"
                 data-operation={menuItem.key}
                 onClick={this.onMenuItemClick}
                 onContextMenu={this.onContextMenu}

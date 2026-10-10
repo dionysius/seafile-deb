@@ -113,7 +113,7 @@ class AdminUploadLinks(APIView):
                     sql_parameter = 'view_cnt'
             upload_links = UploadLinkShare.objects.all().order_by(sql_parameter)[start:end]
         else:
-            upload_links = UploadLinkShare.objects.all().order_by('ctime')[start:end]
+            upload_links = UploadLinkShare.objects.all().order_by('-ctime')[start:end]
 
         count = UploadLinkShare.objects.all().count()
 

@@ -4338,6 +4338,34 @@ seafile_get_virtual_repo (const char *origin_repo,
     return repo_obj;
 }
 
+int
+seafile_set_base_commit (const char *repo_id,
+                         const char *base_commit,
+                         GError **error)
+{
+    if (!repo_id || !base_commit || !is_uuid_valid (repo_id) ||
+        !is_object_id_valid (base_commit)) {
+        g_set_error (error, SEAFILE_DOMAIN, SEAF_ERR_BAD_ARGS,
+                     "Invalid arguments");
+        return -1;
+    }
+
+    SeafVirtRepo *vinfo = seaf_repo_manager_get_virtual_repo_info (seaf->repo_mgr,
+                                                                    repo_id);
+    if (!vinfo) {
+        g_set_error (error, SEAFILE_DOMAIN, SEAF_ERR_BAD_ARGS,
+                     "Virtual repo not found");
+        return -1;
+    }
+
+    seaf_repo_manager_set_virtual_repo_base_commit_path (seaf->repo_mgr,
+                                                         repo_id, base_commit,
+                                                         vinfo->path);
+
+    seaf_virtual_repo_info_free (vinfo);
+    return 0;
+}
+
 /* System default library */
 
 char *
@@ -5015,19 +5043,6 @@ ccnet_rpc_get_descendants_groups(int group_id, GError **error)
     groups = ccnet_group_manager_get_descendants_groups (group_mgr, group_id, error);
 
     return groups;
-}
-
-GList*
-ccnet_rpc_search_ldapusers (const char *keyword,
-                            int start, int limit,
-                            GError **error)
-{
-    GList *ldapusers = NULL;
-    CcnetUserManager *user_mgr = seaf->user_mgr;
-
-    ldapusers = ccnet_user_manager_search_ldapusers (user_mgr, keyword,
-                                                     start, limit);
-    return ldapusers;
 }
 
 gint64
@@ -5798,22 +5813,6 @@ ccnet_rpc_set_org_name (int org_id, const char *org_name, GError **error)
     }
 
     return ccnet_org_manager_set_org_name (org_mgr, org_id, org_name, error);
-}
-
-int
-ccnet_rpc_set_reference_id (const char *primary_id, const char *reference_id, GError **error)
-{
-    CcnetUserManager *user_mgr = seaf->user_mgr;
-
-    return ccnet_user_manager_set_reference_id (user_mgr, primary_id, reference_id, error);
-}
-
-char *
-ccnet_rpc_get_primary_id (const char *email, GError **error)
-{
-    CcnetUserManager *user_mgr = seaf->user_mgr;
-
-    return ccnet_user_manager_get_primary_id (user_mgr, email);
 }
 
 #endif  /* SEAFILE_SERVER */

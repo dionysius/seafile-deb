@@ -1,0 +1,14 @@
+.sdoc-thumbnail-container {
+  flex: 1;
+  display: flex;
+}
+
+.sdoc-thumbnail-container .sdoc-editor-container .sdoc-editor-content.no-outline .sdoc-article-container {
+  margin-left: auto !important;
+}
+
+.empty-sdoc-thumbnail {
+  width: 794px;
+  min-height: 1123px;
+  background: #fff;
+}

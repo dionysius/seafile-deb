@@ -1,0 +1,53 @@
+.sf-metadata-ui.file-name-formatter {
+  width: 100%;
+  display: flex;
+  height: 100%;
+  align-self: stretch;
+  align-items: center;
+}
+
+.sf-table-cell .sf-metadata-ui.cell-formatter-container.file-name-formatter.multi-line-file-name-formatter {
+  height: 100%;
+  align-items: flex-start;
+}
+
+.sf-metadata-ui.file-name-formatter .sf-metadata-file-icon-container {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 24px;
+  width: 24px;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+.sf-metadata-ui.file-name-formatter .sf-metadata-file-icon-container .thumbnail {
+  background-color: var(--bs-thumbnail-bg-color, transparent);
+  border-radius: 2px;
+}
+
+.sf-table-row .sf-metadata-ui.file-name-formatter .sf-metadata-file-icon-container .sf-metadata-file-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.sf-table-row .sf-metadata-ui.file-name-formatter .sf-metadata-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.sf-metadata-ui.file-name-formatter.multi-line-file-name-formatter .sf-metadata-file-name {
+  max-height: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.sf-metadata-ui.file-name-formatter .sf-metadata-file-name:hover {
+  text-decoration: underline;
+}

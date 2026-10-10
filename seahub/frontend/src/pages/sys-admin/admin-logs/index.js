@@ -1,7 +1,7 @@
 import React from 'react';
-import MainPanelTopbar from '../main-panel-topbar';
-import LogsNav from './logs-nav';
 import { useLocation } from '@gatsbyjs/reach-router';
+import MainPanelTopbar from '@/components/admin/layout/main-panel-topbar';
+import LogsNav from './logs-nav';
 
 const AdminLogs = ({ children, ...commonProps }) => {
   const location = useLocation();
@@ -9,8 +9,12 @@ const AdminLogs = ({ children, ...commonProps }) => {
   return (
     <>
       <MainPanelTopbar {...commonProps} />
-      <LogsNav currentItem={path} />
-      <div className="h-100 d-flex overflow-auto">{children}</div>
+      <div className="main-panel-center flex-row">
+        <div className="cur-view-container">
+          <LogsNav currentItem={path} />
+          <div className="cur-view-content">{children}</div>
+        </div>
+      </div>
     </>
   );
 };

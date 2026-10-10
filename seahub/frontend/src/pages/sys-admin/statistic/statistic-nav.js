@@ -1,8 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Link } from '@gatsbyjs/reach-router';
-import { siteRoot, gettext } from '../../../utils/constants';
-import { NAV_ITEM_MARGIN } from '../../../constants';
+import PropTypes from 'prop-types';
+import { siteRoot, gettext } from '@/utils/constants';
+import '@/css/system-stat.css';
+
+const STATISTIC_NAV_ITEM_MARGIN = 16;
 
 const propTypes = {
   currentItem: PropTypes.string.isRequired
@@ -17,6 +19,7 @@ class Nav extends React.Component {
       { name: 'storageStatistic', urlPart: 'statistics/storage', text: gettext('Storage') },
       { name: 'userStatistic', urlPart: 'statistics/user', text: gettext('Users') },
       { name: 'trafficStatistic', urlPart: 'statistics/traffic', text: gettext('Traffic') },
+      { name: 'aiStatistic', urlPart: 'statistics/ai', text: gettext('AI Usage') },
       { name: 'reportsStatistic', urlPart: 'statistics/reports', text: gettext('Reports') },
       { name: 'metricsStatistic', urlPart: 'statistics/metrics', text: gettext('Metrics') },
     ];
@@ -32,10 +35,10 @@ class Nav extends React.Component {
     const activeIndex = this.navItems.findIndex(item => item.name === currentItem);
     const itemWidths = this.itemRefs.map(ref => ref?.offsetWidth);
     const indicatorWidth = itemWidths[activeIndex];
-    const indicatorOffset = itemWidths.slice(0, activeIndex).reduce((a, b) => a + b, 0) + (2 * activeIndex + 1) * NAV_ITEM_MARGIN;
+    const indicatorOffset = itemWidths.slice(0, activeIndex).reduce((a, b) => a + b, 0) + (2 * activeIndex + 1) * STATISTIC_NAV_ITEM_MARGIN;
 
     return (
-      <div className="cur-view-path tab-nav-container">
+      <div className="cur-view-path tab-nav-container statistic-nav">
         <ul
           className="nav nav-indicator-container position-relative"
           style={{
@@ -46,7 +49,7 @@ class Nav extends React.Component {
           {this.navItems.map((item, index) => {
             return (
               <li
-                className="nav-item mx-3"
+                className="nav-item mx-4"
                 key={index}
                 ref={el => this.itemRefs[index] = el}
               >

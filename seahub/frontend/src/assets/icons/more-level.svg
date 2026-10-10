@@ -1,15 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 21.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="图层_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 32 32" style="enable-background:new 0 0 32 32;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#929292;}
-</style>
-<title>more</title>
-<desc>Created with Sketch.</desc>
-<g id="more">
-	<path id="形状结合" class="st0" d="M24.3,16c0-2,1.7-3.7,3.7-3.7s3.7,1.7,3.7,3.7S30,19.7,28,19.7S24.3,18,24.3,16z M12,16
-		c0-2,1.7-3.7,3.7-3.7s3.7,1.7,3.7,3.7s-1.7,3.7-3.7,3.7S12,18,12,16z M0,16c0-2,1.3-3.7,3.4-3.7s4,1.7,4,3.7s-1.9,3.7-4,3.7
-		S0,18,0,16z"/>
-</g>
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9.00024 16C9.00024 17.6569 7.6571 19 6.00024 19C4.34339 19 3.00024 17.6569 3.00024 16C3.00024 14.3431 4.34339 13 6.00024 13C7.6571 13 9.00024 14.3431 9.00024 16Z" fill="currentColor"/>
+<circle cx="15.9998" cy="16" r="3" fill="currentColor"/>
+<path d="M28.9998 16C28.9998 17.6569 27.6566 19 25.9998 19C24.3429 19 22.9998 17.6569 22.9998 16C22.9998 14.3431 24.3429 13 25.9998 13C27.6566 13 28.9998 14.3431 28.9998 16Z" fill="currentColor"/>
 </svg>

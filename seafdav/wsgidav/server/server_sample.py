@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# (c) 2009-2023 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
+# (c) 2009-2024 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
 # Original PyFileServer (c) 2005 Ho Chun Wei.
 # Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 """
@@ -7,7 +6,7 @@ Simple example how to a run WsgiDAV in a 3rd-party WSGI server.
 """
 from cheroot import wsgi
 
-from wsgidav import __version__, util
+from wsgidav import util
 from wsgidav.fs_dav_provider import FilesystemProvider
 from wsgidav.wsgidav_app import WsgiDAVApp
 
@@ -36,7 +35,7 @@ def main():
 
     # For an example, use cheroot:
     version = (
-        f"WsgiDAV/{__version__} {wsgi.Server.version} Python/{util.PYTHON_VERSION}"
+        f"{util.public_wsgidav_info} {wsgi.Server.version} {util.public_python_info}"
     )
 
     server = wsgi.Server(

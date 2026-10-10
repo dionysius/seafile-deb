@@ -1,7 +1,8 @@
 import React, { Component, Fragment } from 'react';
 import { Input, InputGroup, Button, Row, Col, Label } from 'reactstrap';
 import PropTypes from 'prop-types';
-import { gettext } from '../../utils/constants';
+import Icon from '@/components/icon';
+import { gettext } from '@/utils/constants';
 
 const propTypes = {
   value: PropTypes.string,
@@ -86,8 +87,12 @@ class OrgSamlConfigInput extends Component {
           <Col md="4">
             {isBtnsShown &&
               <Fragment>
-                <Button color="primary" className="sf2-icon-tick web-setting-icon-btn web-setting-icon-btn-submit" onMouseDown={this.onSubmit} title={gettext('Submit')}></Button>
-                <Button className="ml-1 sf2-icon-x2 web-setting-icon-btn web-setting-icon-btn-cancel" title={gettext('Cancel')}></Button>
+                <Button color="primary" className="web-setting-icon-btn web-setting-icon-btn-submit" onMouseDown={this.onSubmit} title={gettext('Submit')}>
+                  <Icon symbol="check" />
+                </Button>
+                <Button className="ml-1 web-setting-icon-btn web-setting-icon-btn-cancel" title={gettext('Cancel')}>
+                  <Icon symbol="close" />
+                </Button>
               </Fragment>
             }
           </Col>

@@ -1,0 +1,39 @@
+.sf-metadata-tags-editor .sf-metadata-tags-editor-tag-container {
+  position: relative;
+  align-items: center;
+  border-radius: 4px;
+  color: var(--bs-body-color);
+  display: flex;
+  font-size: 13px;
+  height: 32px;
+  width: 100%;
+  padding-right: 8px;
+}
+
+.sf-metadata-tags-editor .sf-metadata-tags-editor-tag-container .sf-metadata-tags-editor-tree-expand-icon {
+  position: absolute;
+  width: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--bs-icon-color);
+  z-index: 1;
+}
+
+.sf-metadata-tags-editor .sf-metadata-tags-editor-tag-container .sf-metadata-tags-editor-tree-expand-icon .seafile-multicolor-icon-down {
+  width: 12px;
+  height: 12px;
+}
+
+.sf-metadata-tags-editor .sf-metadata-tags-editor-tag-container .sf-metadata-ui-tag {
+  flex: 0 1 auto;
+  max-width: calc(100% - 24px);
+  margin-right: auto;
+}
+
+.sf-metadata-tags-editor .sf-metadata-tags-editor-tag-container .sf-metadata-ui-tag .sf-metadata-ui-tag-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

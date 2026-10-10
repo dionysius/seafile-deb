@@ -1,0 +1,15 @@
+.list-created-files-dialog.modal-dialog {
+  max-height: calc(100% - 3.5rem);
+  margin: 1.75rem auto;
+}
+
+.list-created-files-dialog .modal-content {
+  display: block;
+}
+
+.list-created-files-dialog .modal-body {
+  overflow-y: auto;
+  padding: 1rem;
+  max-height: calc(90vh - 120px);
+  min-height: 100px;
+}

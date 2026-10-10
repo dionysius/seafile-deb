@@ -1,13 +1,13 @@
 import React, { Fragment } from 'react';
-import { createRoot } from 'react-dom/client';
-import { Utils } from '../../utils/utils';
-import { seafileAPI } from '../../utils/seafile-api';
-import { gettext } from '../../utils/constants';
-import Logo from '../../components/logo';
-import Account from '../../components/common/account';
+import { seafileAPI } from '@/api/seafile-api';
+import Account from '@/components/account';
+import Icon from '@/components/icon';
+import Logo from '@/components/logo';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import FileUploader from './file-uploader';
 
-import '../../css/upload-link.css';
+import '@/css/upload-link.css';
 
 const loggedUser = window.app.pageOptions.username;
 const {
@@ -50,14 +50,14 @@ class SharedUploadLink extends React.Component {
             </p>
             {noQuota ? (
               <div className="py-6 text-center">
-                <span className="sf3-font sf3-font-tips warning-icon"></span>
+                <span className="warning-icon" aria-hidden="true"><Icon symbol="about" /></span>
                 <p>{gettext('The owner of this library has run out of space.')}</p>
               </div>
             ) : (
               <Fragment>
                 {maxUploadFileSize && <p className="small text-gray m-0">{gettext('File size should be smaller than {max_size_placeholder}.').replace('{max_size_placeholder}', Utils.bytesToSize(maxUploadFileSize * 1000 * 1000))}</p>}
                 <div id="upload-link-drop-zone" className="text-center mt-2 mb-4">
-                  <span className="sf3-font sf3-font-upload upload-icon"></span>
+                  <span className="upload-icon" aria-hidden="true"><Icon symbol="shared-link-upload" /></span>
                   <p className="small text-gray mb-0">{gettext('Drag and drop files or folders here.')}</p>
                 </div>
                 <FileUploader
@@ -77,5 +77,5 @@ class SharedUploadLink extends React.Component {
   }
 }
 
-const root = createRoot(document.getElementById('wrapper'));
-root.render(<SharedUploadLink />);
+export default SharedUploadLink;
+

@@ -1,14 +1,18 @@
 import React from 'react';
+import { DropdownItem } from 'reactstrap';
 import PropTypes from 'prop-types';
-import { Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from 'reactstrap';
-import { gettext, isPro, folderPermEnabled, enableRepoSnapshotLabel, enableResetEncryptedRepoPassword, isEmailConfigured, enableMultipleOfficeSuite } from '../utils/constants';
-import { Utils } from '../utils/utils';
+import { gettext, isPro, folderPermEnabled, enableRepoSnapshotLabel, enableResetEncryptedRepoPassword, isEmailConfigured, enableMultipleOfficeSuite, enableStorageClasses } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import MobileItemMenu from '../components/mobile-item-menu';
+import CustomDropdown from './dropdown';
+import Icon from './icon';
+import Tooltip from './tooltip';
 
 const propTypes = {
   isPC: PropTypes.bool,
   isLibView: PropTypes.bool,
   isDepartmentRepo: PropTypes.bool,
+  menuContainer: PropTypes.string,
   repo: PropTypes.object.isRequired,
   isStarred: PropTypes.bool,
   onFreezedItem: PropTypes.func,
@@ -22,29 +26,12 @@ class LibraryOperationMenu extends React.Component {
     super(props);
     this.state = {
       isItemMenuShow: false,
-      isAdvancedMenuShown: false
     };
   }
 
   onMenuItemClick = (e) => {
     const operation = Utils.getEventData(e, 'toggle');
-    this.props.onMenuItemClick(operation);
-  };
-
-  onMenuItemKeyDown = (e) => {
-    if (e.key == 'Enter' || e.key == 'Space') {
-      this.onMenuItemClick(e);
-    }
-  };
-
-  onDropdownToggleClick = (e) => {
-    this.toggleOperationMenu(e);
-  };
-
-  onDropdownToggleKeyDown = (e) => {
-    if (e.key == 'Enter' || e.key == 'Space') {
-      this.onDropdownToggleClick(e);
-    }
+    this.props.onMenuItemClick(e, operation);
   };
 
   toggleOperationMenu = (e) => {
@@ -72,29 +59,17 @@ class LibraryOperationMenu extends React.Component {
     );
   };
 
-  toggleAdvancedMenuShown = (e) => {
-    this.setState({ isAdvancedMenuShown: true });
-  };
-
-  toggleAdvancedMenu = (e) => {
-    e.stopPropagation();
-    this.setState({ isAdvancedMenuShown: !this.state.isAdvancedMenuShown }, () => {
-      this.toggleOperationMenu(e);
-    });
-  };
-
-  onDropDownMouseMove = (e) => {
-    if (this.state.isAdvancedMenuShown && e.target && e.target.className === 'dropdown-item') {
-      this.setState({
-        isAdvancedMenuShown: false
-      });
-    }
-  };
 
   generatorOperations = () => {
     let repo = this.props.repo;
     let showResetPasswordMenuItem = isPro && repo.encrypted && enableResetEncryptedRepoPassword && isEmailConfigured;
-    let operations = ['Rename', 'Transfer'];
+    let operations = ['Rename'];
+    if (this.props.isStarred) {
+      operations.push('Unstar');
+    } else {
+      operations.push('Star');
+    }
+    operations.push('Transfer');
     if (folderPermEnabled) {
       operations.push('Folder Permission');
     }
@@ -119,9 +94,20 @@ class LibraryOperationMenu extends React.Component {
   };
 
   getAdvancedOperations = () => {
-    const { isDepartmentRepo } = this.props;
+    const { isDepartmentRepo, repo } = this.props;
     const operations = [];
     operations.push('API Token');
+
+    // Archive/Unarchive operation - show for both personal and department repos when storage classes is enabled
+    if (enableStorageClasses && isPro) {
+      const archiveStatus = repo.archive_status;
+      if (!archiveStatus || archiveStatus === 'archived') {
+        operations.push('Archive');
+      }
+    }
+
+    operations.push('Webhooks');
+
     if (isDepartmentRepo) {
       return operations;
     }
@@ -133,6 +119,32 @@ class LibraryOperationMenu extends React.Component {
       operations.push('Office Suite');
     }
     return operations;
+  };
+
+  buildMenuItems = (operations, advancedOperations) => {
+    return operations.map((item) => {
+      if (item === 'Divider') {
+        return item;
+      }
+
+      if (item === 'Advanced') {
+        return {
+          key: 'Advanced',
+          label: this.translateOperations(item),
+          children: advancedOperations.map((advancedItem) => ({
+            key: advancedItem,
+            label: this.translateOperations(advancedItem),
+            onClick: (e) => this.props.onMenuItemClick(e, advancedItem),
+          })),
+        };
+      }
+
+      return {
+        key: item,
+        label: this.translateOperations(item),
+        onClick: (e) => this.props.onMenuItemClick(e, item),
+      };
+    });
   };
 
   translateOperations = (item) => {
@@ -171,6 +183,9 @@ class LibraryOperationMenu extends React.Component {
       case 'API Token':
         translateResult = 'API Token'; // translation is not needed here
         break;
+      case 'Webhooks':
+        translateResult = 'Webhooks';
+        break;
       case 'Share Admin':
         translateResult = gettext('Share Admin');
         break;
@@ -180,6 +195,9 @@ class LibraryOperationMenu extends React.Component {
       case 'Office Suite':
         translateResult = gettext('Office Suite');
         break;
+      case 'Archive':
+        translateResult = this.props.repo && this.props.repo.archive_status === 'archived' ? gettext('Unarchive') : gettext('Archive');
+        break;
       default:
         break;
     }
@@ -187,69 +205,41 @@ class LibraryOperationMenu extends React.Component {
     return translateResult;
   };
 
+  renderCustomTrigger = (isOpen) => {
+    const { isLibView } = this.props;
+    return (
+      <>
+        <Icon symbol="more-level" />
+        {!isOpen && (
+          <Tooltip target={isLibView ? 'library-more-operations-btn' : 'more-operations-btn'}>
+            {isLibView ? gettext('More') : gettext('More operations')}
+          </Tooltip>
+        )}
+      </>
+    );
+  };
+
   render() {
     let operations = this.generatorOperations();
     const advancedOperations = this.getAdvancedOperations();
+    const menuItems = this.buildMenuItems(operations, advancedOperations);
 
-    const { children, isLibView } = this.props;
+    const { children, isLibView, menuContainer } = this.props;
 
     // pc menu
     if (this.props.isPC) {
       return (
-        <Dropdown
-          isOpen={this.state.isItemMenuShow}
-          toggle={this.toggleOperationMenu}
-          direction={isLibView ? 'end' : 'down'}
+        <CustomDropdown
+          items={menuItems}
           className={isLibView ? 'd-block' : ''}
-        >
-          <DropdownToggle
-            tag={isLibView ? 'div' : 'i'}
-            className={isLibView ? 'dir-others-item' : 'op-icon sf3-font-more sf3-font'}
-            role="button"
-            tabIndex="0"
-            title={isLibView ? gettext('More') : gettext('More operations')}
-            aria-label={gettext('More operations')}
-            onClick={this.onDropdownToggleClick}
-            onKeyDown={this.onDropdownToggleKeyDown}
-            data-toggle="dropdown"
-          >
-            {children}
-          </DropdownToggle>
-          <DropdownMenu onMouseMove={this.onDropDownMouseMove} container={isLibView ? 'body' : ''}>
-            {operations.map((item, index) => {
-              if (item == 'Divider') {
-                return <DropdownItem key={index} divider />;
-              } else if (item == 'Advanced') {
-                return (
-                  <Dropdown
-                    key={index}
-                    direction="right"
-                    className="w-100"
-                    isOpen={this.state.isAdvancedMenuShown}
-                    toggle={this.toggleAdvancedMenu}
-                    onMouseMove={(e) => {e.stopPropagation();}}
-                  >
-                    <DropdownToggle
-                      tag="span"
-                      className="dropdown-item font-weight-normal rounded-0 d-flex justify-content-between align-items-center pr-2"
-                      onMouseEnter={this.toggleAdvancedMenuShown}
-                    >
-                      {this.translateOperations(item)}
-                      <i className="sf3-font-down sf3-font rotate-270"></i>
-                    </DropdownToggle>
-                    <DropdownMenu>
-                      {advancedOperations.map((item, index) => {
-                        return (<DropdownItem key={index} data-toggle={item} onClick={this.onMenuItemClick} onKeyDown={this.onMenuItemKeyDown}>{this.translateOperations(item)}</DropdownItem>);
-                      })}
-                    </DropdownMenu>
-                  </Dropdown>
-                );
-              } else {
-                return (<DropdownItem key={index} data-toggle={item} onClick={this.onMenuItemClick} onKeyDown={this.onMenuItemKeyDown}>{this.translateOperations(item)}</DropdownItem>);
-              }
-            })}
-          </DropdownMenu>
-        </Dropdown>
+          target={isLibView ? 'library-more-operations-btn' : 'more-operations-btn'}
+          placement={isLibView ? 'end' : 'down'}
+          trigger={isLibView ? children : this.renderCustomTrigger}
+          triggerClassName={isLibView ? 'dir-others-item' : 'op-icon'}
+          menuProps={{ container: menuContainer || (isLibView ? 'body' : '') }}
+          freezeItem={this.props.onFreezedItem}
+          unfreezeItem={this.props.onUnfreezedItem}
+        />
       );
     }
 
@@ -257,7 +247,6 @@ class LibraryOperationMenu extends React.Component {
     operations.pop(); // removed the last item 'Advanced'
     operations.unshift('Delete');
     operations.unshift('Share');
-    this.props.isStarred ? operations.unshift('Unstar') : operations.unshift('Star');
 
     return (
       <MobileItemMenu isOpen={this.state.isItemMenuShow} toggle={this.toggleOperationMenu}>

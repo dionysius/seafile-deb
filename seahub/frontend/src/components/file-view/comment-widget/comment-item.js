@@ -1,9 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import dayjs from 'dayjs';
 import { SeafileCommentEditor, commentProcessor } from '@seafile/comment-editor';
-import { Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import CustomDropdown from '../../dropdown';
 import CommentDeletePopover from './comment-delete-popover';
 
 const commentItemPropTypes = {
@@ -21,19 +21,12 @@ class CommentItem extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      dropdownOpen: false,
       html: '',
       newComment: this.props.item.comment,
       editable: false,
       isShowDeletePopover: false,
     };
   }
-
-  toggleDropDownMenu = () => {
-    this.setState({
-      dropdownOpen: !this.state.dropdownOpen,
-    });
-  };
 
   convertComment = (mdFile) => {
     commentProcessor.process(mdFile).then((result) => {
@@ -83,6 +76,19 @@ class CommentItem extends React.Component {
     }
   };
 
+  getMenuItems = () => {
+    const items = [
+      { key: 'delete', label: gettext('Delete'), onClick: this.toggleShowDeletePopover },
+      { key: 'edit', label: gettext('Edit'), onClick: this.toggleEditComment },
+    ];
+    if (!this.props.item.resolved) {
+      items.push({ key: 'resolve', label: gettext('Mark as resolved'), onClick: () => this.props.resolveComment(this.props.item, 'true') });
+    } else {
+      items.push({ key: 'resubmit', label: gettext('Resubmit'), onClick: () => this.props.resolveComment(this.props.item, 'false') });
+    }
+    return items;
+  };
+
   toggleShowDeletePopover = () => {
     this.setState({
       isShowDeletePopover: !this.state.isShowDeletePopover
@@ -98,7 +104,7 @@ class CommentItem extends React.Component {
       return (
         <li className="seafile-comment-item" id={item.id}>
           <div className="seafile-comment-info">
-            <img className="avatar mt-1" src={item.avatar_url} alt=""/>
+            <img className="avatar mt-1" src={item.avatar_url} alt="" />
             <div className="comment-author-info">
               <div className="comment-author-name ellipsis">{item.user_name}</div>
               <div className="comment-author-time">{time}</div>
@@ -122,7 +128,7 @@ class CommentItem extends React.Component {
     return (
       <li className={'seafile-comment-item'} id={item.id}>
         <div className="seafile-comment-info">
-          <img className="avatar mt-1" src={item.avatar_url} alt=""/>
+          <img className="avatar" src={item.avatar_url} alt="" />
           <div className="comment-author-info">
             <div className="comment-author-name ellipsis">{item.user_name}</div>
             <div className="comment-author-time">
@@ -133,59 +139,11 @@ class CommentItem extends React.Component {
             </div>
           </div>
           {(item.user_email === username) &&
-          <Dropdown
-            isOpen={this.state.dropdownOpen}
-            size="sm"
-            className="seafile-comment-dropdown"
-            toggle={this.toggleDropDownMenu}
-            id={commentOpToolsId}
-          >
-            <DropdownToggle
-              tag="i"
-              role="button"
-              tabIndex="0"
-              className="seafile-comment-dropdown-btn sf-dropdown-toggle sf3-font-more sf3-font"
-              title={gettext('More operations')}
-              aria-label={gettext('More operations')}
-              data-toggle="dropdown"
-              aria-expanded={this.state.dropdownOpen}
-              aria-haspopup={true}
+            <CustomDropdown
+              target={commentOpToolsId}
+              items={this.getMenuItems()}
+              triggerClassName="op-icon"
             />
-            <DropdownMenu>
-              <DropdownItem
-                onClick={this.toggleShowDeletePopover}
-                className="delete-comment"
-                id={item.id}
-              >
-                {gettext('Delete')}
-              </DropdownItem>
-              <DropdownItem
-                onClick={this.toggleEditComment}
-                className="edit-comment"
-                id={item.id}
-              >
-                {gettext('Edit')}
-              </DropdownItem>
-              {!item.resolved &&
-                <DropdownItem
-                  onClick={() => this.props.resolveComment(this.props.item, 'true')}
-                  className="resolve-comment"
-                  id={item.id}
-                >
-                  {gettext('Mark as resolved')}
-                </DropdownItem>
-              }
-              {item.resolved &&
-                <DropdownItem
-                  onClick={() => this.props.resolveComment(this.props.item, 'false')}
-                  className="resolve-comment"
-                  id={item.id}
-                >
-                  {gettext('Resubmit')}
-                </DropdownItem>
-              }
-            </DropdownMenu>
-          </Dropdown>
           }
         </div>
         <div

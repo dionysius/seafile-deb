@@ -6,6 +6,7 @@
   height: 20px;
   border-radius: 10px;
   background: #eaeaea;
+  max-width: 100%;
 }
 
 .user-item .user-avatar,
@@ -24,8 +25,13 @@
 }
 
 .user-item .user-name {
-  margin-left: 5px;
+  margin-left: 4px;
   color: var(--bs-body-color);
+}
+
+.user-select-trigger .user-item .user-name,
+.selected-user-item-container .user-item .user-name {
+  color: #212529;
 }
 
 .user-item .user-avatar img {
@@ -35,20 +41,15 @@
 }
 
 .user-item .user-remove {
-  display: inline-block;
-  width: 14px;
-  margin: 0 -2px 0 2px;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
 }
 
-.user-item .user-remove .sf3-font {
-  display: inline-block;
-  font-size: 12px;
-  color: #909090;
-  cursor: pointer;
-}
-
-.user-item .user-remove .sf3-font:hover {
-  color: #666666;
+.user-item .seafile-multicolor-icon-close {
+  width: 10px;
+  height: 10px;
+  color: #666;
   cursor: pointer;
 }
 

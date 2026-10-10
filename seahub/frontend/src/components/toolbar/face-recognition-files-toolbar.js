@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import ItemDropdownMenu from '../dropdown-menu/item-dropdown-menu';
-import { gettext } from '../../utils/constants';
-import { EVENT_BUS_TYPE, PRIVATE_COLUMN_KEY } from '../../metadata/constants';
-import { useFileOperations } from '../../hooks/file-operations';
-import RowUtils from '../../metadata/views/table/utils/row-utils';
-import { buildGalleryToolbarMenuOptions } from '../../metadata/utils/menu-builder';
+import { EVENT_BUS_TYPE, PRIVATE_COLUMN_KEY } from '@/features/metadata/constants';
+import { getFileNameFromRecord } from '@/features/metadata/utils/cell';
+import { openInNewTab, openParentFolder } from '@/features/metadata/utils/file';
+import { buildGalleryToolbarMenuOptions } from '@/features/metadata/utils/menu-builder';
+import { checkIsDir } from '@/features/metadata/utils/row';
+import { useMetadataStatus } from '@/hooks';
+import { useFileOperations } from '@/hooks/file-operations';
+import { gettext } from '@/utils/constants';
+import TextTranslation from '@/utils/text-translation';
+import { Utils } from '@/utils/utils';
+import CustomDropdown from '../dropdown';
+import Icon from '../icon';
+import OpIcon from '../op-icon';
 import { getColumnByKey } from '../sf-table/utils/column';
-import { useMetadataStatus } from '../../hooks';
-import TextTranslation from '../../utils/text-translation';
-import { openInNewTab, openParentFolder } from '../../metadata/utils/file';
-import { checkIsDir } from '../../metadata/utils/row';
-import { getFileNameFromRecord } from '../../metadata/utils/cell';
-import { Utils } from '../../utils/utils';
-import OpIcon from '../../components/op-icon';
-import OpElement from '../../components/op-element';
+import RowUtils from '../sf-table/utils/row';
 
 const FaceRecognitionFilesToolbar = ({ repoID }) => {
   const [selectedRecordIds, setSelectedRecordIds] = useState([]);
@@ -46,7 +46,7 @@ const FaceRecognitionFilesToolbar = ({ repoID }) => {
     return () => {
       unsubscribeSelectedFileIds && unsubscribeSelectedFileIds();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const unSelect = useCallback(() => {
@@ -80,22 +80,6 @@ const FaceRecognitionFilesToolbar = ({ repoID }) => {
       }
     });
   }, [eventBus, selectedRecords]);
-
-  const toolbarMenuOptions = useMemo(() => {
-    if (!selectedRecords.length) return [];
-    const metadataStatus = {
-      enableFaceRecognition: true,
-      enableGenerateDescription: getColumnByKey(metadataRef.current.columns, PRIVATE_COLUMN_KEY.FILE_DESCRIPTION) !== null,
-      enableTags
-    };
-    return buildGalleryToolbarMenuOptions(
-      selectedRecords,
-      readOnly,
-      metadataStatus,
-      isSomeone,
-      faceRecognitionPermission
-    );
-  }, [selectedRecords, enableTags, readOnly, faceRecognitionPermission, isSomeone]);
 
   const onMenuItemClick = useCallback((option) => {
     switch (option) {
@@ -156,51 +140,67 @@ const FaceRecognitionFilesToolbar = ({ repoID }) => {
     }
   }, [repoID, eventBus, readOnly, selectedRecords, selectedRecordIds]);
 
+  const toolbarMenuOptions = useMemo(() => {
+    if (!selectedRecords.length) return [];
+
+    const metadataStatus = {
+      enableFaceRecognition: true,
+      enableGenerateDescription: getColumnByKey(metadataRef.current.columns, PRIVATE_COLUMN_KEY.FILE_DESCRIPTION) !== null,
+      enableTags
+    };
+
+    let options = buildGalleryToolbarMenuOptions(
+      selectedRecords,
+      readOnly,
+      metadataStatus,
+      isSomeone,
+      faceRecognitionPermission
+    );
+
+    return options.map(item => {
+      if (item === 'Divider') return item;
+      if (item.subOpList) {
+        return {
+          ...item,
+          onClick: () => onMenuItemClick(item.key),
+          subOpList: item.subOpList.map((subItem) => {
+            if (subItem === 'Divider') return subItem;
+            return {
+              ...subItem,
+              onClick: () => onMenuItemClick(subItem.key)
+            };
+          })
+        };
+      }
+      return {
+        ...item,
+        onClick: () => onMenuItemClick(item.key)
+      };
+    });
+  }, [selectedRecords, enableTags, readOnly, isSomeone, faceRecognitionPermission, onMenuItemClick]);
+
   const length = selectedRecordIds.length;
   return (
     <div className="selected-dirents-toolbar">
-      <OpElement
-        className="cur-view-path-btn px-2"
-        title={gettext('Unselect')}
-        op={unSelect}
-      >
-        <span className="sf3-font-x-01 sf3-font mr-2"></span>
+      <span className="cur-view-path-btn px-2" onClick={unSelect}>
+        <span className="d-flex mr-2" aria-label={gettext('Unselect')} title={gettext('Unselect')}>
+          <Icon symbol="close" />
+        </span>
         <span>{length}{' '}{gettext('selected')}</span>
-      </OpElement>
+      </span>
       {!readOnly && length === 1 && (
         <>
-          <OpIcon
-            className="cur-view-path-btn sf3-font-move1 sf3-font"
-            title={gettext('Move')}
-            op={onMoveClick}
-          />
-          <OpIcon
-            className="cur-view-path-btn sf3-font-copy1 sf3-font"
-            title={gettext('Copy')}
-            op={onCopyClick}
-          />
+          <OpIcon id="move-btn" symbol="move" className="cur-view-path-btn" tooltip={gettext('Move')} aria-label={gettext('Move')} op={onMoveClick} />
+          <OpIcon id="copy-btn" symbol="copy" className="cur-view-path-btn" tooltip={gettext('Copy')} aria-label={gettext('Copy')} op={onCopyClick} />
         </>
       )}
-
-      <OpIcon
-        className="cur-view-path-btn sf3-font-download1 sf3-font"
-        title={gettext('Download')}
-        op={handleDownload}
-      />
-
-      {!readOnly &&
-      <OpIcon
-        className="cur-view-path-btn sf3-font-delete1 sf3-font"
-        title={gettext('Delete')}
-        op={deleteRecords}
-      />
-      }
-      <ItemDropdownMenu
-        ref={menuRef}
-        item={{}}
-        toggleClass="cur-view-path-btn sf3-font-more sf3-font"
-        onMenuItemClick={onMenuItemClick}
-        getMenuList={() => toolbarMenuOptions}
+      <OpIcon id="download-btn" symbol="download" className="cur-view-path-btn" tooltip={gettext('Download')} aria-label={gettext('Download')} op={handleDownload} />
+      {!readOnly && <OpIcon id="delete-btn" symbol="delete" className="cur-view-path-btn" tooltip={gettext('Delete')} aria-label={gettext('Delete')} op={deleteRecords} />}
+      <CustomDropdown
+        target="face-recognition-files-toolbar-menu-toggle"
+        forwardedRef={menuRef}
+        items={toolbarMenuOptions}
+        triggerClassName="cur-view-path-btn"
       />
     </div>
   );

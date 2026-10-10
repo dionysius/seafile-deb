@@ -1,14 +1,16 @@
 import React, { useCallback, useMemo } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import CenteredLoading from '../../centered-loading';
 import EmptyTip from '../../empty-tip';
-import Records from './records';
-import { gettext } from '../../../utils/constants';
-import { GROUP_VIEW_OFFSET } from '../constants/group';
 import { SEQUENCE_COLUMN_WIDTH } from '../constants/grid';
+import { GROUP_VIEW_OFFSET } from '../constants/group';
+import ContextMenu from '../context-menu';
 import { getCellValueByColumn } from '../utils/cell';
-import GridUtils from '../utils/grid-utils';
+import GridUtils from '../utils/grid';
 import { generateKeyTreeNodeRowIdMap } from '../utils/tree';
+import Records from './records';
 
 const TableMain = ({
   table,
@@ -20,41 +22,50 @@ const TableMain = ({
   showSequenceColumn,
   noRecordsTipsText,
   hasMoreRecords,
-  isLoadingMoreRecords,
+  isLoadingMore,
+  isLoading = false,
   showGridFooter,
   recordsTree,
   showRecordAsTree,
+  enableScrollToLoad = true,
   loadMore,
   loadAll,
   getTreeNodeByIndex,
   recordGetterByIndex,
   recordGetterById,
   getClientCellValueDisplayString,
+  updateFileTags,
+  gridUtils: injectedGridUtils,
   ...customProps
 }) => {
 
+  // Use injected GridUtils if provided, otherwise create one internally
   const gridUtils = useMemo(() => {
+    if (injectedGridUtils) {
+      return injectedGridUtils;
+    }
     return new GridUtils(recordsIds, {
       recordGetterByIndex,
       recordGetterById,
+      updateFileTags,
     });
-  }, [recordsIds, recordGetterByIndex, recordGetterById]);
+  }, [injectedGridUtils, recordsIds, recordGetterByIndex, recordGetterById, updateFileTags]);
 
   const tableId = useMemo(() => {
     return (table && table._id) || '';
   }, [table]);
 
   const recordsCount = useMemo(() => {
-    return recordsIds.length;
+    return (recordsIds || []).length;
   }, [recordsIds]);
 
   const treeNodesCount = useMemo(() => {
-    return recordsTree.length;
+    return (recordsTree || []).length;
   }, [recordsTree]);
 
   const treeNodeKeyRecordIdMap = useMemo(() => {
     // treeNodeKeyRecordIdMap: { [node_key]: _id, ... }
-    return generateKeyTreeNodeRowIdMap(recordsTree);
+    return recordsTree ? generateKeyTreeNodeRowIdMap(recordsTree) : {};
   }, [recordsTree]);
 
   const hasNoRecords = useMemo(() => {
@@ -70,7 +81,7 @@ const TableMain = ({
   }, [showSequenceColumn]);
 
   const groupbysCount = useMemo(() => {
-    return groupbys.length;
+    return (groupbys || []).length;
   }, [groupbys]);
 
   const groupOffset = useMemo(() => {
@@ -79,6 +90,10 @@ const TableMain = ({
 
   const getCopiedRecordsAndColumnsFromRange = useCallback(({ type, copied, columns, isGroupView }) => {
     return gridUtils.getCopiedContent({ type, copied, isGroupView, columns });
+  }, [gridUtils]);
+
+  const getUpdateDraggedRecords = useCallback((draggedRange, columns, rows, idRowMap, groupMetrics, canModifyRow, canModifyColumn) => {
+    return gridUtils.getUpdateDraggedRecords(draggedRange, columns, rows, idRowMap, groupMetrics, canModifyRow, canModifyColumn);
   }, [gridUtils]);
 
   const getInternalClientCellValueDisplayString = useCallback((record, column) => {
@@ -90,10 +105,24 @@ const TableMain = ({
 
   return (
     <div className={classnames('sf-table-main-container container-fluid p-0', { [`group-level-${groupbysCount + 1}`]: groupbysCount > 0, 'sf-table-tree': showRecordAsTree })}>
-      {hasNoRecords && <EmptyTip text={noRecordsTipsText || gettext('No record')} />}
-      {!hasNoRecords &&
+      {isLoading && (
+        <div className="sf-table-canvas-ctx-wrapper">
+          <CenteredLoading />
+        </div>
+      )}
+      {!isLoading && hasNoRecords && (
+        <div className="sf-table-canvas-ctx-wrapper">
+          <EmptyTip text={noRecordsTipsText || gettext('No record')} />
+          <ContextMenu
+            createContextMenuOptions={customProps.createContextMenuOptions}
+            selectedPosition={{ idx: -1, rowIdx: -1 }}
+          />
+        </div>
+      )}
+      {!isLoading && !hasNoRecords && (
         <Records
           {...customProps}
+          table={table}
           tableId={tableId}
           tableColumns={tableColumns}
           columns={visibleColumns}
@@ -111,15 +140,19 @@ const TableMain = ({
           recordsTree={recordsTree}
           treeNodesCount={treeNodesCount}
           treeNodeKeyRecordIdMap={treeNodeKeyRecordIdMap}
-          scrollToLoadMore={loadMore}
+          scrollToLoadMore={enableScrollToLoad ? loadMore : undefined}
+          loadMore={loadMore}
           loadAll={loadAll}
+          isLoadingMore={isLoadingMore}
           getTreeNodeByIndex={getTreeNodeByIndex}
           recordGetterById={recordGetterById}
           recordGetterByIndex={recordGetterByIndex}
           getClientCellValueDisplayString={getInternalClientCellValueDisplayString}
           getCopiedRecordsAndColumnsFromRange={getCopiedRecordsAndColumnsFromRange}
+          getUpdateDraggedRecords={getUpdateDraggedRecords}
+          updateFileTags={updateFileTags}
         />
-      }
+      )}
     </div>
   );
 
@@ -136,9 +169,19 @@ TableMain.propTypes = {
   noRecordsTipsText: PropTypes.string,
   recordsTree: PropTypes.array,
   showRecordAsTree: PropTypes.bool,
+  modifyRecord: PropTypes.func,
   modifyRecords: PropTypes.func,
+  enableScrollToLoad: PropTypes.bool,
   loadMore: PropTypes.func,
   loadAll: PropTypes.func,
+  isLoading: PropTypes.bool,
+  updateFileTags: PropTypes.func,
+  canModifyColumn: PropTypes.func,
+  /**
+   * External GridUtils instance. If provided, this will be used instead of
+   * internally creating one. Useful for metadata tables.
+   */
+  gridUtils: PropTypes.object,
 };
 
 export default TableMain;

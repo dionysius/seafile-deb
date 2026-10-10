@@ -1,30 +1,31 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import { isPro, gettext } from '../../../utils/constants';
 import { Button } from 'reactstrap';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { Utils } from '../../../utils/utils';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import { isPro, gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import EmptyTip from '../../../components/empty-tip';
+import Icon from '../../icon';
 import Loading from '../../loading';
+import SharePermissionEditor from '../../select-editor/share-permission-editor';
 import toaster from '../../toast';
 import UserSelect from '../../user-select';
-import SharePermissionEditor from '../../select-editor/share-permission-editor';
 
 class UserItem extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      isOperationShow: false
+      isHighlighted: false
     };
   }
 
   onMouseEnter = () => {
-    this.setState({ isOperationShow: true });
+    this.setState({ isHighlighted: true });
   };
 
   onMouseLeave = () => {
-    this.setState({ isOperationShow: false });
+    this.setState({ isHighlighted: false });
   };
 
   deleteShareItem = () => {
@@ -40,15 +41,20 @@ class UserItem extends React.Component {
   render() {
     let item = this.props.item;
     let currentPermission = Utils.getSharedPermission(item);
+    const { isHighlighted } = this.state;
     return (
-      <tr onMouseEnter={this.onMouseEnter} onMouseLeave={this.onMouseLeave}>
+      <tr
+        onMouseEnter={this.onMouseEnter}
+        onMouseLeave={this.onMouseLeave}
+        className={isHighlighted ? 'tr-highlight' : ''}
+      >
         <td className="name">{item.user_name}</td>
         <td>
           <SharePermissionEditor
             repoID={item.repo_id}
             isTextMode={true}
             autoFocus={true}
-            isEditIconShow={this.state.isOperationShow}
+            isEditIconShow={this.state.isHighlighted}
             currentPermission={currentPermission}
             permissions={this.props.permissions}
             onPermissionChanged={this.onChangeUserPermission}
@@ -57,10 +63,13 @@ class UserItem extends React.Component {
         </td>
         <td>
           <span
-            className={`sf2-icon-x3 action-icon ${this.state.isOperationShow ? '' : 'hide'}`}
+            className={`op-icon ${this.state.isHighlighted ? '' : 'invisible'}`}
+            role="button"
+            tabIndex="0"
             onClick={this.deleteShareItem}
             title={gettext('Delete')}
           >
+            <Icon symbol="close" />
           </span>
         </td>
       </tr>
@@ -180,9 +189,8 @@ class SysAdminShareToUser extends React.Component {
       });
     }).catch(error => {
       if (error.response) {
-        let message = gettext('Library can not be shared to owner.');
         let errMessage = [];
-        errMessage.push(message);
+        errMessage.push(Utils.getErrorMsg(error));
         this.setState({
           errorMsg: errMessage,
           selectedUsers: [],
@@ -191,11 +199,11 @@ class SysAdminShareToUser extends React.Component {
     });
   };
 
-  deleteShareItem = (useremail) => {
+  deleteShareItem = (userEmail) => {
     let repoID = this.props.repoID;
-    systemAdminAPI.sysAdminDeleteRepoSharedItem(repoID, 'user', useremail).then(res => {
+    systemAdminAPI.sysAdminDeleteRepoSharedItem(repoID, 'user', userEmail).then(res => {
       this.setState({
-        sharedItems: this.state.sharedItems.filter(item => { return item.user_email !== useremail; })
+        sharedItems: this.state.sharedItems.filter(item => { return item.user_email !== userEmail; })
       });
     }).catch(error => {
       let errMessage = Utils.getErrorMsg(error);

@@ -1,17 +1,19 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
-import classnames from 'classnames';
 import { Button, Input, InputGroup } from 'reactstrap';
-import { gettext, isPro, isSeafilePlus, siteRoot } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
-import SharePermissionEditor from '../select-editor/share-permission-editor';
-import FileChooser from '../file-chooser';
-import GroupSelect from '../common/group-select';
-import toaster from '../../components/toast';
+import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { gettext, isPro, isSeafilePlus, siteRoot } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import BackIcon from '../../components/back-icon';
 import EmptyTip from '../../components/empty-tip';
 import Loading from '../../components/loading';
+import toaster from '../../components/toast';
+import FileChooser from '../file-chooser';
+import GroupSelect from '../group-select';
+import Icon from '../icon';
+import OpIcon from '../op-icon';
+import SharePermissionEditor from '../select-editor/share-permission-editor';
 
 class GroupItem extends React.Component {
 
@@ -78,16 +80,12 @@ class GroupItem extends React.Component {
           />
         </td>
         <td>
-          <i
-            tabIndex="0"
-            role="button"
-            className={`sf3-font sf3-font-x-01 op-icon ${this.state.isOperationShow ? '' : 'd-none'}`}
-            onClick={this.deleteGroupPermissionItem}
-            onKeyDown={Utils.onKeyDown}
+          <OpIcon
+            symbol="close"
+            className={`op-icon ${this.state.isOperationShow ? '' : 'd-none'}`}
+            op={this.deleteGroupPermissionItem}
             title={gettext('Delete')}
-            aria-label={gettext('Delete')}
-          >
-          </i>
+          />
         </td>
       </tr>
     );
@@ -358,7 +356,7 @@ class LibSubFolderSetGroupPermissionDialog extends React.Component {
                 <td>
                   <InputGroup>
                     <Input value={this.state.folderPath} onChange={this.onSetSubFolder} />
-                    <Button className="sf2-icon-plus" onClick={this.toggleFileChooser}></Button>
+                    <Button className="d-flex align-items-center" onClick={this.toggleFileChooser}><Icon symbol="new" /></Button>
                   </InputGroup>
                 </td>
               }

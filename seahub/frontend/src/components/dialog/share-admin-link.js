@@ -1,10 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Modal, ModalBody, ModalFooter, Button } from 'reactstrap';
-import copy from '../copy-to-clipboard';
-import { gettext } from '../../utils/constants';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
 import toaster from '../../components/toast';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
+import copy from '../copy-to-clipboard';
 
 const propTypes = {
   link: PropTypes.string.isRequired,
@@ -32,8 +32,8 @@ class ShareAdminLink extends React.Component {
           <a href={link}>{link}</a>
         </ModalBody>
         <ModalFooter>
+          <Button color="secondary" onClick={toggleDialog}>{gettext('Cancel')}</Button>
           <Button color="primary" onClick={this.copyToClipboard}>{gettext('Copy')}</Button>
-          <Button color="secondary" onClick={toggleDialog}>{gettext('Close')}</Button>
         </ModalFooter>
       </Modal>
     );

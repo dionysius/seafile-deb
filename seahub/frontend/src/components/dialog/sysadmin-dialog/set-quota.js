@@ -1,8 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Modal, ModalBody, ModalFooter, Button, Form, FormGroup, Input, InputGroup, InputGroupText } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
 
 const propTypes = {
   toggle: PropTypes.func.isRequired,
@@ -43,6 +43,11 @@ class SetQuotaDialog extends React.Component {
     this.toggle();
   };
 
+  handleUnset = () => {
+    this.props.updateQuota(0);
+    this.toggle();
+  };
+
   render() {
     const { quota, isSubmitBtnActive } = this.state;
     return (
@@ -62,10 +67,9 @@ class SetQuotaDialog extends React.Component {
                 <InputGroupText>MB</InputGroupText>
               </InputGroup>
               <p className="small text-secondary mt-2 mb-2">
-                {gettext('An integer that is greater than or equal to 0.')}
-                <br />
-                {gettext('Tip: 0 means default limit')}
+                {gettext('An integer that is greater than 0.')}
               </p>
+              <Button color="secondary" onClick={this.handleUnset}>{gettext('Unset')}</Button>
             </FormGroup>
           </Form>
         </ModalBody>

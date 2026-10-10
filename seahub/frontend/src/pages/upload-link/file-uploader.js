@@ -1,16 +1,16 @@
 // This file is copied from frontend/src/components/file-uploader/file-uploader.js,
 // and modified according to the requirements of this page.
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import Resumablejs from '@seafile/resumablejs';
 import MD5 from 'MD5';
-import { gettext, resumableUploadFileBlockSize, maxUploadFileSize, maxNumberOfFilesForFileupload } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import toaster from '@/components/toast';
+import { gettext, resumableUploadFileBlockSize, maxUploadFileSize, maxNumberOfFilesForFileupload } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UploadProgressDialog from './upload-progress-dialog';
-import toaster from '../../components/toast';
 
-import '../../css/file-uploader.css';
+import '@/css/file-uploader.css';
 
 const propTypes = {
   dragAndDrop: PropTypes.bool.isRequired,
@@ -375,7 +375,7 @@ class FileUploader extends React.Component {
         type: 'file',
         mtime: currentTime
       };
-      this.props.onFileUploadSuccess(dirent); // this contance: just one file
+      this.props.onFileUploadSuccess(dirent); // this scene: just one file
 
       let uploadFileList = this.state.uploadFileList.map(item => {
         if (item.uniqueIdentifier === resumableFile.uniqueIdentifier) {
@@ -507,7 +507,6 @@ class FileUploader extends React.Component {
   };
 
   onClick = (e) => {
-    e.nativeEvent.stopImmediatePropagation();
     e.stopPropagation();
   };
 

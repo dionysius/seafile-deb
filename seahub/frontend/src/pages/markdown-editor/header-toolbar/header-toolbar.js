@@ -1,18 +1,20 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { EXTERNAL_EVENTS, EventBus } from '@seafile/seafile-editor';
-import { gettext, canGenerateShareLink, isPro, mediaUrl, canLockUnlockFile } from '../../../utils/constants';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import EmbeddedFileDetails from '@/components/dirent-detail/embedded-file-details';
+import CommentPanel from '@/components/file-view/comment-panel';
+import Icon from '@/components/icon';
+import IconButton from '@/components/icon-button';
+import Tooltip from '@/components/tooltip';
+import Dirent from '@/models/dirent';
+import { gettext, canGenerateShareLink, isPro, mediaUrl, canLockUnlockFile } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import ButtonGroup from './button-group';
-import MoreMenu from './more-menu';
 import FileInfo from './file-info';
-import Icon from '../../../components/icon';
-import IconButton from '../../../components/icon-button';
-import EmbeddedFileDetails from '../../../components/dirent-detail/embedded-file-details';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { Utils } from '../../../utils/utils';
-import Dirent from '../../../../src/models/dirent';
+import MoreMenu from './more-menu';
 
-import '../css/header-toolbar.css';
+import './index.css';
 
 const { canDownloadFile, repoID, filePath, isRepoAdmin } = window.app.pageOptions;
 
@@ -34,6 +36,8 @@ const propTypes = {
   isLocked: PropTypes.bool.isRequired,
   lockedByMe: PropTypes.bool.isRequired,
   toggleLockFile: PropTypes.func.isRequired,
+  participants: PropTypes.array,
+  isCommentUpdated: PropTypes.bool,
 };
 
 class HeaderToolbar extends React.Component {
@@ -42,6 +46,7 @@ class HeaderToolbar extends React.Component {
     super(props);
     this.dirPath = filePath.substring(0, filePath.lastIndexOf('/') || 0) || '/';
     this.isFileInfoShow = false;
+    this.isCommentPanelShow = false;
     this.currentDirent = null;
     this.helpInfoToggleSubscribe = null;
   }
@@ -68,6 +73,64 @@ class HeaderToolbar extends React.Component {
 
   handleHelpClick = () => {
     this.isFileInfoShow = false;
+    this.isCommentPanelShow = false;
+  };
+
+  onArticleInfoToggle = () => {
+    const repoInfo = { permission: this.currentDirent.permission, is_admin: isRepoAdmin };
+    const eventBus = EventBus.getInstance();
+
+    if (!this.isFileInfoShow) {
+      eventBus.dispatch(EXTERNAL_EVENTS.ON_COMMENT_PANEL_TOGGLE, null);
+      eventBus.dispatch(EXTERNAL_EVENTS.ON_HELP_INFO_TOGGLE, false);
+    }
+
+    eventBus.dispatch(EXTERNAL_EVENTS.ON_ARTICLE_INFO_TOGGLE, this.isFileInfoShow ? null : {
+      component: (props) => {
+        return (<EmbeddedFileDetails {...props} />);
+      },
+      props: {
+        repoID: repoID,
+        repoInfo: repoInfo,
+        dirent: this.currentDirent,
+        path: filePath,
+        onClose: this.onArticleInfoToggle,
+        width: 300,
+        component: {
+          headerComponent: {
+            closeIcon: (
+              <>
+                <Icon symbol="close" className="detail-control-icon" />
+                <Tooltip target="details-close-icon">{gettext('Close')}</Tooltip>
+              </>
+            )
+          }
+        }
+      }
+    });
+    this.isFileInfoShow = !this.isFileInfoShow;
+  };
+
+  onCommentPanelToggle = () => {
+    const eventBus = EventBus.getInstance();
+
+    if (!this.isCommentPanelShow) {
+      eventBus.dispatch(EXTERNAL_EVENTS.ON_ARTICLE_INFO_TOGGLE, null);
+      eventBus.dispatch(EXTERNAL_EVENTS.ON_HELP_INFO_TOGGLE, false);
+    }
+
+    eventBus.dispatch(EXTERNAL_EVENTS.ON_COMMENT_PANEL_TOGGLE, this.isCommentPanelShow ? null : {
+      component: (props) => {
+        return (<CommentPanel {...props} />);
+      },
+      props: {
+        width: 300,
+        toggleCommentPanel: this.onCommentPanelToggle,
+        participants: this.props.participants,
+        onParticipantsChange: this.props.onParticipantsChange,
+      }
+    });
+    this.isCommentPanelShow = !this.isCommentPanelShow;
   };
 
   getDirentList = () => {
@@ -86,33 +149,8 @@ class HeaderToolbar extends React.Component {
     });
   };
 
-  onArticleInfoToggle = () => {
-    const repoInfo = { permission: this.currentDirent.permission, is_admin: isRepoAdmin, };
-    const eventBus = EventBus.getInstance();
-
-    eventBus.dispatch(EXTERNAL_EVENTS.ON_ARTICLE_INFO_TOGGLE, this.isFileInfoShow ? null : {
-      component: (props) => {
-        return (<EmbeddedFileDetails {...props} />);
-      },
-      props: {
-        repoID: repoID,
-        repoInfo: repoInfo,
-        dirent: this.currentDirent,
-        path: filePath,
-        onClose: this.onArticleInfoToggle,
-        width: 300,
-        component: {
-          headerComponent: {
-            closeIcon: (<i className="iconfont icon-x"></i>)
-          }
-        }
-      }
-    });
-    this.isFileInfoShow = !this.isFileInfoShow;
-  };
-
   render() {
-    let { contentChanged, saving, isLocked, lockedByMe } = this.props;
+    let { contentChanged, saving, isLocked, lockedByMe, isCommentUpdated } = this.props;
 
     if (this.props.editorMode === 'rich') {
       return (
@@ -128,60 +166,68 @@ class HeaderToolbar extends React.Component {
               isStarred={this.props.fileInfo.isStarred}
             />
             <div className="topbar-btn-container">
-              <ButtonGroup>
-                {(canLockUnlockFile && !isLocked) && (
-                  <IconButton
-                    id="lock-unlock-file"
-                    icon='lock'
-                    text={gettext('Lock')}
-                    onClick={this.props.toggleLockFile}
-                  />
-                )}
-                {(canLockUnlockFile && lockedByMe) && (
-                  <IconButton
-                    id="lock-unlock-file"
-                    icon='unlock'
-                    text={gettext('Unlock')}
-                    onClick={this.props.toggleLockFile}
-                  />
-                )}
-                {canGenerateShareLink && (
-                  <IconButton
-                    id='shareBtn'
-                    text={gettext('Share')}
-                    icon='share'
-                    onClick={this.props.toggleShareLinkDialog}
-                  />
-                )}
-                {saving ?
-                  <button type={'button'} aria-label={gettext('Saving...')} className={'btn btn-icon btn-secondary btn-active'}>
-                    <Icon symbol="spinner" />
-                  </button>
-                  :
-                  <IconButton
-                    text={gettext('Save')}
-                    id={'saveButton'}
-                    icon='save'
-                    disabled={!contentChanged}
-                    onClick={this.props.onSaveEditorContent}
-                  />
-                }
-                {canDownloadFile && (
-                  <IconButton
-                    id="download-file"
-                    icon="download"
-                    text={gettext('Download')}
-                    onClick={this.downloadFile}
-                  />
-                )}
+              {(canLockUnlockFile && !isLocked) && (
                 <IconButton
-                  id="file-info"
-                  text={gettext('Info')}
-                  icon='info'
-                  onClick={this.onArticleInfoToggle}
+                  id="lock-unlock-file"
+                  icon='lock'
+                  text={gettext('Lock')}
+                  onClick={this.props.toggleLockFile}
                 />
-              </ButtonGroup>
+              )}
+              {(canLockUnlockFile && lockedByMe) && (
+                <IconButton
+                  id="lock-unlock-file"
+                  icon='unlock'
+                  text={gettext('Unlock')}
+                  onClick={this.props.toggleLockFile}
+                />
+              )}
+              {canGenerateShareLink && (
+                <IconButton
+                  id='shareBtn'
+                  text={gettext('Share')}
+                  icon='share'
+                  onClick={this.props.toggleShareLinkDialog}
+                />
+              )}
+              {saving ?
+                <button type={'button'} aria-label={gettext('Saving...')} className={'btn btn-icon btn-secondary btn-active'}>
+                  <Icon symbol="spinner" />
+                </button>
+                :
+                <IconButton
+                  text={gettext('Save')}
+                  id={'saveButton'}
+                  icon='save'
+                  disabled={!contentChanged}
+                  onClick={this.props.onSaveEditorContent}
+                />
+              }
+              {canDownloadFile && (
+                <IconButton
+                  id="download-file"
+                  icon="download"
+                  text={gettext('Download')}
+                  onClick={this.downloadFile}
+                />
+              )}
+              <span className="position-relative">
+                <IconButton
+                  id="file-comment"
+                  icon="comment"
+                  text={gettext('Comment')}
+                  onClick={this.onCommentPanelToggle}
+                />
+                {isCommentUpdated && <span className='comment-tip'></span>}
+              </span>
+              <IconButton
+                id="file-info"
+                text={gettext('Info')}
+                icon='info'
+                onClick={this.onArticleInfoToggle}
+              />
               <MoreMenu
+                target="markdown-rich-more-button"
                 readOnly={this.props.readOnly}
                 openDialogs={this.props.openDialogs}
                 editorMode={this.props.editorMode}
@@ -189,6 +235,7 @@ class HeaderToolbar extends React.Component {
                 showFileHistory={this.props.showFileHistory}
                 toggleHistory={this.props.toggleHistory}
                 openParentDirectory={this.openParentDirectory}
+                onCommentPanelToggle={this.onCommentPanelToggle}
                 isSmallScreen={false}
               />
             </div>
@@ -216,6 +263,7 @@ class HeaderToolbar extends React.Component {
                 }
               </ButtonGroup>
               <MoreMenu
+                target="markdown-rich-more-button-narrow"
                 readOnly={this.props.readOnly}
                 openDialogs={this.props.openDialogs}
                 editorMode={this.props.editorMode}
@@ -224,6 +272,7 @@ class HeaderToolbar extends React.Component {
                 openParentDirectory={this.openParentDirectory}
                 showFileHistory={this.props.showFileHistory}
                 toggleHistory={this.props.toggleHistory}
+                onCommentPanelToggle={this.onCommentPanelToggle}
                 isSmallScreen={true}
               />
             </div>
@@ -236,25 +285,27 @@ class HeaderToolbar extends React.Component {
       return (
         <div className="sf-md-viewer-topbar">
           <div className="sf-md-viewer-topbar-first d-flex justify-content-between">
-            <FileInfo toggleStar={this.props.toggleStar} editorApi={this.props.editorApi}
-              fileInfo={this.props.fileInfo}/>
+            <FileInfo
+              toggleStar={this.props.toggleStar}
+              editorApi={this.props.editorApi}
+              fileInfo={this.props.fileInfo}
+            />
             <div className="topbar-btn-container">
-              <ButtonGroup>
-                {saving ?
-                  <button type={'button'} className={'btn btn-icon btn-secondary btn-active'}>
-                    <Icon symbol="spinner" />
-                  </button>
-                  :
-                  <IconButton
-                    id={'saveButton'}
-                    text={gettext('Save')}
-                    icon='save'
-                    onClick={this.props.onSaveEditorContent}
-                    disabled={!contentChanged}
-                  />
-                }
-              </ButtonGroup>
+              {saving ?
+                <button type={'button'} className={'btn btn-icon btn-secondary btn-active'}>
+                  <Icon symbol="spinner" />
+                </button>
+                :
+                <IconButton
+                  id={'saveButton'}
+                  text={gettext('Save')}
+                  icon='save'
+                  onClick={this.props.onSaveEditorContent}
+                  disabled={!contentChanged}
+                />
+              }
               <MoreMenu
+                target="markdown-plain-more-button"
                 readOnly={this.props.readOnly}
                 openDialogs={this.props.openDialogs}
                 editorMode={this.props.editorMode}
@@ -266,7 +317,7 @@ class HeaderToolbar extends React.Component {
           </div>
           <div className="sf-md-viewer-topbar-first-narrow d-flex justify-content-between">
             <FileInfo toggleStar={this.props.toggleStar} editorApi={this.props.editorApi}
-              fileInfo={this.props.fileInfo}/>
+              fileInfo={this.props.fileInfo} />
             <div className="topbar-btn-container">
               <ButtonGroup>
                 {saving ?
@@ -284,6 +335,7 @@ class HeaderToolbar extends React.Component {
                 }
               </ButtonGroup>
               <MoreMenu
+                target="markdown-plain-more-button-narrow"
                 readOnly={this.props.readOnly}
                 openDialogs={this.props.openDialogs}
                 editorMode={this.props.editorMode}

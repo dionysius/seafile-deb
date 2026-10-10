@@ -1,21 +1,22 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
+import { Link } from '@gatsbyjs/reach-router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Link } from '@gatsbyjs/reach-router';
-import { Utils } from '../../../utils/utils';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { isPro, username, gettext, multiInstitution, siteRoot } from '../../../utils/constants';
-import toaster from '../../../components/toast';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
-import Selector from '../../../components/single-selector';
-import OpMenu from '../../../components/dialog/op-menu';
-import SysAdminUserSetQuotaDialog from '../../../components/dialog/sysadmin-dialog/set-quota';
-import CommonOperationConfirmationDialog from '../../../components/dialog/common-operation-confirmation-dialog';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import CommonOperationConfirmationDialog from '@/components/dialog/common-operation-confirmation-dialog';
+import OpMenu from '@/components/dialog/op-menu';
+import SysAdminUserSetQuotaDialog from '@/components/dialog/sysadmin-dialog/set-quota';
+import SysAdminUserDeactivateDialog from '@/components/dialog/sysadmin-dialog/sysadmin-user-deactivate-dialog';
+import EmptyTip from '@/components/empty-tip';
+import IconBtn from '@/components/icon-btn';
+import Loading from '@/components/loading';
+import Paginator from '@/components/paginator';
+import Selector from '@/components/single-selector';
+import toaster from '@/components/toast';
+import { isPro, username, gettext, multiInstitution, siteRoot } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UserLink from '../user-link';
-import SysAdminUserDeactivateDialog from '../../../components/dialog/sysadmin-dialog/sysadmin-user-deactivate-dialog';
 
 const { availableRoles, availableAdminRoles, institutions } = window.sysadmin.pageOptions;
 dayjs.extend(relativeTime);
@@ -508,11 +509,7 @@ class Item extends Component {
           }
           <td>
             {`${Utils.bytesToSize(item.quota_usage)} / ${item.quota_total > 0 ? Utils.bytesToSize(item.quota_total) : '--'}`}
-            <i
-              title={gettext('Edit')}
-              className={`sf3-font sf3-font-rename op-icon ml-1 ${isOpIconShown ? '' : 'invisible'}`}
-              onClick={this.toggleSetQuotaDialog}>
-            </i>
+            <IconBtn symbol="rename" title={gettext('Edit')} className={`op-icon ml-1 ${isOpIconShown ? '' : 'invisible'}`} onClick={this.toggleSetQuotaDialog} />
           </td>
           {(multiInstitution && !isAdmin) &&
             <td>

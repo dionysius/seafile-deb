@@ -1,16 +1,17 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
-import dayjs from 'dayjs';
-import classnames from 'classnames';
 import { Link } from '@gatsbyjs/reach-router';
-import { Utils } from '../../../utils/utils';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { repoShareAdminAPI } from '../../../utils/repo-share-admin-api';
-import { gettext, siteRoot } from '../../../utils/constants';
-import Loading from '../../loading';
-import toaster from '../../../components/toast';
-import EmptyTip from '../../../components/empty-tip';
+import classnames from 'classnames';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { repoShareAdminAPI } from '@/api/repo-share-admin-api';
+import { seafileAPI } from '@/api/seafile-api';
+import { gettext, siteRoot } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import CommonOperationConfirmationDialog from '../../../components/dialog/common-operation-confirmation-dialog';
+import EmptyTip from '../../../components/empty-tip';
+import toaster from '../../../components/toast';
+import Icon from '../../icon';
+import Loading from '../../loading';
 
 const itemPropTypes = {
   item: PropTypes.object.isRequired,
@@ -99,16 +100,17 @@ class Item extends Component {
         </td>
         <td>{item.view_cnt}</td>
         <td>
-          <i
+          <span
             tabIndex="0"
             role="button"
-            className={`sf3-font-delete1 sf3-font op-icon ${this.state.isOperationShow ? '' : 'invisible'}`}
+            className={`op-icon ${this.state.isOperationShow ? '' : 'invisible'}`}
             onClick={this.onDeleteLink}
             onKeyDown={Utils.onKeyDown}
             title={gettext('Delete')}
             aria-label={gettext('Delete')}
           >
-          </i>
+            <Icon symbol="delete" />
+          </span>
         </td>
       </tr>
     );
@@ -299,15 +301,15 @@ class RepoShareAdminUploadLinks extends Component {
     const isAllLinksSelected = items.length == selectedLinks.length;
     return (
       <div className="h-100 d-flex flex-column">
-        <div className="d-flex justify-content-between align-items-center pb-2 mt-1 pr-1 border-bottom">
+        <div className="d-flex justify-content-between align-items-center pb-2 pr-1 border-bottom">
           <h6 className="font-weight-normal m-0">{gettext('Upload Links')}</h6>
           <div className="d-flex">
-            {selectedLinks.length > 0 && (
+            {selectedLinks.length > 0 ? (
               <>
                 <button className="btn btn-sm btn-secondary mr-2" onClick={this.cancelSelectAllLinks}>{gettext('Cancel')}</button>
                 <button className="btn btn-sm btn-secondary mr-2" onClick={this.toggleDeleteUploadLinksDialog}>{gettext('Delete')}</button>
               </>
-            )}
+            ) : <div className="my-4"></div>}
           </div>
         </div>
         <div className='flex-fill'>

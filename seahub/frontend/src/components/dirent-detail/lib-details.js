@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import toaster from '../toast';
+import { seafileAPI } from '@/api/seafile-api';
+import Formatter from '@/features/metadata/components/formatter';
+import { CellType } from '@/features/metadata/constants';
+import Repo from '@/models/repo';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import Loading from '../loading';
+import toaster from '../toast';
 import { Detail, Header, Body } from './detail';
 import DetailItem from './detail-item';
-import Formatter from '../../metadata/components/formatter';
-import { Utils } from '../../utils/utils';
-import { gettext } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import Repo from '../../models/repo';
-import { CellType } from '../../metadata/constants';
 
 const LibDetail = React.memo(({ currentRepoInfo, onClose, isInSearch }) => {
   const [isLoading, setLoading] = useState(true);
@@ -41,14 +41,14 @@ const LibDetail = React.memo(({ currentRepoInfo, onClose, isInSearch }) => {
           :
           <div className="detail-content">
             <DetailItem field={filesField} value={repo.file_count || 0} className="sf-metadata-property-detail-formatter">
-              <Formatter field={filesField} value={repo.file_count || 0} />
+              <Formatter column={filesField} value={repo.file_count || 0} />
             </DetailItem>
             <DetailItem field={sizeField} value={repo.size} className="sf-metadata-property-detail-formatter">
-              <Formatter field={sizeField} value={repo.size} />
+              <Formatter column={sizeField} value={repo.size} />
             </DetailItem>
             <DetailItem field={creatorField} className="sf-metadata-property-detail-formatter">
               <Formatter
-                field={creatorField}
+                column={creatorField}
                 value={repo.owner_email}
                 collaborators={[{
                   name: repo.owner_name,
@@ -59,7 +59,7 @@ const LibDetail = React.memo(({ currentRepoInfo, onClose, isInSearch }) => {
               />
             </DetailItem>
             <DetailItem field={mtimeField} className="sf-metadata-property-detail-formatter">
-              <Formatter field={mtimeField} value={repo.last_modified} />
+              <Formatter column={mtimeField} value={repo.last_modified} />
             </DetailItem>
           </div>
         }

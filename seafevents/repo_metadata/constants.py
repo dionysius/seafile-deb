@@ -57,6 +57,8 @@ class PrivatePropertyKeys:
     SIZE = '_size'
     SUFFIX = '_suffix'
     FILE_DETAILS = '_file_details'
+    AI_SUMMARY = '_ai_summary'
+    AI_SUMMARY_MTIME = '_ai_summary_mtime'
     CAPTURE_TIME = '_capture_time'
     OWNER = '_owner'
     FACE_VECTORS = '_face_vectors'
@@ -142,6 +144,16 @@ class ViewType(object):
     KANBAN = 'kanban'
 
 
+class FileStatusOptions(object):
+    IN_PROGRESS = '_in_progress'
+    IN_REVIEW = '_in_review'
+    DONE = '_done'
+    OUTDATED = '_outdated'
+
+    @classmethod
+    def keys(cls):
+        return [cls.IN_PROGRESS, cls.IN_REVIEW, cls.DONE, cls.OUTDATED]
+
 METADATA_OP_LIMIT = 1000
 
 
@@ -157,6 +169,14 @@ class MetadataTable(object):
 
 
 def gen_file_type_options(option_ids):
+    options = []
+
+    for option_id in option_ids:
+        options.append({'id': option_id, 'name': option_id})
+    return options
+
+
+def gen_file_status_options(option_ids):
     options = []
 
     for option_id in option_ids:
@@ -181,10 +201,14 @@ class MetadataColumns(object):
         self.size = MetadataColumn(PrivatePropertyKeys.SIZE, '_size', PropertyTypes.NUMBER)
         self.suffix = MetadataColumn(PrivatePropertyKeys.SUFFIX, '_suffix', PropertyTypes.TEXT)
         self.file_details = MetadataColumn(PrivatePropertyKeys.FILE_DETAILS, '_file_details', PropertyTypes.LONG_TEXT)
+        self.ai_summary = MetadataColumn(PrivatePropertyKeys.AI_SUMMARY, '_ai_summary', PropertyTypes.TEXT)
+        self.ai_summary_mtime = MetadataColumn(PrivatePropertyKeys.AI_SUMMARY_MTIME, '_ai_summary_mtime', PropertyTypes.DATE)
         self.description = MetadataColumn(PrivatePropertyKeys.FILE_DESCRIPTION, '_description', PropertyTypes.LONG_TEXT)
 
         self.collaborator = MetadataColumn(PrivatePropertyKeys.FILE_COLLABORATORS, '_collaborators', PropertyTypes.COLLABORATOR)
         self.owner = MetadataColumn(PrivatePropertyKeys.OWNER, '_owner', PropertyTypes.COLLABORATOR)
+        self.status = MetadataColumn(PrivatePropertyKeys.FILE_STATUS, '_status', PropertyTypes.SINGLE_SELECT,
+                                    {'options': gen_file_status_options(FileStatusOptions.keys())})
 
         # face
         self.face_vectors = MetadataColumn(PrivatePropertyKeys.FACE_VECTORS, '_face_vectors', PropertyTypes.LONG_TEXT)
@@ -283,6 +307,7 @@ METADATA_TABLE_SYS_COLUMNS = [
     METADATA_TABLE.columns.file_details.to_dict(),
     METADATA_TABLE.columns.description.to_dict(),
     METADATA_TABLE.columns.location_translated.to_dict(),
+    METADATA_TABLE.columns.status.to_dict(),
 ]
 
 
@@ -291,6 +316,8 @@ FACES_TABLE = FacesTable('faces', '0001', '0004', '0005')
 TAGS_TABLE = TagsTable('tags', '0002', '0003')
 
 ZERO_OBJ_ID = '0000000000000000000000000000000000000000'
+
+SUMMARY_SUPPORTED_FILE_EXTENSIONS = ['sdoc', 'md', 'markdown', 'docx', 'pdf', 'pptx']
 
 
 FILE_DETAIL_EXTRACT_CONTENT_LIMIT = 20 * 1024 * 1024

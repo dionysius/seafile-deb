@@ -1,6 +1,6 @@
 # Copyright (c) 2012-2016 Seafile Ltd.
 import logging
-
+from datetime import datetime
 from django.utils.translation import gettext as _
 from django.utils.crypto import get_random_string
 
@@ -12,12 +12,15 @@ from rest_framework import status
 
 from seaserv import ccnet_api, seafile_api
 
+from seahub.constants import DEFAULT_ORG
 from seahub.auth.utils import get_virtual_id_by_email
 from seahub.organizations.settings import ORG_MEMBER_QUOTA_DEFAULT, \
         ORG_ENABLE_REACTIVATE
 from seahub.organizations.signals import org_deleted
-from seahub.organizations.utils import generate_org_reactivate_link
-from seahub.utils import is_valid_email, IS_EMAIL_CONFIGURED, send_html_email
+from seahub.organizations.utils import generate_org_reactivate_link, \
+        get_org_monthly_download_traffic_limit
+from seahub.utils import is_valid_email, IS_EMAIL_CONFIGURED, send_html_email, \
+        get_org_traffic_by_month
 from seahub.utils.file_size import get_file_size_unit
 from seahub.utils.timeutils import timestamp_to_isoformat_timestr, datetime_to_isoformat_timestr
 from seahub.base.templatetags.seahub_tags import email2nickname, \
@@ -33,13 +36,7 @@ from seahub.organizations.models import OrgSAMLConfig, OrgAdminSettings
 from seahub.utils.ccnet_db import CcnetDB
 from seahub.utils.db_api import SeafileDB
 
-try:
-    from seahub.settings import ORG_MEMBER_QUOTA_ENABLED
-except ImportError:
-    ORG_MEMBER_QUOTA_ENABLED = False
-
-if ORG_MEMBER_QUOTA_ENABLED:
-    from seahub.organizations.models import OrgMemberQuota
+from seahub.organizations.models import OrgMemberQuota
 
 try:
     from seahub.settings import MULTI_TENANCY
@@ -81,8 +78,11 @@ def get_org_info(org):
     org_info['quota'] = seafile_api.get_org_quota(org_id)
     org_info['quota_usage'] = seafile_api.get_org_quota_usage(org_id)
 
-    if ORG_MEMBER_QUOTA_ENABLED:
-        org_info['max_user_number'] = OrgMemberQuota.objects.get_quota(org_id)
+    org_info['monthly_download_traffic_limit'] = get_org_monthly_download_traffic_limit(org)
+    current_date = datetime.now()
+    org_info['monthly_traffic_usage'] = get_org_traffic_by_month(org_id, current_date)
+
+    org_info['max_user_number'] = OrgMemberQuota.objects.get_quota(org_id)
 
     return org_info
 
@@ -114,14 +114,14 @@ def get_org_detailed_info(org):
         org_info['enable_sso'] = True
         org_setting = OrgAdminSettings.objects.filter(org_id=org_id, key='force_adfs_login').first()
         org_info['force_adfs_login'] = org_setting and int(org_setting.value) or 0
-    
+
     if ENABLE_MULTI_ADFS:
         org_saml_config = OrgSAMLConfig.objects.get_config_by_org_id(org_id)
         if org_saml_config:
             org_info['enable_saml_login'] = True
             org_info['metadata_url'] = org_saml_config.metadata_url
             org_info['domain'] = org_saml_config.domain
-    
+
     return org_info
 
 
@@ -189,26 +189,82 @@ class AdminOrganizations(APIView):
 
         start = (page - 1) * per_page
 
-        try:
-            orgs = ccnet_api.get_all_orgs(start, per_page)
-            total_count = ccnet_api.count_orgs()
-        except Exception as e:
-            logger.error(e)
-            error_msg = 'Internal Server Error'
-            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
+        is_active = request.GET.get('is_active', None)
+        if is_active is not None:
 
-        result = []
-        org_ids = [org.org_id for org in orgs]
-        orgs_last_activity = OrgLastActivityTime.objects.filter(org_id__in=org_ids)
-        orgs_last_activity_dict = {org.org_id: org.timestamp for org in orgs_last_activity}
-        for org in orgs:
-            org_info = get_org_info(org)
-            org_id = org_info['org_id']
-            if org_id in orgs_last_activity_dict:
-                org_info['last_activity_time'] = datetime_to_isoformat_timestr(orgs_last_activity_dict[org_id])
-            else:
-                org_info['last_activity_time'] = None
-            result.append(org_info)
+            is_active = is_active.lower()
+            is_active = str(is_active)
+            if is_active not in ('true', 'false', '1', '0'):
+                error_msg = "is_active invalid."
+                return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
+
+            ccnet_db = CcnetDB()
+            total_count, orgs = ccnet_db.get_orgs_by_is_active(is_active, page, per_page)
+
+            org_ids = [org.org_id for org in orgs]
+            orgs_last_activity = OrgLastActivityTime.objects.filter(org_id__in=org_ids)
+            orgs_last_activity_dict = {org.org_id: org.timestamp for org in orgs_last_activity}
+
+            result = []
+            for org in orgs:
+
+                org_id = org.org_id
+
+                org_info = {}
+                org_info['org_id'] = org_id
+                org_info['org_name'] = org.org_name
+                org_info['ctime'] = timestamp_to_isoformat_timestr(org.ctime)
+                org_info['org_url_prefix'] = org.url_prefix
+
+                if not org.role:
+                    role = DEFAULT_ORG
+                elif org.role in get_available_roles():
+                    role = org.role
+                else:
+                    logger.warning('Role %s is not valid' % org.role)
+                    role = DEFAULT_ORG
+
+                org_info['role'] = role
+                org_info['is_active'] = True if org.is_active else False
+
+                creator = org.creator
+                org_info['creator_email'] = creator
+                org_info['creator_name'] = email2nickname(creator)
+                org_info['creator_contact_email'] = email2contact_email(creator)
+
+                org_info['quota'] = seafile_api.get_org_quota(org_id)
+                org_info['quota_usage'] = seafile_api.get_org_quota_usage(org_id)
+
+                org_info['max_user_number'] = OrgMemberQuota.objects.get_quota(org_id)
+
+                if org_id in orgs_last_activity_dict:
+                    org_info['last_activity_time'] = datetime_to_isoformat_timestr(orgs_last_activity_dict[org_id])
+                else:
+                    org_info['last_activity_time'] = None
+
+                result.append(org_info)
+        else:
+            try:
+                orgs = ccnet_api.get_all_orgs(start, per_page)
+                total_count = ccnet_api.count_orgs()
+            except Exception as e:
+                logger.error(e)
+                error_msg = 'Internal Server Error'
+                return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
+
+            result = []
+            org_ids = [org.org_id for org in orgs]
+            orgs_last_activity = OrgLastActivityTime.objects.filter(org_id__in=org_ids)
+            orgs_last_activity_dict = {org.org_id: org.timestamp for org in orgs_last_activity}
+            for org in orgs:
+                org_info = get_org_info(org)
+                org_id = org_info['org_id']
+                if org_id in orgs_last_activity_dict:
+                    org_info['last_activity_time'] = datetime_to_isoformat_timestr(orgs_last_activity_dict[org_id])
+                else:
+                    org_info['last_activity_time'] = None
+
+                result.append(org_info)
 
         return Response({'organizations': result, 'total_count': total_count})
 
@@ -239,6 +295,15 @@ class AdminOrganizations(APIView):
         if not owner_password:
             error_msg = 'owner_password invalid.'
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
+
+        member_limit = request.data.get('member_limit', ORG_MEMBER_QUOTA_DEFAULT)
+        try:
+            member_limit = int(member_limit)
+        except (TypeError, ValueError):
+            return api_error(status.HTTP_400_BAD_REQUEST, 'member_limit invalid.')
+
+        if member_limit <= 0:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'member_limit invalid.')
 
         url_prefix = gen_org_url_prefix(5, 20)
         if ccnet_api.get_org_by_url_prefix(url_prefix):
@@ -279,9 +344,7 @@ class AdminOrganizations(APIView):
                 logger.error(e)
                 return api_error(status.HTTP_400_BAD_REQUEST, "Quota is not valid")
 
-        if ORG_MEMBER_QUOTA_ENABLED:
-            member_limit = request.data.get('member_limit', ORG_MEMBER_QUOTA_DEFAULT)
-            OrgMemberQuota.objects.set_quota(org_id, member_limit)
+        OrgMemberQuota.objects.set_quota(org_id, member_limit)
 
         org = ccnet_api.get_org_by_id(org_id)
         try:
@@ -369,7 +432,7 @@ class AdminOrganization(APIView):
 
         # update org max user number
         max_user_number = request.data.get('max_user_number', None)
-        if max_user_number and ORG_MEMBER_QUOTA_ENABLED:
+        if max_user_number:
 
             try:
                 max_user_number = int(max_user_number)
@@ -442,12 +505,30 @@ class AdminOrganization(APIView):
                     }
                     send_html_email(subject, email_template, con_context,
                                     from_email, [email2contact_email(email)])
-                    
+
         force_adfs_login = request.data.get('force_adfs_login', None)
         if force_adfs_login is not None:
             OrgAdminSettings.objects.update_or_create(org_id=org_id, key='force_adfs_login',
-                                                              defaults={'value': force_adfs_login})
-            
+                                                      defaults={'value': force_adfs_login})
+
+        monthly_download_traffic_limit = request.data.get('monthly_download_traffic_limit', None)
+        if monthly_download_traffic_limit is not None:
+            try:
+                monthly_download_traffic_limit = int(monthly_download_traffic_limit)
+            except ValueError:
+                error_msg = 'monthly_download_traffic_limit invalid.'
+                return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
+
+            if monthly_download_traffic_limit < 0:
+                error_msg = 'monthly_download_traffic_limit invalid.'
+                return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
+
+            monthly_download_traffic_limit = monthly_download_traffic_limit * get_file_size_unit('MB')
+            OrgSettings.objects.add_or_update(org, monthly_download_traffic_limit=monthly_download_traffic_limit)
+            # Clear a prior monthly traffic throttle. seafevents will reapply it
+            # during its next check if the updated limit is still exceeded.
+            seafile_api.org_set_download_rate_limit(org_id, -1)
+
         org = ccnet_api.get_org_by_id(org_id)
         org_info = get_org_info(org)
         return Response(org_info)
@@ -490,10 +571,10 @@ class AdminOrganization(APIView):
 
             # remove org repos
             seafile_api.remove_org_repo_by_org_id(org_id)
-            
+
             # remove org
             ccnet_api.remove_org(org_id)
-            
+
             # handle signal
             org_deleted.send(sender=None, org_id=org_id)
         except Exception as e:
@@ -615,7 +696,6 @@ class TrafficExceededOrganizations(APIView):
             logger.error(e)
             error_msg = 'Internal Server Error'
             return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
-
 
         result = []
         limit_data = {}

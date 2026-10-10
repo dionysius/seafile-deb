@@ -1,17 +1,18 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Button } from 'reactstrap';
-import { Utils } from '../../../utils/utils';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { gettext } from '../../../utils/constants';
-import toaster from '../../../components/toast';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
-import CommonOperationConfirmationDialog from '../../../components/dialog/common-operation-confirmation-dialog';
-import SysAdminGroupAddMemberDialog from '../../../components/dialog/sysadmin-dialog/sysadmin-group-add-member-dialog';
-import RoleSelector from '../../../components/single-selector';
-import MainPanelTopbar from '../main-panel-topbar';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import MainPanelTopbar from '@/components/admin/layout/main-panel-topbar';
+import CommonOperationConfirmationDialog from '@/components/dialog/common-operation-confirmation-dialog';
+import SysAdminGroupAddMemberDialog from '@/components/dialog/sysadmin-dialog/sysadmin-group-add-member-dialog';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import OpIcon from '@/components/op-icon';
+import Paginator from '@/components/paginator';
+import RoleSelector from '@/components/single-selector';
+import toaster from '@/components/toast';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UserLink from '../user-link';
 import GroupNav from './group-nav';
 
@@ -176,13 +177,12 @@ class Item extends Component {
           </td>
           <td>
             {item.role != 'Owner' &&
-            <i
-              role="button"
-              className={`op-icon sf2-icon-x3 ${highlighted ? '' : 'invisible'}`}
-              title={gettext('Remove')}
-              onClick={this.toggleDeleteDialog}
-            >
-            </i>
+              <OpIcon
+                className={highlighted ? '' : 'invisible'}
+                symbol="close"
+                title={gettext('Remove')}
+                op={this.toggleDeleteDialog}
+              />
             }
           </td>
         </tr>

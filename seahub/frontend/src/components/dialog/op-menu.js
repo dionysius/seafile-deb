@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from 'reactstrap';
-import { gettext } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
+import CustomDropdown from '../dropdown';
+import Icon from '../icon';
 
 const propTypes = {
   onFreezedItem: PropTypes.func.isRequired,
@@ -13,54 +12,19 @@ const propTypes = {
 };
 
 class OpMenu extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      isItemMenuShow: false
-    };
-  }
-
-  onMenuItemClick = (e) => {
-    let operation = Utils.getEventData(e, 'op');
-    this.props.onMenuItemClick(operation);
-  };
-
-  onDropdownToggleClick = (e) => {
-    this.toggleOperationMenu(e);
-  };
-
-  toggleOperationMenu = (e) => {
-    this.setState(
-      { isItemMenuShow: !this.state.isItemMenuShow },
-      () => {
-        if (this.state.isItemMenuShow) {
-          this.props.onFreezedItem();
-        } else {
-          this.props.onUnfreezedItem();
-        }
-      }
-    );
-  };
-
   render() {
     const { operations, translateOperations } = this.props;
+    const menuItems = operations.map((item) => ({ key: item, label: translateOperations(item), onClick: () => this.props.onMenuItemClick(item) }));
     return (
-      <Dropdown isOpen={this.state.isItemMenuShow} toggle={this.toggleOperationMenu}>
-        <DropdownToggle
-          tag="i"
-          className="sf3-font sf3-font-more op-icon"
-          title={gettext('More operations')}
-          aria-label={gettext('More operations')}
-          data-toggle="dropdown"
-          aria-expanded={this.state.isItemMenuShow}
-        />
-        <DropdownMenu className="my-1 mr-2">
-          {operations.map((item, index) => {
-            return (<DropdownItem key={index} data-op={item} onClick={this.onMenuItemClick}>{translateOperations(item)}</DropdownItem>);
-          })}
-        </DropdownMenu>
-      </Dropdown>
+      <CustomDropdown
+        items={menuItems}
+        className="lh-1"
+        trigger={<Icon symbol="more-level" />}
+        triggerClassName="op-icon"
+        menuPortal={false}
+        freezeItem={this.props.onFreezedItem}
+        unfreezeItem={this.props.onUnfreezedItem}
+      />
     );
   }
 }

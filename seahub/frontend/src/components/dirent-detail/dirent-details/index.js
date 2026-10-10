@@ -1,19 +1,19 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { siteRoot, thumbnailSizeForGrid, enableSeafileAI, fileServerRoot, MimetypesKind } from '../../../utils/constants';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { Utils } from '../../../utils/utils';
+import { seafileAPI } from '@/api/seafile-api';
+import AIIcon from '@/features/metadata/components/metadata-details/ai-icon';
+import SettingsIcon from '@/features/metadata/components/metadata-details/settings-icon';
+import { EVENT_BUS_TYPE } from '@/features/metadata/constants';
+import { MetadataDetailsProvider } from '@/features/metadata/hooks/metadata-details';
+import { siteRoot, thumbnailSizeForGrid, enableSeafileAI, fileServerRoot, MimetypesKind } from '@/utils/constants';
+import ObjectUtils from '@/utils/object';
+import { Utils } from '@/utils/utils';
+import { eventBus } from '../../event-bus';
 import toaster from '../../toast';
+import VideoPlayer from '../../video-player';
 import { Detail, Header, Body } from '../detail';
 import DirDetails from './dir-details';
 import FileDetails from './file-details';
-import ObjectUtils from '../../../utils/object';
-import { MetadataDetailsProvider } from '../../../metadata/hooks';
-import AIIcon from '../../../metadata/components/metadata-details/ai-icon';
-import SettingsIcon from '../../../metadata/components/metadata-details/settings-icon';
-import { eventBus } from '../../common/event-bus';
-import { EVENT_BUS_TYPE } from '../../../metadata/constants';
-import VideoPlayer from '../../video-player';
 
 import './index.css';
 
@@ -45,14 +45,18 @@ class DirentDetails extends React.Component {
   UNSAFE_componentWillReceiveProps(nextProps) {
     const { dirent, path, repoID, currentRepoInfo, repoTags, fileTags } = this.props;
     if (!ObjectUtils.isSameObject(currentRepoInfo, nextProps.currentRepoInfo) ||
-        !ObjectUtils.isSameObject(dirent, nextProps.dirent, ['name']) ||
-        JSON.stringify(repoTags || []) !== JSON.stringify(nextProps.repoTags || []) ||
-        JSON.stringify(fileTags || []) !== JSON.stringify(nextProps.fileTags || []) ||
-        (path !== nextProps.path && !ObjectUtils.isSameObject(dirent, nextProps.dirent, ['name'])) ||
-        repoID !== nextProps.repoID
+      !ObjectUtils.isSameObject(dirent, nextProps.dirent, ['name', 'status']) ||
+      JSON.stringify(repoTags || []) !== JSON.stringify(nextProps.repoTags || []) ||
+      JSON.stringify(fileTags || []) !== JSON.stringify(nextProps.fileTags || []) ||
+      (path !== nextProps.path && !ObjectUtils.isSameObject(dirent, nextProps.dirent, ['name', 'status'])) ||
+      repoID !== nextProps.repoID
     ) {
       const fullPath = Utils.joinPath(nextProps.path, nextProps.dirent.name);
       this.updateDetail(nextProps.repoID, nextProps.dirent, fullPath);
+    }
+
+    if (!ObjectUtils.isSameObject(dirent, nextProps.dirent, ['name', 'status'])) {
+      this.setState({ direntDetail: '' });
     }
   }
 
@@ -171,6 +175,7 @@ class DirentDetails extends React.Component {
               <div className="detail-content">
                 {dirent.type !== 'file' ? (
                   <DirDetails
+                    repoID={repoID}
                     direntDetail={direntDetail}
                     tagsData={this.props.tagsData}
                     addTag={this.props.addTag}
@@ -206,12 +211,8 @@ DirentDetails.propTypes = {
   onFileTagChanged: PropTypes.func.isRequired,
   repoTags: PropTypes.array,
   fileTags: PropTypes.array,
-  enableMetadata: PropTypes.bool,
-  enableFaceRecognition: PropTypes.bool,
-  detailsSettings: PropTypes.object,
   tagsData: PropTypes.object,
   addTag: PropTypes.func,
-  modifyDetailsSettings: PropTypes.func,
   modifyLocalFileTags: PropTypes.func,
 };
 

@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { gettext, siteRoot, enableSysAdminViewRepo, isPro } from '../../../utils/constants';
-import { Utils } from '../../../utils/utils';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import Paginator from '@/components/paginator';
+import { gettext, siteRoot, enableSysAdminViewRepo, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UserLink from '../user-link';
 
 dayjs.extend(relativeTime);
@@ -280,22 +280,16 @@ class AdminOperationLogs extends Component {
   render() {
     let { logList, currentPage, perPage, hasNextPage } = this.state;
     return (
-      <div className="main-panel-center flex-row">
-        <div className="cur-view-container">
-          <div className="cur-view-content">
-            <Content
-              loading={this.state.loading}
-              errorMsg={this.state.errorMsg}
-              items={logList}
-              currentPage={currentPage}
-              perPage={perPage}
-              hasNextPage={hasNextPage}
-              getLogsByPage={this.getLogsByPage}
-              resetPerPage={this.resetPerPage}
-            />
-          </div>
-        </div>
-      </div>
+      <Content
+        loading={this.state.loading}
+        errorMsg={this.state.errorMsg}
+        items={logList}
+        currentPage={currentPage}
+        perPage={perPage}
+        hasNextPage={hasNextPage}
+        getLogsByPage={this.getLogsByPage}
+        resetPerPage={this.resetPerPage}
+      />
     );
   }
 }

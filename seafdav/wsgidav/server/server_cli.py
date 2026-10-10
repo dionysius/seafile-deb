@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import gunicorn.app.base
 """
 server_cli
 ==========
@@ -32,6 +33,7 @@ Configuration is defined like this:
        ``--root=FOLDER`` option creates a FilesystemProvider that publishes
        FOLDER on the '/' share.
 """
+
 import argparse
 import copy
 import logging
@@ -160,7 +162,7 @@ See https://github.com/mar10/wsgidav for additional information.
         "--root",
         dest="root_path",
         action=FullExpandedPath,
-        help="path to a file system folder to publish as share '/'.",
+        help="path to a file system folder to publish for RW as share '/'.",
     )
     parser.add_argument(
         "--auth",
@@ -240,7 +242,7 @@ See https://github.com/mar10/wsgidav for additional information.
     del args.quiet
 
     if args.root_path and not os.path.isdir(args.root_path):
-        msg = "{} is not a directory".format(args.root_path)
+        msg = f"{args.root_path} is not a directory"
         parser.error(msg)
 
     if args.version:
@@ -251,9 +253,9 @@ See https://github.com/mar10/wsgidav for additional information.
                 "64" if sys.maxsize > 2**32 else "32",
                 platform.platform(aliased=True),
             )
-            version_info += "\nPython from: {}".format(sys.executable)
+            version_info += f"\nPython from: {sys.executable}"
         else:
-            version_info = "{}".format(__version__)
+            version_info = f"{__version__}"
         print(version_info)
         sys.exit()
 
@@ -266,7 +268,7 @@ See https://github.com/mar10/wsgidav for additional information.
             defPath = os.path.abspath(filename)
             if os.path.exists(defPath):
                 if args.verbose >= 3:
-                    print("Using default configuration file: {}".format(defPath))
+                    print(f"Using default configuration file: {defPath}")
                 args.config_file = defPath
                 break
     else:
@@ -274,9 +276,7 @@ See https://github.com/mar10/wsgidav for additional information.
         args.config_file = os.path.abspath(args.config_file)
         if not os.path.isfile(args.config_file):
             parser.error(
-                "Could not find specified configuration file: {}".format(
-                    args.config_file
-                )
+                f"Could not find specified configuration file: {args.config_file}"
             )
 
     # Convert args object to dictionary
@@ -284,7 +284,7 @@ See https://github.com/mar10/wsgidav for additional information.
     if args.verbose >= 5:
         print("Command line args:")
         for k, v in cmdLineOpts.items():
-            print("    {:>12}: {}".format(k, v))
+            print(f"    {k:>12}: {v}")
     return cmdLineOpts, parser
 
 
@@ -296,49 +296,17 @@ def _loadSeafileSettings(config):
         'default_to_digest': False,
         'domain_controller': SeafileDomainController
     }
-    # Load share_name from seafdav config file
-
-    # haiwen
-    #   - conf
-    #     - seafdav.conf
-
-    ##### a sample seafdav.conf, we only care: "share_name", "workers", "timeout"
-    # [WEBDAV]
-    # enabled = true
-    # port = 8080
-    # share_name = /seafdav
-    # workers = 5
-    # timeout = 1200
-    ##### a sample seafdav.conf
-
-    share_name = '/'
-    workers = 5
-    timeout = 1200
-    show_repo_id = False
-
-    seafdav_conf = os.environ.get('SEAFDAV_CONF')
-    if seafdav_conf and os.path.exists(seafdav_conf):
-        import configparser
-        cp = configparser.ConfigParser()
-        cp.read(seafdav_conf)
-        section_name = 'WEBDAV'
-
-        if cp.has_option(section_name, 'share_name'):
-            share_name = cp.get(section_name, 'share_name')
-        if cp.has_option(section_name, 'workers'):
-            workers = cp.get(section_name, 'workers')
-        if cp.has_option(section_name, 'timeout'):
-            timeout = cp.get(section_name, 'timeout')
-        if cp.has_option(section_name, 'show_repo_id'):
-            if cp.get(section_name, 'show_repo_id').lower() == 'true':
-                show_repo_id = True
 
     # Setup provider mapping for Seafile. E.g. /seafdav -> seafile provider.
     provider_mapping = {}
-    provider_mapping[share_name] = SeafileProvider(show_repo_id=show_repo_id)
+
+    provider_mapping['/seafdav'] = SeafileProvider(show_repo_id=True)
     config['provider_mapping'] = provider_mapping
+
+    workers = os.environ.get('SEAFDAV_WORKERS', 5)
     config['workers'] = workers
-    config['timeout'] = timeout
+    config['timeout'] = 1200
+
 
 def _read_config_file(config_file, _verbose):
     """Read configuration file options into a dictionary."""
@@ -349,11 +317,11 @@ def _read_config_file(config_file, _verbose):
         raise RuntimeError(f"Couldn't open configuration file {config_file!r}.")
 
     if config_file.endswith(".json"):
-        with open(config_file, mode="rt", encoding="utf-8-sig") as fp:
+        with open(config_file, encoding="utf-8-sig") as fp:
             conf = json_load(fp)
 
     elif config_file.endswith(".yaml"):
-        with open(config_file, mode="rt", encoding="utf-8-sig") as fp:
+        with open(config_file, encoding="utf-8-sig") as fp:
             conf = yaml.safe_load(fp)
 
     else:
@@ -414,7 +382,10 @@ def _init_config():
 
     if cli_opts.get("root_path"):
         root_path = os.path.abspath(cli_opts.get("root_path"))
-        config["provider_mapping"]["/"] = FilesystemProvider(root_path)
+        config["provider_mapping"]["/"] = FilesystemProvider(
+            root_path,
+            fs_opts=config.get("fs_dav_provider"),
+        )
 
     if config["verbose"] >= 5:
         # TODO: remove passwords from user_mapping
@@ -497,9 +468,12 @@ def _init_config():
     #     # import pydevd
     #     # pydevd.settrace()
 
+    if config["suppress_version_info"]:
+        util.public_wsgidav_info = "WsgiDAV"
+        util.public_python_info = f"Python/{sys.version_info[0]}"
+
     return cli_opts, config
 
-import gunicorn.app.base
 
 class GunicornApplication(gunicorn.app.base.BaseApplication):
 
@@ -528,7 +502,7 @@ def _run_cheroot(app, config, _server):
         return False
 
     version = (
-        f"WsgiDAV/{__version__} {wsgi.Server.version} Python/{util.PYTHON_VERSION}"
+        f"{util.public_wsgidav_info} {wsgi.Server.version} {util.public_python_info}"
     )
     # wsgi.Server.version = version
 
@@ -541,7 +515,7 @@ def _run_cheroot(app, config, _server):
         wsgi.Server.ssl_adapter = ssl_adapter(
             info["ssl_cert"], info["ssl_pk"], info["ssl_chain"]
         )
-        _logger.info("SSL / HTTPS enabled. Adapter: {}".format(ssl_adapter))
+        _logger.info(f"SSL / HTTPS enabled. Adapter: {ssl_adapter}")
 
     _logger.info(f"Running {version}")
     _logger.info(f"Serving on {info['url']} ...")
@@ -620,7 +594,7 @@ def _run_gevent(app, config, server):
 
     info = _get_common_info(config)
     version = f"gevent/{gevent.__version__}"
-    version = f"WsgiDAV/{__version__} {version} Python {util.PYTHON_VERSION}"
+    version = f"{util.public_wsgidav_info} {version} {util.public_python_info}"
 
     # Override or add custom args
     server_args = {
@@ -716,7 +690,7 @@ def _run_gunicorn(app, config, server):
     server_args.update(custom_args)
 
     version = f"gunicorn/{gunicorn.__version__}"
-    version = f"WsgiDAV/{__version__} {version} Python {util.PYTHON_VERSION}"
+    version = f"{util.public_wsgidav_info} {version} {util.public_python_info}"
     _logger.info(f"Running {version} ...")
 
     GunicornApplication(app, server_args).run()
@@ -739,7 +713,7 @@ def _run_paste(app, config, server):
     info = _get_common_info(config)
 
     version = httpserver.WSGIHandler.server_version
-    version = f"WsgiDAV/{__version__} {version} Python {util.PYTHON_VERSION}"
+    version = f"{util.public_wsgidav_info} {version} {util.public_python_info}"
 
     # See http://pythonpaste.org/modules/httpserver.html for more options
     server = httpserver.serve(
@@ -813,7 +787,7 @@ def _run_uvicorn(app, config, server):
     server_args.update(custom_args)
 
     version = f"uvicorn/{uvicorn.__version__}"
-    version = f"WsgiDAV/{__version__} {version} Python {util.PYTHON_VERSION}"
+    version = f"{util.public_wsgidav_info} {version} {util.public_python_info}"
     _logger.info(f"Running {version} ...")
 
     uvicorn.run(app, **server_args)
@@ -824,7 +798,7 @@ def _run_wsgiref(app, config, _server):
     from wsgiref.simple_server import WSGIRequestHandler, make_server
 
     version = WSGIRequestHandler.server_version
-    version = f"WsgiDAV/{__version__} {version}"  # Python {util.PYTHON_VERSION}"
+    version = f"{util.public_wsgidav_info} {version}"  # {util.public_python_info}"
     _logger.info(f"Running {version} ...")
 
     _logger.warning(

@@ -1,8 +1,8 @@
-import i18n from 'i18next';
-import Backend from 'i18next-http-backend';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
-import { mediaUrl } from '../utils/constants';
+import i18n from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import Backend from 'i18next-http-backend';
+import { mediaUrl } from '@/utils/constants';
 
 const { lang = 'en' } = window.app.config;
 
@@ -13,7 +13,7 @@ i18n
   .init({
     lng: lang,
     fallbackLng: 'en',
-    ns: ['sdoc-editor', 'seafile-editor'],
+    ns: ['sdoc-editor', 'seafile-editor', 'comment-editor'],
     defaultNS: 'sdoc-editor',
 
     whitelist: ['en', 'zh-CN', 'fr', 'de', 'cs', 'es', 'es-AR', 'es-MX', 'ru'],

@@ -1,0 +1,25 @@
+.sf-table-cell-formatter {
+  width: 100%;
+}
+
+.sf-table-child-tags-formatter,
+.sf-table-tag-files-formatter {
+  text-align: right;
+}
+
+.sf-table-tag-name-formatter {
+  display: flex;
+  align-items: center;
+}
+
+.sf-table-tag-name-formatter .sf-metadata-ui.tags-formatter .sf-metadata-ui-tags-container {
+  cursor: default;
+}
+
+.sf-metadata-all-tags-wrapper .sf-table-row .name-cell.cell-selected {
+  cursor: default;
+}
+
+.sf-table-cell.cell-selected .sf-table-tag-name-formatter .sf-metadata-ui.tags-formatter .sf-metadata-ui-tags-container {
+  cursor: pointer;
+}

@@ -1,22 +1,21 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { RightScrollbar } from '../../../scrollbar';
-import InteractionMasks from '../../../masks/interaction-masks';
-import GroupContainer from './group-container';
-import Record from '../record';
-import { isShiftKeyDown } from '../../../../../utils/keyboard-utils';
-import { RecordMetrics } from '../../../utils/record-metrics';
-import { getColumnScrollPosition, getColVisibleEndIdx, getColVisibleStartIdx } from '../../../utils/records-body-utils';
-import { addClassName, removeClassName } from '../../../../../utils/dom';
-import { createGroupMetrics, getGroupRecordByIndex, isNestedGroupRow } from '../../../utils/group-metrics';
-import { checkIsColumnSupportDirectEdit, checkIsColumnFrozen, checkIsNameColumn, getColumnByIndex, checkIsColumnEditable } from '../../../utils/column';
-import { checkIsCellSupportOpenEditor } from '../../../utils/selected-cell-utils';
+import PropTypes from 'prop-types';
+import { EVENT_BUS_TYPE, ROW_HEIGHT } from '@/features/metadata/constants';
+import { addClassName, removeClassName } from '@/utils/dom';
+import { isShiftKeyDown } from '@/utils/keyboard-utils';
+import EventBus from '../../../../event-bus';
 import { GROUP_HEADER_HEIGHT, GROUP_ROW_TYPE, GROUP_VIEW_OFFSET } from '../../../constants/group';
-import { EVENT_BUS_TYPE } from '../../../constants/event-bus-type';
-import EventBus from '../../../../common/event-bus';
+import InteractionMasks from '../../../masks/interaction-masks';
+import { RightScrollbar } from '../../../scrollbar';
+import { checkIsColumnSupportDirectEdit, checkIsColumnFrozen, checkIsNameColumn, getColumnByIndex, checkIsColumnEditable } from '../../../utils/column';
+import { createGroupMetrics, getGroupRecordByIndex, isNestedGroupRow } from '../../../utils/group-metrics';
+import { RecordMetrics } from '../../../utils/record-metrics';
+import { getColumnScrollPosition, getColVisibleEndIdx, getColVisibleStartIdx } from '../../../utils/records-body';
+import { checkIsCellSupportOpenEditor } from '../../../utils/selection';
+import Record from '../record';
+import GroupContainer from './group-container';
 
-const ROW_HEIGHT = 33;
 const GROUP_OVER_SCAN_ROWS = 10;
 const MAX_ANIMATION_ROWS = 50;
 const LOCAL_FOLDED_GROUP_KEY = 'path_folded_group';
@@ -27,11 +26,13 @@ class GroupBody extends Component {
   constructor(props) {
     super(props);
     const { groups, groupbys, allColumns } = props;
-    const rowHeight = this.getRowHeight();
+    let { rowHeight } = props;
+    rowHeight = rowHeight || ROW_HEIGHT;
     const pathFoldedGroupMap = this.getFoldedGroups();
     const groupMetrics = createGroupMetrics(groups, groupbys, pathFoldedGroupMap, allColumns, rowHeight, false);
     const { startRenderIndex, endRenderIndex } = this.getGroupVisibleBoundaries(window.innerHeight, 0, groupMetrics, rowHeight);
     this.state = {
+      rowHeight,
       activeRecords: [],
       groupMetrics,
       startRenderIndex,
@@ -58,6 +59,17 @@ class GroupBody extends Component {
     this.unSubscribeCollapseAllGroups = this.eventBus.subscribe(EVENT_BUS_TYPE.COLLAPSE_ALL_GROUPS, this.collapseAllGroups);
     this.unSubscribeExpandAllGroups = this.eventBus.subscribe(EVENT_BUS_TYPE.EXPAND_ALL_GROUPS, this.expandAllGroups);
     this.unsubscribeFocus = this.eventBus.subscribe(EVENT_BUS_TYPE.FOCUS_CANVAS, this.onFocus);
+  }
+
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    const { rowHeight: newRowHeight } = nextProps;
+    const { rowHeight } = this.state;
+    if (
+      newRowHeight &&
+      rowHeight != newRowHeight
+    ) {
+      this.setState({ rowHeight: newRowHeight });
+    }
   }
 
   componentDidUpdate(prevProps) {
@@ -189,7 +201,8 @@ class GroupBody extends Component {
   };
 
   getRowHeight = () => {
-    return ROW_HEIGHT;
+    const { rowHeight } = this.state;
+    return rowHeight;
   };
 
   getRowTop = (groupRecordIndex) => {
@@ -299,7 +312,6 @@ class GroupBody extends Component {
   getCellMetaData = () => {
     if (!this.cellMetaData) {
       this.cellMetaData = {
-        CellOperationBtn: this.props.CellOperationBtn,
         onCellClick: this.onCellClick,
         onCellDoubleClick: this.onCellDoubleClick,
         onCellMouseDown: this.onCellMouseDown,
@@ -416,10 +428,10 @@ class GroupBody extends Component {
       const isFromKeyboard = true;
       this.selectUpdate(cell, isFromKeyboard);
     } else {
-      const { columns, recordGetterByIndex, checkCanModifyRecord } = this.props;
+      const { columns, recordGetterByIndex, canModifyRow } = this.props;
       const column = getColumnByIndex(cell.idx, columns);
       const supportOpenEditor = checkIsColumnSupportDirectEdit(column);
-      const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, true, recordGetterByIndex, checkCanModifyRecord);
+      const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, true, recordGetterByIndex, canModifyRow);
       this.selectCell(cell, supportOpenEditor && hasOpenPermission);
     }
     this.props.onCellClick(cell);
@@ -427,10 +439,10 @@ class GroupBody extends Component {
   };
 
   onCellDoubleClick = (cell, e) => {
-    const { columns, recordGetterByIndex, checkCanModifyRecord } = this.props;
+    const { columns, recordGetterByIndex, canModifyRow } = this.props;
     const column = getColumnByIndex(cell.idx, columns);
     const supportOpenEditor = checkIsColumnEditable(column);
-    const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, true, recordGetterByIndex, checkCanModifyRecord);
+    const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, true, recordGetterByIndex, canModifyRow);
     this.selectCell(cell, supportOpenEditor && hasOpenPermission);
   };
 
@@ -764,12 +776,13 @@ class GroupBody extends Component {
     const columnsLen = columns.length;
     const lastColumn = columns[columnsLen - 1];
     let groupRowsHeight = groupMetrics.groupRowsHeight;
+    const getGroupWidth = (level) => totalColumnsWidth + (level - 1) * GROUP_VIEW_OFFSET;
     visibleGroupRows.forEach(groupRow => {
       let {
         type, level, key, left, top, isExpanded, height, groupPathString, groupRecordIndex,
       } = groupRow;
       if (type === GROUP_ROW_TYPE.GROUP_CONTAINER) {
-        const groupWidth = totalColumnsWidth + (level - 1) * 2 * GROUP_VIEW_OFFSET; // columns + group offset
+        const groupWidth = getGroupWidth(level);
         const folding = this.expandingGroupPathString === groupPathString && !isExpanded;
         const backdropHeight = height + GROUP_VIEW_OFFSET;
         rendererGroups.push(
@@ -797,6 +810,7 @@ class GroupBody extends Component {
         );
       } else if (type === GROUP_ROW_TYPE.ROW) {
         const { rowId, rowIdx, isLastRow } = groupRow;
+        const groupWidth = getGroupWidth(level);
         const record = rowId && this.props.recordGetterById(rowId);
         const isSelected = RecordMetrics.isRecordSelected(rowId, recordMetrics);
         const hasSelectedCell = this.props.hasSelectedCell({ groupRecordIndex }, selectedPosition);
@@ -812,12 +826,15 @@ class GroupBody extends Component {
             isSelected={isSelected}
             showSequenceColumn={showSequenceColumn}
             sequenceColumnWidth={sequenceColumnWidth}
+            groupLevel={level}
+            maxGroupLevel={maxLevel}
             groupRecordIndex={groupRecordIndex}
             index={rowIdx}
             isLastRecord={isLastRow}
             lastFrozenColumnKey={lastFrozenColumnKey}
             record={record}
             columns={columns}
+            totalWidth={groupWidth - sequenceColumnWidth}
             colOverScanStartIdx={colOverScanStartIdx}
             colOverScanEndIdx={colOverScanEndIdx}
             left={left}
@@ -829,12 +846,13 @@ class GroupBody extends Component {
             hasSelectedCell={hasSelectedCell}
             selectedPosition={this.state.selectedPosition}
             selectNoneCells={this.selectNoneCells}
-            checkCanModifyRecord={this.props.checkCanModifyRecord}
+            canModify={this.props.canModify}
             checkCellValueChanged={this.props.checkCellValueChanged}
             onSelectRecord={this.props.onSelectRecord}
             modifyRecord={this.props.modifyRecord}
             reloadRecords={this.props.reloadRecords}
             columnColor={columnColor}
+            onShowRowDetails={this.props.onShowRowDetails}
           />
         );
       }
@@ -842,17 +860,18 @@ class GroupBody extends Component {
 
     const allColumnsFrozen = lastFrozenColumnKey === lastColumn.key;
     const groupRowsClassName = classnames(
-      'canvas-groups-rows', 'animation',
+      'sf-canvas-groups-rows', 'animation',
       {
         'single-column': checkIsNameColumn(lastColumn),
         'disabled-add-record': true,
         'all-columns-frozen': allColumnsFrozen,
         'frozen': allColumnsFrozen || !!lastFrozenColumnKey,
+        [`group-depth-${maxLevel}`]: !!maxLevel,
       }
     );
     const groupRowsStyle = {
       height: groupRowsHeight,
-      width: containerWidth + ((maxLevel - 1) * 2 + 1) * GROUP_VIEW_OFFSET, // columns width + groups offset
+      width: containerWidth + ((maxLevel - 1) * 2 + 1) * GROUP_VIEW_OFFSET,
     };
     return (
       <div className={groupRowsClassName} style={groupRowsStyle} ref={ref => this.groupRows = ref}>
@@ -969,7 +988,7 @@ GroupBody.propTypes = {
   paste: PropTypes.func,
   selectNone: PropTypes.func,
   onSelectRecord: PropTypes.func,
-  checkCanModifyRecord: PropTypes.func,
+  canModify: PropTypes.func,
   checkCellValueChanged: PropTypes.func,
   expandRow: PropTypes.func,
   onDeleteRecords: PropTypes.func,
@@ -985,6 +1004,7 @@ GroupBody.propTypes = {
   onCellContextMenu: PropTypes.func,
   getTableCanvasContainerRect: PropTypes.func,
   scrollToRowIndex: PropTypes.number,
+  onShowRowDetails: PropTypes.func,
 };
 
 export default GroupBody;

@@ -25,6 +25,9 @@ class Activity(Base):
     path = mapped_column(Text, nullable=False)
     detail = mapped_column(Text, nullable=False)
 
+    __table_args__ = (Index('idx_activity_repo_timestamp',
+                            'repo_id', 'timestamp'),)
+
     def __init__(self, record):
         super().__init__()
         self.op_type = record['op_type']
@@ -36,7 +39,7 @@ class Activity(Base):
         self.commit_id = record.get('commit_id', None)
 
         detail = {}
-        detail_keys = ['size', 'old_path', 'days', 'repo_name', 'obj_id', 'old_repo_name']
+        detail_keys = ['size', 'old_path', 'days', 'repo_name', 'obj_id', 'old_repo_name', 'path']
         for k in detail_keys:
             if k in record and record.get(k, None) is not None:
                 detail[k] = record.get(k, None)
@@ -110,11 +113,11 @@ class FileAudit(Base):
     eid = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     timestamp = mapped_column(DateTime, nullable=False, index=True)
     etype = mapped_column(String(length=128), nullable=False)
-    user = mapped_column(String(length=255), nullable=False, index=True)
+    user = mapped_column(String(length=255), nullable=False)
     ip = mapped_column(String(length=45), nullable=False)
     device = mapped_column(Text, nullable=False)
     org_id = mapped_column(Integer, nullable=False)
-    repo_id = mapped_column(String(length=36), nullable=False, index=True)
+    repo_id = mapped_column(String(length=36), nullable=False)
     file_path = mapped_column(Text, nullable=False)
     __table_args__ = (Index('idx_file_audit_orgid_eid',
                             'org_id', 'eid'),
@@ -259,6 +262,8 @@ class FileTrash(Base):
     commit_id = mapped_column(String(length=40))
     path = mapped_column(Text, nullable=False)
     size = mapped_column(BigInteger, nullable=False)
+    __table_args__ = (Index('idx_filetrash_repo_delete_time',
+                            'repo_id', 'delete_time'),)
 
     def __init__(self, record):
         super().__init__()

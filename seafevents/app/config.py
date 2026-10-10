@@ -23,10 +23,9 @@ try:
     ENABLE_DINGTALK = getattr(seahub_settings, 'ENABLE_DINGTALK', False)
     SEAHUB_SECRET_KEY = getattr(seahub_settings, 'SECRET_KEY', '')
     JWT_PRIVATE_KEY = getattr(seahub_settings, 'JWT_PRIVATE_KEY', '')
-    METADATA_SERVER_URL = getattr(seahub_settings, 'METADATA_SERVER_URL', '')
-    ENABLE_METADATA_MANAGEMENT = getattr(seahub_settings, 'ENABLE_METADATA_MANAGEMENT', False)
     METADATA_FILE_TYPES = getattr(seahub_settings, 'METADATA_FILE_TYPES', {})
     DOWNLOAD_LIMIT_WHEN_THROTTLE = getattr(seahub_settings, 'DOWNLOAD_LIMIT_WHEN_THROTTLE', '1k')
+    UPLOAD_LIMIT_WHEN_THROTTLE = getattr(seahub_settings, 'UPLOAD_LIMIT_WHEN_THROTTLE', '1k')
     ENABLED_ROLE_PERMISSIONS = getattr(seahub_settings, 'ENABLED_ROLE_PERMISSIONS', {})
     BAIDU_MAP_KEY = getattr(seahub_settings, 'BAIDU_MAP_KEY', '')
     BAIDU_MAP_URL = getattr(seahub_settings, 'BAIDU_MAP_URL', '')
@@ -35,6 +34,9 @@ try:
     ENABLE_SEAFILE_AI = getattr(seahub_settings, 'ENABLE_SEAFILE_AI', False)
     SEAFILE_AI_SECRET_KEY = getattr(seahub_settings, 'SEAFILE_AI_SECRET_KEY', '')
     SEAFILE_AI_SERVER_URL = getattr(seahub_settings, 'SEAFILE_AI_SERVER_URL', '')
+    EMBEDDING_MODEL = getattr(seahub_settings, 'EMBEDDING_MODEL', {})
+    EMBEDDING_MODEL_CONFIGURED = getattr(seahub_settings, 'EMBEDDING_MODEL_CONFIGURED', False)
+    EMBEDDING_DIMENSIONS = getattr(seahub_settings, 'EMBEDDING_DIMENSIONS', 1024)
     ENABLE_QUOTA_ALERT = getattr(seahub_settings, 'ENABLE_QUOTA_ALERT', False)
     AI_PRICES = getattr(seahub_settings, 'AI_PRICES', {})
     INNER_FILE_SERVER_ROOT = getattr(seahub_settings, 'INNER_FILE_SERVER_ROOT', '')
@@ -42,12 +44,19 @@ try:
     FILE_CONVERTER_SERVER_URL = getattr(seahub_settings, 'FILE_CONVERTER_SERVER_URL', '')
     SEADOC_PRIVATE_KEY = getattr(seahub_settings, 'SEADOC_PRIVATE_KEY', '')
     ENABLE_FACE_RECOGNITION = getattr(seahub_settings, 'ENABLE_FACE_RECOGNITION', False)
+    ORG_MEMBER_QUOTA_DEFAULT = getattr(seahub_settings, 'ORG_MEMBER_QUOTA_DEFAULT', 100)
     LICENSE_PATH = getattr(seahub_settings, 'LICENSE_PATH', '/opt/seafile/seafile-license.txt')
+    ENABLE_RISK_CONTROL = getattr(seahub_settings, 'ENABLE_RISK_CONTROL', False)
+    RISK_CONTROL_SERVER_URL = getattr(seahub_settings, 'RISK_CONTROL_SERVER_URL', '')
 except ImportError:
     logger.critical("Can not import seahub settings.")
     raise RuntimeError("Can not import seahub settings.")
 
 ################## config from env ################################
+
+## config for metadata
+METADATA_SERVER_URL = os.environ.get('INNER_METADATA_SERVER_URL', '') or 'http://127.0.0.1:8084'
+ENABLE_METADATA_MANAGEMENT = os.environ.get('ENABLE_METADATA_MANAGEMENT', 'false').lower() == 'true'
 
 ## config for redis
 REDIS_HOST = os.environ.get('REDIS_HOST', '')
@@ -73,6 +82,19 @@ MYSQL_CCNET_DB_NAME = os.environ.get('SEAFILE_MYSQL_DB_CCNET_DB_NAME', 'ccnet_db
 
 # config for seafile edition
 IS_PRO_VERSION = os.environ.get('IS_PRO_VERSION', 'false') == 'true'
+
+# config for multiple storage
+ENABLE_MULTI_STORAGE = os.environ.get('SEAF_SERVER_STORAGE_TYPE', '') == 'multiple'
+
+# config for search
+ENABLE_SEARCH = os.environ.get('ENABLE_SEARCH', 'false').lower() == 'true'
+SEARCH_ENGINE = os.environ.get('SEARCH_ENGINE', 'seasearch').lower()
+assert SEARCH_ENGINE in ('seasearch', 'elasticsearch'), 'Invalid SEARCH_ENGINE: %s' % SEARCH_ENGINE
+
+# config for ai summary worker
+AI_SUMMARY_BATCH_SIZE = int(os.environ.get('AI_SUMMARY_BATCH_SIZE', 10))
+AI_SUMMARY_EMBEDDING_BATCH_SIZE = max(1, min(int(os.environ.get('AI_SUMMARY_EMBEDDING_BATCH_SIZE', 10)), 50))
+AI_SUMMARY_WORKERS = int(os.environ.get('AI_SUMMARY_WORKERS', 3))
 
 ################## config from env ################################
 
@@ -116,20 +138,10 @@ def is_repo_auto_del_enabled(config):
 
 
 def is_search_enabled(config):
-    if config.has_option('INDEX FILES', 'enabled'):
-        try:
-            return config.getboolean('INDEX FILES', 'enabled')
-        except ValueError:
-            return False
-    return False
+    return IS_PRO_VERSION and ENABLE_SEARCH and SEARCH_ENGINE == 'elasticsearch'
 
 def is_seasearch_enabled(config):
-    if config.has_option('SEASEARCH', 'enabled'):
-        try:
-            return config.getboolean('SEASEARCH', 'enabled')
-        except ValueError:
-            return False
-    return False
+    return IS_PRO_VERSION and ENABLE_SEARCH and SEARCH_ENGINE == 'seasearch'
 
 def is_audit_enabled(config):
     if config.has_option('Audit', 'enabled'):

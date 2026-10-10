@@ -6,6 +6,9 @@ import sys
 import os
 import re
 import copy
+import json
+from django.core.exceptions import ImproperlyConfigured
+from .config_parser import ConfigParser
 
 from seaserv import FILE_SERVER_PORT
 
@@ -36,6 +39,7 @@ DATABASES = {
         'PASSWORD': 'root',
         'HOST': '127.0.0.1',
         'PORT': '3306',
+        'OPTIONS': {'charset': 'utf8mb4'},
     }
 }
 _preset_db_cfg = copy.deepcopy(DATABASES)
@@ -234,7 +238,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # In order to overide command `createsuperuser`, base app *must* before auth app.
+    # In order to override command `createsuperuser`, base app *must* before auth app.
     # ref: https://docs.djangoproject.com/en/1.11/howto/custom-management-commands/#overriding-commands
     'seahub.base',
     'django.contrib.auth',
@@ -322,7 +326,7 @@ ENABLE_ADFS_LOGIN = False
 
 ENABLE_MULTI_ADFS = False
 
-DISABLE_ADFS_USER_PWD_LOGIN = False
+DISABLE_SSO_USER_LOCAL_PWD_LOGIN = False
 
 ENABLE_OAUTH = False
 ENABLE_WATERMARK = False
@@ -407,7 +411,7 @@ ENCRYPTED_LIBRARY_PWD_HASH_PARAMS = ""
 # enable reset encrypt library's password when user forget password
 ENABLE_RESET_ENCRYPTED_REPO_PASSWORD = False
 
-# mininum length for password of encrypted library
+# minimum length for password of encrypted library
 REPO_PASSWORD_MIN_LENGTH = 8
 
 # token length for the share link
@@ -438,7 +442,7 @@ UPLOAD_LINK_EXPIRE_DAYS_DEFAULT = 0
 # force use password when generate a share/upload link
 SHARE_LINK_FORCE_USE_PASSWORD = False
 
-# mininum length for the password of a share/upload link
+# minimum length for the password of a share/upload link
 SHARE_LINK_PASSWORD_MIN_LENGTH = 10
 
 # LEVEL for the password of a share/upload link
@@ -456,6 +460,9 @@ ENABLE_SHARE_LINK_REPORT_ABUSE = False
 # share link audit code timeout
 SHARE_LINK_AUDIT_CODE_TIMEOUT = 60 * 60
 
+# always share link send password separately
+SHARE_LINK_ALWAYS_SEND_PASSWORD_SEPARATELY = True
+
 # enable or disable limit ip
 ENABLE_LIMIT_IPADDRESS = False
 TRUSTED_IP_LIST = ['127.0.0.1']
@@ -472,12 +479,6 @@ USER_STRONG_PASSWORD_REQUIRED = False
 
 # Force user to change password when admin add/reset a user.
 FORCE_PASSWORD_CHANGE = True
-
-# Enable a user to change password in 'settings' page.
-ENABLE_CHANGE_PASSWORD = True
-
-# Enable a sso user to change password in 'settings' page.
-ENABLE_SSO_USER_CHANGE_PASSWORD = True
 
 # Enable a user to get auth token in 'settings' page.
 ENABLE_GET_AUTH_TOKEN_BY_SESSION = False
@@ -553,7 +554,7 @@ CACHES = {
 }
 _preset_cache_cfg = copy.deepcopy(CACHES)
 
-# rest_framwork
+# rest_framework
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
@@ -584,7 +585,7 @@ ACTIVATE_AFTER_REGISTRATION = True
 # This option will be ignored if ``ACTIVATE_AFTER_REGISTRATION`` set to ``True``.
 REGISTRATION_SEND_MAIL = False
 
-# Whether or not send notify email to sytem admins when user registered or
+# Whether or not send notify email to system admins when user registered or
 # first login through Shibboleth.
 NOTIFY_ADMIN_AFTER_REGISTRATION = False
 
@@ -637,7 +638,7 @@ BRANDING_CSS = ''
 # used in 6.3+, enable setting custom css via admin web interface
 ENABLE_BRANDING_CSS = False
 
-# Using Django to server static file. Set to `False` if deployed behide a web
+# Using Django to server static file. Set to `False` if deployed behind a web
 # server.
 SERVE_STATIC = True
 
@@ -867,7 +868,7 @@ FREEZE_USER_ON_LOGIN_FAILED = False # deactivate user account when login attempt
 # Age of cookie, in seconds (default: 1 day).
 SESSION_COOKIE_AGE = 24 * 60 * 60
 
-# Days of remembered login info (deafult: 7 days)
+# Days of remembered login info (default: 7 days)
 LOGIN_REMEMBER_DAYS = 7
 
 SEAFILE_VERSION = '6.3.3'
@@ -897,7 +898,7 @@ THUMBNAIL_IMAGE_SIZE_LIMIT = 30
 THUMBNAIL_IMAGE_ORIGINAL_SIZE_LIMIT = 256
 
 # video thumbnails
-ENABLE_VIDEO_THUMBNAIL = False
+
 THUMBNAIL_VIDEO_FRAME_TIME = 5  # use the frame at 5 second as thumbnail
 
 # pdf thumbnails
@@ -906,6 +907,7 @@ ENABLE_PDF_THUMBNAIL = True
 # template for create new office file
 OFFICE_TEMPLATE_ROOT = os.path.join(MEDIA_ROOT, 'office-template')
 
+ENABLE_WEBDAV = os.environ.get('ENABLE_SEAFDAV', 'false').lower() == 'true'
 ENABLE_WEBDAV_SECRET = True
 WEBDAV_SECRET_MIN_LENGTH = 1
 WEBDAV_SECRET_STRENGTH_LEVEL = 1
@@ -1011,7 +1013,7 @@ ENABLE_METADATA_FOR_NEW_LIBRARY = False
 ############################
 
 # ADDITIONAL_SHARE_DIALOG_NOTE = {
-#     'title': 'Attention! Read before shareing files:',
+#     'title': 'Attention! Read before sharing files:',
 #     'content': 'Do not share personal or confidential official data with **.'
 # }
 ADDITIONAL_SHARE_DIALOG_NOTE = None
@@ -1034,7 +1036,7 @@ if os.environ.get('SEAFILE_DOCS', None):
 # metadata server properties #
 ##############################
 ENABLE_METADATA_MANAGEMENT = False
-METADATA_SERVER_URL = ''
+INNER_METADATA_SERVER_URL = 'http://127.0.0.1:8084'
 MD_FILE_COUNT_LIMIT = int(os.getenv('MD_FILE_COUNT_LIMIT', 100000))
 
 #############################
@@ -1056,6 +1058,10 @@ OFFICE_SUITE_LIST = [
 ROLES_DEFAULT_OFFCICE_SUITE = {}
 OFFICE_SUITE_ENABLED_FILE_TYPES = []
 OFFICE_SUITE_ENABLED_EDIT_FILE_TYPES = []
+
+
+# Thumbnail
+ENABLE_THUMBNAIL_SERVER = False
 
 # file tags
 ENABLE_FILE_TAGS = True
@@ -1084,6 +1090,57 @@ ENABLE_FACE_RECOGNITION = False
 SEAFILE_AI_SERVER_URL = ''
 SEAFILE_AI_SECRET_KEY = ''
 AI_PRICES = {}
+LLM_MODELS = []
+
+
+def validate_llm_models(models):
+    if not models or not isinstance(models, list):
+        return []
+    validated_models = []
+
+    for model in models:
+        if not isinstance(model, dict) or model.get('disable', False):
+            continue
+        if model.get('type') in ('other', 'hosted_vllm'):
+            required_fields = ('model', 'url')
+        else:
+            required_fields = ('model', 'key')
+        if not all(field in model for field in required_fields):
+            continue
+        model['label'] = model.get('label', model['model'])
+        validated_models.append(model)
+
+    return validated_models
+
+
+def get_llm_price(models):
+    if not models or not isinstance(models, list):
+        return {}
+
+    prices = {}
+    for model in models:
+        if not isinstance(model, dict) or model.get('disable', False):
+            continue
+
+        model_name = model.get('model')
+        if not model_name:
+            continue
+
+        price = model.get('price')
+        if isinstance(price, (float, int)):
+            prices[model_name] = {
+                'input_tokens': price,
+                'output_tokens': 0,
+            }
+            continue
+
+        if isinstance(price, dict) and 'input_tokens' in price:
+            prices[model_name] = {
+                'input_tokens': price.get('input_tokens', 0),
+                'output_tokens': price.get('output_tokens', 0),
+            }
+
+    return prices
 
 d = os.path.dirname
 EVENTS_CONFIG_FILE = os.environ.get(
@@ -1111,6 +1168,15 @@ SERVER_GOOGLE_MAP_KEY = '' # Used in backend server for address / position conve
 GOOGLE_MAP_ID = 'google_map_id'
 
 
+# risk control
+ENABLE_RISK_CONTROL = False
+RISK_CONTROL_SERVER_URL = ''
+
+# Cloudflare Turnstile
+ENABLE_TURNSTILE = False
+TURNSTILE_SITE_KEY = ''
+TURNSTILE_SECRET_KEY = ''
+
 #####################
 # External settings #
 #####################
@@ -1131,16 +1197,16 @@ def load_local_settings(module):
                 globals()[name] = value
         elif re.search('^[A-Z]', attr):
             globals()[attr] = getattr(module, attr)
-            
+
 def logger_error(error, filename='seahub_settings.py'):
     from datetime import datetime
     import traceback
-    
+
     log_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     error_type = type(error).__name__
     error_traceback = traceback.format_exc()
     log_entry = f"[{log_time}] [ERROR] {filename} load: {error_type}: {str(error)}\n{error_traceback}\n"
-    
+
     log_file_path = os.path.join(LOG_DIR, 'seahub.log')
     with open(log_file_path, 'a', encoding='utf-8') as f:
         f.write(log_entry)
@@ -1196,7 +1262,35 @@ for module in LOGGING_IGNORE_MODULES:
 # config in env
 JWT_PRIVATE_KEY = os.environ.get('JWT_PRIVATE_KEY', '') or JWT_PRIVATE_KEY
 
+# config in yaml & env
+ai_yaml_file_path = os.path.join(central_conf_dir, os.environ.get('SEAFILE_AI_CONFIG_NAME', 'seafile_ai_config.yaml'))
+ai_configs = ConfigParser(ai_yaml_file_path, 'seahub')
+EMBEDDING_MODEL = ai_configs.get('EMBEDDING_MODEL', {})
+EMBEDDING_MODEL_CONFIGURED = bool(validate_llm_models([EMBEDDING_MODEL]))
+EMBEDDING_DIMENSIONS = 1024
+try:
+    dimensions = int(EMBEDDING_MODEL.get('dimensions', EMBEDDING_DIMENSIONS))
+    if dimensions > 0:
+        EMBEDDING_DIMENSIONS = dimensions
+except (TypeError, ValueError):
+    pass
+AI_PRICES = get_llm_price(ai_configs.get('LLM_MODELS', []) + [EMBEDDING_MODEL])
+
+LLM_MODELS = [
+    {
+        'type': model.get('type', 'openai'),
+        'model': model['model'],
+        'label': model['label'],
+        'default': model.get('default', False),
+    }
+    for model in validate_llm_models(ai_configs.get('LLM_MODELS', []))if not model.get('hidden', False)
+]
+
 # For database conf., now Seafile only support MySQL, skip for other engine
+
+
+
+ENABLE_VIDEO_THUMBNAIL = ENABLE_THUMBNAIL_SERVER
 
 ## use update methods to get user's cfg
 _tmp_db_cfg = copy.deepcopy(_preset_db_cfg)
@@ -1276,6 +1370,12 @@ elif CACHE_PROVIDER == 'memcached':
 else:
     raise ValueError(f'Invalid CACHE_PROVIDER: {CACHE_PROVIDER}')
 
+if os.environ.get('CSRF_TRUSTED_ORIGINS'):
+    try:
+        CSRF_TRUSTED_ORIGINS = json.loads(os.environ.get('CSRF_TRUSTED_ORIGINS'))
+    except:
+        pass
+
 if os.environ.get('ENABLE_SEADOC'):
     ENABLE_SEADOC = os.environ.get('ENABLE_SEADOC', 'false').lower() == 'true'
 SEADOC_PRIVATE_KEY = JWT_PRIVATE_KEY
@@ -1299,6 +1399,10 @@ sys.path.pop(0)
 # Following settings are private, can not be overwrite.
 INNER_FILE_SERVER_ROOT = 'http://127.0.0.1:' + FILE_SERVER_PORT
 
+if os.environ.get('ENABLE_METADATA_MANAGEMENT'):
+    ENABLE_METADATA_MANAGEMENT = os.environ.get('ENABLE_METADATA_MANAGEMENT', 'false').lower() == 'true'
+METADATA_SERVER_URL = os.environ.get('INNER_METADATA_SERVER_URL', '') or INNER_METADATA_SERVER_URL
+
 if os.environ.get('ENABLE_SEAFILE_AI'):
     ENABLE_SEAFILE_AI = os.environ.get('ENABLE_SEAFILE_AI', 'false').lower() == 'true'
 SEAFILE_AI_SECRET_KEY = os.environ.get('SEAFILE_AI_SECRET_KEY', '') or SEAFILE_AI_SECRET_KEY
@@ -1308,6 +1412,8 @@ if os.environ.get('ENABLE_FACE_RECOGNITION'):
     ENABLE_FACE_RECOGNITION = os.environ.get('ENABLE_FACE_RECOGNITION', 'false').lower() == 'true'
 
 ENABLE_FACE_RECOGNITION = ENABLE_METADATA_MANAGEMENT and ENABLE_SEAFILE_AI and ENABLE_FACE_RECOGNITION
+
+ENABLE_AI_CHAT = ENABLE_SEAFILE_AI
 
 SEAFEVENTS_SERVER_URL = 'http://127.0.0.1:8889'
 
@@ -1386,5 +1492,3 @@ if ENABLE_LDAP:
 # ]
 
 # settings.py
-
-

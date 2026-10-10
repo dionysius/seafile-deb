@@ -1,0 +1,52 @@
+.dir-others .dir-others-item {
+  position: relative;
+  height: 28px;
+  padding-left: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.dir-others .dir-others-item[aria-expanded="true"], /* for 'More' */
+.dir-others .dir-others-item:hover {
+  background-color: var(--bs-nav-hover-bg);
+  border-radius: 0.25rem;
+}
+
+.dir-others .dir-others-item.tree-node-hight-light {
+  border-radius: 4px;
+  background-color: var(--bs-nav-active-bg) !important;
+}
+
+.dir-others .dir-others-item.tree-node-hight-light::before {
+  content: '';
+  position: absolute;
+  display: block;
+  width: 4px;
+  height: 24px;
+  left: -8px;
+  top: 2px;
+  background-color: #ff9800;
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.dir-others .dir-others-item .dir-others-item-text {
+  font-size: 14px;
+  margin-left: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--bs-body-color);
+}
+
+.dir-others .dir-others-item .seafile-multicolor-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--bs-icon-color);
+}
+
+.dir-others .dir-others-item.more-dropdown-toggle {
+  width: 100%;
+}

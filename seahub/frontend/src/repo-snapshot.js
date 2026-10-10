@@ -1,20 +1,22 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import PropTypes from 'prop-types';
-import classnames from 'classnames';
 import { navigate } from '@gatsbyjs/reach-router';
-import { Utils } from './utils/utils';
-import { gettext, siteRoot, mediaUrl, logoPath, logoWidth, logoHeight, siteTitle } from './utils/constants';
-import { seafileAPI } from './utils/seafile-api';
-import Loading from './components/loading';
-import ModalPortal from './components/modal-portal';
-import toaster from './components/toast';
-import CommonToolbar from './components/toolbar/common-toolbar';
-import ConfirmRestoreRepo from './components/dialog/confirm-restore-repo';
+import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { createRoot } from 'react-dom/client';
+import { seafileAPI } from '@/api/seafile-api';
+import ConfirmRestoreRepo from '@/components/dialog/confirm-restore-repo';
+import Icon from '@/components/icon';
+import Loading from '@/components/loading';
+import ModalPortal from '@/components/modal-portal';
+import OpIcon from '@/components/op-icon';
+import toaster from '@/components/toast';
+import CommonToolbar from '@/components/toolbar/common-toolbar';
+import { gettext, siteRoot, mediaUrl, logoPath, logoWidth, logoHeight, siteTitle } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 
-import './css/toolbar.css';
-import './css/search.css';
-import './css/repo-snapshot.css';
+import '@/css/toolbar.css';
+import '@/css/search.css';
+import '@/css/repo-snapshot.css';
 
 const {
   repoID, repoName, canRestoreRepo,
@@ -148,7 +150,7 @@ class RepoSnapshot extends React.Component {
                   <span className="heading-commit-time ml-1">({commitTime})</span>
                 </h2>
                 <a href="#" className="go-back" title={gettext('Back')} role="button" aria-label={gettext('Back')} onClick={this.goBack}>
-                  <span aria-hidden="true" className="sf3-font sf3-font-down rotate-90 d-inline-block"></span>
+                  <Icon symbol="down" className="rotate-90" />
                 </a>
                 {folderPath == '/' && (
                   <div className="d-flex mb-2 align-items-center">
@@ -308,14 +310,15 @@ class FolderItem extends React.Component {
         <td><a href="#" onClick={this.renderFolder}>{item.name}</a></td>
         <td></td>
         <td>
-          <i
+          <span
             role="button"
-            className={`op-icon sf2-icon-reply ${isIconShown ? '' : 'invisible'}`}
+            className={`op-icon ${isIconShown ? '' : 'invisible'}`}
             onClick={this.restoreItem}
             title={gettext('Restore')}
             aria-label={gettext('Restore')}
           >
-          </i>
+            <Icon symbol="reply" />
+          </span>
         </td>
       </tr>
     ) : (
@@ -332,15 +335,16 @@ class FolderItem extends React.Component {
         <td>{Utils.bytesToSize(item.size)}</td>
         <td>
           <div className="d-flex align-items-center">
-            <i
-              className={`op-icon sf2-icon-reply ${isIconShown ? '' : 'invisible'}`}
-              onClick={this.restoreItem}
+            <OpIcon
+              symbol="reply"
+              className={`op-icon ${isIconShown ? '' : 'invisible'}`}
+              op={this.restoreItem}
               title={gettext('Restore')}
               aria-label={gettext('Restore')}
-              role="button"
-            >
-            </i>
-            <a href={`${siteRoot}repo/${repoID}/${item.obj_id}/download/?file_name=${encodeURIComponent(item.name)}&p=${encodeURIComponent(Utils.joinPath(folderPath, item.name))}`} className={`op-icon sf3-font sf3-font-download1 ${isIconShown ? '' : 'invisible'}`} title={gettext('Download')} role="button" aria-label={gettext('Download')}></a>
+            />
+            <a href={`${siteRoot}repo/${repoID}/${item.obj_id}/download/?file_name=${encodeURIComponent(item.name)}&p=${encodeURIComponent(Utils.joinPath(folderPath, item.name))}`} className={`op-icon ${isIconShown ? '' : 'invisible'}`} title={gettext('Download')} role="button" aria-label={gettext('Download')}>
+              <Icon symbol="download" />
+            </a>
           </div>
         </td>
       </tr>

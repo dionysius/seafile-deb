@@ -1,16 +1,22 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
-import { UncontrolledTooltip } from 'reactstrap';
 import { Link } from '@gatsbyjs/reach-router';
-import DirOperationToolbar from '../../components/toolbar/dir-operation-toolbar';
-import MetadataViewName from '../../metadata/components/metadata-view-name';
-import TagViewName from '../../tag/components/tag-view-name';
-import { siteRoot, gettext } from '../../utils/constants';
-import { debounce, Utils } from '../../utils/utils';
-import { PRIVATE_FILE_TYPE } from '../../constants';
-import { EVENT_BUS_TYPE } from '../../metadata/constants';
-import { ALL_TAGS_ID } from '../../tag/constants';
+import PropTypes from 'prop-types';
+import { PRIVATE_FILE_TYPE } from '@/constants';
+import { getTrashPath } from '@/features/library-view/dir-trash-view/utils';
+import MetadataViewName from '@/features/metadata/components/metadata-view-name';
+import { EVENT_BUS_TYPE } from '@/features/metadata/constants';
+import TagViewName from '@/features/tag/components/tag-view-name';
+import { ALL_TAGS_ID } from '@/features/tag/constants';
+import { siteRoot, gettext, username, enableUserCleanTrash } from '@/utils/constants';
+import { debounce, Utils } from '@/utils/utils';
 import OpIcon from '../../components/op-icon';
+import DirOperationToolbar from '../../components/toolbar/dir-operation-toolbar';
+import ArchiveIcon from '../archive-icon';
+import CleanTrash from '../dialog/clean-trash';
+import CustomDropdown from '../dropdown';
+import EventBus from '../event-bus';
+import Icon from '../icon';
+import Tooltip from '../tooltip';
 
 const propTypes = {
   currentRepoInfo: PropTypes.object.isRequired,
@@ -49,6 +55,50 @@ class DirPath extends React.Component {
   onPathClick = (e) => {
     let path = Utils.getEventData(e, 'path');
     this.props.onPathClick(path);
+  };
+
+  onTrashPathClick = (e) => {
+    // update path
+    let path = Utils.getEventData(e, 'path');
+    this.props.onTrashPathClick(path);
+
+    // update content
+    const eventBus = EventBus.getInstance();
+    eventBus.dispatch('update_trash_path_by_dir_path', path);
+  };
+
+  isTrashMode = () => {
+    return location.href.indexOf('?trash=true') > -1;
+  };
+
+  isHistoryMode = () => {
+    return location.href.indexOf('?history=true') > -1;
+  };
+
+  isChatMode = () => {
+    return location.href.indexOf('?chat=true') > -1;
+  };
+
+  isSettingsMode = () => {
+    return location.href.indexOf('?settings=true') > -1;
+  };
+
+  turnChatPathToLink = () => {
+    return (
+      <>
+        <span className="path-split">/</span>
+        <span className="path-item path-item-read-only">{gettext('Chat')}</span>
+      </>
+    );
+  };
+
+  turnSettingsPathToLink = () => {
+    return (
+      <>
+        <span className="path-split">/</span>
+        <span className="path-item path-item-read-only">{gettext('Settings')}</span>
+      </>
+    );
   };
 
   onTabNavClick = (e, tabName, id) => {
@@ -134,8 +184,8 @@ class DirPath extends React.Component {
           role={children ? 'button' : null}
           tabIndex={children ? 0 : -1}
           aria-label={children ? gettext('Refresh the view') : ''}
-          onClick={children ? this.handleRefresh : () => {}}
-          onKeyDown={children ? Utils.onKeyDown : () => {}}
+          onClick={children ? this.handleRefresh : () => { }}
+          onKeyDown={children ? Utils.onKeyDown : () => { }}
           title={children ? gettext('Refresh the view') : ''}
         >
           {viewId && <MetadataViewName id={viewId} />}
@@ -155,10 +205,13 @@ class DirPath extends React.Component {
           onClick={this.handleRefresh}
           onKeyDown={Utils.onKeyDown}
         >
-          <i className="sf3-font sf3-font-refresh"></i>
-          <UncontrolledTooltip target="sf-metadata-view-refresh" placement="bottom">
+          <Icon symbol="refresh" />
+          <Tooltip
+            target="sf-metadata-view-refresh"
+            placement="bottom"
+          >
             {gettext('Refresh the view')}
-          </UncontrolledTooltip>
+          </Tooltip>
         </div>
       </>
     );
@@ -184,6 +237,126 @@ class DirPath extends React.Component {
     );
   };
 
+  toggleDesktopOpMenu = () => {
+    this.setState({ isDesktopMenuOpen: !this.state.isDesktopMenuOpen });
+  };
+
+  toggleCleanTrashDialog = () => {
+    this.setState({ isCleanTrashDialogOpen: !this.state.isCleanTrashDialogOpen });
+  };
+
+  refreshTrash = () => {
+    const eventBus = EventBus.getInstance();
+    eventBus.dispatch(EVENT_BUS_TYPE.REFRESH_TRASH);
+  };
+
+  renderCustomTrigger = (isOpen) => {
+    return (
+      <>
+        <Icon symbol="down" className="path-item-dropdown-toggle" />
+        {!isOpen && <Tooltip target="trash-more-operations">{gettext('More operations')}</Tooltip>}
+      </>
+    );
+  };
+
+  renderCleanTrash = () => {
+    const { currentRepoInfo } = this.props;
+    const { owner_email, is_admin } = currentRepoInfo;
+    const isRepoAdmin = owner_email === username || is_admin;
+    if (!enableUserCleanTrash || !isRepoAdmin) {
+      return null;
+    }
+
+    return (
+      <>
+        <CustomDropdown
+          target="trash-more-operations"
+          className="trash-path-dropdown"
+          items={[{ key: 'clean-trash', label: gettext('Clean trash'), onClick: this.toggleCleanTrashDialog }]}
+          trigger={this.renderCustomTrigger}
+          triggerClassName="trash-path-item"
+          menuClassName="position-fixed"
+          menuPortal={false}
+        />
+        {this.state.isCleanTrashDialogOpen && (
+          <CleanTrash
+            repoID={this.props.repoID}
+            refreshTrash={this.refreshTrash}
+            toggleDialog={this.toggleCleanTrashDialog}
+          />
+        )}
+      </>
+    );
+  };
+
+  turnTrashPathToLink = () => {
+    const path = getTrashPath();
+    if (path === '/') {
+      return (
+        <>
+          <span className="path-split">/</span>
+          <span className="path-item path-item-read-only">{gettext('Trash')}</span>
+          {this.renderCleanTrash()}
+        </>
+      );
+    }
+
+    const pathList = path.split('/');
+    let nodePath = '';
+    const pathElem = pathList.map((item, index) => {
+      if (item === '') {
+        return (
+          <>
+            <span className="path-split">/</span>
+            <span
+              className="path-item"
+              data-path={'/'}
+              onClick={this.onTrashPathClick}
+              role="button"
+              title={item}
+            >
+              {gettext('Trash')}
+            </span>
+          </>
+        );
+      }
+      nodePath += '/' + item;
+      return (
+        <Fragment key={index} >
+          <span className="path-split">/</span>
+          <span
+            className={'path-item'}
+            data-path={nodePath}
+            onClick={this.onTrashPathClick}
+            role="button"
+            title={item}
+          >
+            {item}
+          </span>
+        </Fragment>
+      );
+    });
+    return pathElem;
+  };
+
+  turnHistoryPathToLink = () => {
+    return (
+      <>
+        <span className="path-split">/</span>
+        <span className="path-item path-item-read-only">{gettext('History')}</span>
+        <div
+          className="cur-view-tip"
+          id="sf-history-mode-tip"
+          role="button"
+          tabIndex={0}
+        >
+          <Icon symbol="question-circle-stroked" />
+          <Tooltip target="sf-history-mode-tip" placement='bottom'>{gettext('Tip: a snapshot will be generated after modification, which records the library state after the modification')}</Tooltip>
+        </div>
+      </>
+    );
+  };
+
   turnPathToLink = (path) => {
     path = path[path.length - 1] === '/' ? path.slice(0, path.length - 1) : path;
     const pathList = path.split('/');
@@ -193,6 +366,23 @@ class DirPath extends React.Component {
     if (pathList.includes(PRIVATE_FILE_TYPE.TAGS_PROPERTIES)) {
       return this.turnTagPathToLink(pathList);
     }
+
+    if (this.isTrashMode()) {
+      return this.turnTrashPathToLink(pathList);
+    }
+
+    if (this.isHistoryMode()) {
+      return this.turnHistoryPathToLink(pathList);
+    }
+
+    if (this.isChatMode()) {
+      return this.turnChatPathToLink();
+    }
+
+    if (this.isSettingsMode()) {
+      return this.turnSettingsPathToLink();
+    }
+
     let nodePath = '';
     let pathElem = pathList.map((item, index) => {
       if (item === '') return null;
@@ -244,15 +434,24 @@ class DirPath extends React.Component {
   };
 
   render() {
-    const { currentPath, repoName, isTreePanelShown } = this.props;
+    const { currentPath, repoName, isTreePanelShown, currentRepoInfo } = this.props;
     const pathElem = this.turnPathToLink(currentPath);
+    const isSettingsMode = this.isSettingsMode();
+    const isTrashMode = this.isTrashMode();
+    const isHistoryMode = this.isHistoryMode();
+    const isChatMode = this.isChatMode();
+    const tip = isTreePanelShown ? gettext('Close the panel') : gettext('Open the panel');
     return (
       <div className="path-container dir-view-path">
         <OpIcon
-          className="cur-view-path-btn mr-1 sf3-font-side-bar sf3-font"
-          title={isTreePanelShown ? gettext('Close the panel') : gettext('Open the panel')}
+          id="sf-side-panel-icon-btn"
+          className="cur-view-path-btn"
+          symbol="side-bar"
+          title={tip}
+          tooltip={tip}
           op={this.props.toggleTreePanel}
         />
+        <span className="icon-path-split mx-2"></span>
         {this.props.pathPrefix && this.props.pathPrefix.map((item, index) => {
           return (
             <Fragment key={index}>
@@ -273,7 +472,7 @@ class DirPath extends React.Component {
             <span className="path-split">/</span>
           </>
         )}
-        {(currentPath === '/' || currentPath === '') ?
+        {(!isHistoryMode && !isTrashMode && !isChatMode && !isSettingsMode && (currentPath === '/' || currentPath === '')) ?
           <DirOperationToolbar
             path={this.props.currentPath}
             repoID={this.props.repoID}
@@ -289,19 +488,25 @@ class DirPath extends React.Component {
             onUploadFolder={this.props.onUploadFolder}
             loadDirentList={this.props.loadDirentList}
           >
-            <span className="last-path-item" title={repoName}>{repoName}</span>
+            <span className="last-path-item" title={repoName}>
+              {repoName}
+              <ArchiveIcon currentRepoInfo={currentRepoInfo} />
+            </span>
           </DirOperationToolbar> :
-          <span
-            className="path-item"
-            data-path="/"
-            onClick={this.onPathClick}
-            onKeyDown={Utils.onKeyDown}
-            role="button"
-            title={repoName}
-            tabIndex="0"
-          >
-            {repoName}
-          </span>
+          <>
+            <span
+              className="path-item"
+              data-path="/"
+              onClick={this.onPathClick}
+              onKeyDown={Utils.onKeyDown}
+              role="button"
+              title={repoName}
+              tabIndex="0"
+            >
+              {repoName}
+            </span>
+            <ArchiveIcon currentRepoInfo={currentRepoInfo} className='mr-1' />
+          </>
         }
         {pathElem}
       </div>

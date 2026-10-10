@@ -8,12 +8,12 @@ from seafevents.app.config import SEAHUB_SECRET_KEY
 from seafevents.seafevent_server.task_manager import task_manager
 from seafevents.seafevent_server.export_task_manager import event_export_task_manager
 from seafevents.seafevent_server.import_task_manager import event_import_task_manager
+from seafevents.seafevent_server.repo_archive_task_manager import repo_archive_task_manager
 from seafevents.seasearch.index_task.index_task_manager import index_task_manager
 from seafevents.repo_metadata.metadata_server_api import MetadataServerAPI
 from seafevents.repo_metadata.utils import add_file_details
 from seafevents.app.cache_provider import cache
 from seafevents.app.event_redis import redis_cache, REDIS_METRIC_KEY
-from seafevents.face_recognition.utils import recognize_faces_by_obj_ids
 
 
 app = Flask(__name__)
@@ -189,7 +189,8 @@ def search():
     return {'results': results}, 200
 
 
-@app.route('/add-init-face-recognition-task', methods=['GET'])
+# Face recognition is no longer available.
+# @app.route('/add-init-face-recognition-task', methods=['GET'])
 def add_init_face_recognition_task():
     is_valid, error = check_auth_token(request)
     if not is_valid:
@@ -212,7 +213,52 @@ def add_init_face_recognition_task():
     return make_response(({'task_id': task_id}, 200))
 
 
-@app.route('/recognize-faces', methods=['POST'])
+@app.route('/add-init-ai-summary-task', methods=['GET'])
+def add_init_ai_summary_task():
+    is_valid, error = check_auth_token(request)
+    if not is_valid:
+        return make_response((error, 403))
+
+    if task_manager.tasks_queue.full():
+        logger.warning('seafevent server busy, queue size: %d' % (task_manager.tasks_queue.qsize(),))
+        return make_response(('seafevent server busy.', 400))
+
+    username = request.args.get('username')
+    repo_id = request.args.get('repo_id')
+
+    try:
+        task_id = task_manager.add_init_ai_summary_task(username, repo_id)
+    except Exception as e:
+        logger.error(e)
+        return make_response((e, 500))
+
+    return make_response(({'task_id': task_id}, 200))
+
+
+@app.route('/delete-summary-vector-index', methods=['POST'])
+def delete_summary_vector_index():
+    is_valid, error = check_auth_token(request)
+    if not is_valid:
+        return make_response((error, 403))
+    try:
+        data = json.loads(request.data)
+    except Exception as error:
+        logger.exception(error)
+        return {'error_msg': 'Bad request.'}, 400
+
+    repo_id = data.get('repo_id')
+    if not repo_id:
+        return {'error_msg': 'repo_id invalid.'}, 400
+    try:
+        index_task_manager.delete_summary_vector_index(repo_id)
+    except Exception as error:
+        logger.exception(error)
+        return {'error_msg': 'Internal Server Error'}, 500
+    return {'success': True}, 200
+
+
+# Face recognition is no longer available.
+# @app.route('/recognize-faces', methods=['POST'])
 def recognize_faces():
     is_valid = check_auth_token(request)
     if not is_valid:
@@ -266,9 +312,8 @@ def extract_file_details():
 
     return {'details': details}, 200
 
-
-@app.route('/wiki-search', methods=['POST'])
-def search_wiki():
+@app.route('/search-wikis', methods=['POST'])
+def search_wikis():
     is_valid = check_auth_token(request)
     if not is_valid:
         return {'error_msg': 'Permission denied'}, 403
@@ -282,20 +327,27 @@ def search_wiki():
         logger.exception(e)
         return {'error_msg': 'Bad request.'}, 400
 
-    query = data.get('query').strip()
-    wiki = data.get('wiki')
+    query = data.get('query', '').strip()
+    wiki_ids = data.get('wiki_ids')
 
     if not query:
         return {'error_msg': 'query invalid.'}, 400
-    if not wiki:
-        return {'error_msg': 'wiki invalid.'}, 400
+    if not wiki_ids:
+        return {'error_msg': 'wiki_ids invalid.'}, 400
+
+    # Normalize to list format (supports single wiki_id string or list)
+    if isinstance(wiki_ids, str):
+        wiki_ids = [wiki_ids]
+
+    if not isinstance(wiki_ids, list):
+        return {'error_msg': 'wiki_ids invalid.'}, 400
 
     try:
         count = int(data.get('count'))
     except:
         count = 20
 
-    results, total = index_task_manager.wiki_search(query, wiki, count)
+    results, total = index_task_manager.search_wikis(query, wiki_ids, count)
 
     return {'results': results, 'total': total}, 200
 
@@ -328,7 +380,8 @@ def add_convert_wiki_task():
     return {'task_id': task_id}, 200
 
 
-@app.route('/update-people-cover-photo', methods=['POST'])
+# Face recognition is no longer available.
+# @app.route('/update-people-cover-photo', methods=['POST'])
 def update_cover_photo():
     is_valid, error = check_auth_token(request)
     if not is_valid:
@@ -341,21 +394,20 @@ def update_cover_photo():
         return {'error_msg': 'Bad request.'}, 400
 
     repo_id = data.get('repo_id')
-    path = data.get('path')
     people_id = data.get('people_id')
-    download_token = data.get('download_token')
+    obj_id = data.get('obj_id')
 
     if not repo_id:
         return {'error_msg': 'repo_id invalid.'}, 400
-    if not path:
-        return {'error_msg': 'path invalid.'}, 400
+    
     if not people_id:
         return {'error_msg': 'people_id invalid.'}, 400
-    if not download_token:
-        return {'error_msg': 'download_token invalid.'}, 400
+    
+    if not obj_id:
+        return {'error_msg': 'obj_id invalid.'}, 400
 
     try:
-        app.face_recognition_manager.update_people_cover_photo(repo_id, people_id, path, download_token)
+        app.face_recognition_manager.update_people_cover_photo(repo_id, people_id, obj_id)
     except Exception as e:
         logger.error(e)
         return make_response((e, 500))
@@ -496,3 +548,60 @@ def import_wiki_page():
         return make_response((e, 500))
 
     return {'task_id': task_id}, 200
+    
+@app.route('/add-repo-archive-task', methods=['POST'])
+def add_repo_archive_task():
+    is_valid, error = check_auth_token(request)
+    if not is_valid:
+        return {'error_msg': 'Permission denied'}, 403
+
+    try:
+        data = json.loads(request.data)
+    except Exception as e:
+        logger.exception(e)
+        return {'error_msg': 'Bad request.'}, 400
+
+    repo_id = data.get('repo_id')
+    orig_storage_id = data.get('orig_storage_id')
+    dest_storage_id = data.get('dest_storage_id')
+    op_type = data.get('op_type')
+    username = data.get('username')
+
+    if not repo_id:
+        return {'error_msg': 'repo_id invalid.'}, 400
+    if not orig_storage_id:
+        return {'error_msg': 'orig_storage_id invalid.'}, 400
+    if not dest_storage_id:
+        return {'error_msg': 'dest_storage_id invalid.'}, 400
+    if not op_type:
+        return {'error_msg': 'op_type invalid.'}, 400
+    if not username:
+        return {'error_msg': 'username invalid.'}, 400
+        
+    try:
+        task_id = repo_archive_task_manager.add_repo_archive_task(repo_id, orig_storage_id, dest_storage_id, op_type, username)
+    except Exception as e:
+        logger.error(e)
+        return make_response((e, 500))
+
+    return {'task_id': task_id}, 200
+
+@app.route('/query-archive-status', methods=['GET'])
+def query_archive_status():
+    is_valid, error = check_auth_token(request)
+    if not is_valid:
+        return make_response((error, 403))
+
+    task_id = request.args.get('task_id')
+    if not repo_archive_task_manager.is_valid_task_id(task_id):
+        return make_response(('task_id not found.', 404))
+
+    try:
+        is_finished, error = repo_archive_task_manager.query_status(task_id)
+    except Exception as e:
+        logger.debug(e)
+        return make_response((e, 500))
+
+    if error:
+        return make_response((error, 500))
+    return make_response(({'is_finished': is_finished}, 200))

@@ -1,10 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Modal, ModalBody, ModalFooter, InputGroup, InputGroupText } from 'reactstrap';
-import { gettext } from '../../utils/constants';
-import { orgAdminAPI } from '../../utils/org-admin-api';
-import { Utils } from '../../utils/utils';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
+import PropTypes from 'prop-types';
+import { orgAdminAPI } from '@/api/org-admin-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 
 const propTypes = {
   orgID: PropTypes.string,
@@ -62,7 +62,7 @@ class SetOrgUserQuota extends React.Component {
   render() {
     const { inputValue, formErrorMsg, submitBtnDisabled } = this.state;
     return (
-      <Modal isOpen={true} centered={true} toggle={this.props.toggleDialog}>
+      <Modal isOpen={true} toggle={this.props.toggleDialog}>
         <SeahubModalHeader toggle={this.props.toggleDialog}>{gettext('Set user quota')}</SeahubModalHeader>
         <ModalBody>
           <React.Fragment>

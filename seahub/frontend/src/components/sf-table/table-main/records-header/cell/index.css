@@ -1,9 +1,13 @@
 .sf-table-header-cell .sf-table-column-icon {
-  fill: #aaa;
+  color: var(--bs-icon-secondary-color);
+}
+
+.static-sf-table-result-content.grid-header .sf-table-header-cell:hover .sf-table-cell.column {
+  background: var(--bs-th-hover-bg);
 }
 
 .sf-table-header-cell .seafile-multicolor-icon-drop-down {
-  fill: #aaa;
+  color: var(--bs-icon-secondary-color);
   font-size: 12px;
   transform: scale(.8);
 }
@@ -26,9 +30,9 @@
   position: absolute;
   top: 10%;
   height: 80%;
-  width: 1px;
-  background-color: #2d7ff9;
-  border-radius: 50%;
+  width: 2px;
+  background-color: rgb(200, 220, 240);
+  border-radius: 2px;
   z-index: 1;
 }
 

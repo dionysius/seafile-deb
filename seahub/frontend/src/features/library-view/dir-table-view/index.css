@@ -1,0 +1,44 @@
+.dir-table-view {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.dir-table-view .dir-table-name-cell {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.dir-table-view .sf-metadata-ui.ctime-formatter,
+.dir-table-view .sf-metadata-ui.mtime-formatter,
+.dir-table-view .sf-metadata-ui.date-formatter,
+.dir-table-view .sf-metadata-ui.number-formatter,
+.dir-table-view .sf-metadata-ui.text-formatter,
+.dir-table-view .sf-metadata-ui.long-text-formatter,
+.dir-table-view .sf-metadata-ui.geolocation-formatter {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 24px;
+}
+
+.table-cell-editor .sf-table-cell-text-editor {
+  height: 100%;
+  background-color: var(--bs-body-bg);
+}
+
+.table-cell-editor .sf-table-cell-text-editor.form-control:focus,
+.table-cell-editor .sf-table-cell-number-editor.form-control:focus {
+  border: 2px solid #3e84f7;
+  box-shadow: 0 0 4px 0 rgba(0, 0, 0, .2);
+}
+
+.dir-table-view .sf-table-cell.sf-table-number-cell .sf-metadata-number-formatter {
+  width: 100%;
+  text-align: right;
+}
+
+.dir-table-view .sf-table-cell.actions-cell .action-cell-content {
+  justify-content: center;
+}

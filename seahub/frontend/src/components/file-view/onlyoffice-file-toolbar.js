@@ -1,13 +1,16 @@
 import React, { Fragment } from 'react';
+import { Button } from 'reactstrap';
 import PropTypes from 'prop-types';
-import { Button, Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
-import { gettext, siteRoot } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
+import { gettext, siteRoot } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import Icon from '../../components/icon';
+import CustomDropdown from '../dropdown';
 import IconButton from '../icon-button';
 
 const propTypes = {
   isCommentUpdated: PropTypes.bool,
+  isShareEnabled: PropTypes.bool,
+  toggleShareDialog: PropTypes.func.isRequired,
   toggleDetailsPanel: PropTypes.func.isRequired,
   toggleHeader: PropTypes.func.isRequired,
 };
@@ -17,30 +20,28 @@ const {
 } = window.app.pageOptions;
 
 class OnlyofficeFileToolbar extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      dropdownOpen: false,
-      moreDropdownOpen: false
-    };
-  }
-
-  toggleMoreOpMenu = () => {
-    this.setState({
-      moreDropdownOpen: !this.state.moreDropdownOpen
-    });
-  };
-
-  toggle = () => {
-    this.setState({
-      dropdownOpen: !this.state.dropdownOpen
-    });
-  };
-
   render() {
-    const { isCommentUpdated } = this.props;
-    const { moreDropdownOpen } = this.state;
+    const { isCommentUpdated, isShareEnabled } = this.props;
+    const desktopMenuItems = [{
+      key: 'open-parent-folder',
+      label: gettext('Open parent folder'),
+      onClick: () => {
+        location.href = `${siteRoot}library/${repoID}/${Utils.encodePath(repoName + parentDir)}`;
+      }
+    }];
+    const mobileMenuItems = [
+      { key: 'fold', label: gettext('Fold'), onClick: this.props.toggleHeader },
+      { key: 'details', label: gettext('Details'), onClick: this.props.toggleDetailsPanel },
+      { key: 'comment', label: gettext('Comment'), onClick: this.props.toggleCommentPanel },
+      ...(isShareEnabled ? [{ key: 'share', label: gettext('Share'), onClick: this.props.toggleShareDialog }] : []),
+      {
+        key: 'open-parent-folder',
+        label: gettext('Open parent folder'),
+        onClick: () => {
+          location.href = `${siteRoot}library/${repoID}/${Utils.encodePath(repoName + parentDir)}`;
+        }
+      }
+    ];
     return (
       <Fragment>
         <div className="d-none d-md-flex justify-content-between align-items-center flex-shrink-0 ml-4">
@@ -55,26 +56,23 @@ class OnlyofficeFileToolbar extends React.Component {
             onClick={this.props.toggleCommentPanel}
             aria-label={gettext('Comment')}
           >
-            <i className="sdocfont sdoc-comments"></i>
+            <Icon symbol="comment" />
             {isCommentUpdated && <span className='comment-tip'></span>}
           </Button>
-          <Dropdown isOpen={moreDropdownOpen} toggle={this.toggleMoreOpMenu}>
-            <DropdownToggle
-              tag="span"
-              role='button'
-              tabIndex={0}
-              className="file-toolbar-btn"
-              aria-label={gettext('More operations')}
-              title={gettext('More operations')}
-            >
-              <Icon symbol="more-level" />
-            </DropdownToggle>
-            <DropdownMenu>
-              <DropdownItem href={`${siteRoot}library/${repoID}/${Utils.encodePath(repoName + parentDir)}`}>
-                {gettext('Open parent folder')}
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
+          {isShareEnabled && (
+            <IconButton
+              id="share-file"
+              icon='share'
+              text={gettext('Share')}
+              onClick={this.props.toggleShareDialog}
+            />
+          )}
+          <CustomDropdown
+            target="onlyoffice-file-toolbar-more"
+            items={desktopMenuItems}
+            triggerClassName="file-toolbar-btn"
+            menuPortal={false}
+          />
           <IconButton
             id="fold-header"
             icon='double-arrow-up'
@@ -83,23 +81,13 @@ class OnlyofficeFileToolbar extends React.Component {
           />
         </div>
 
-        <Dropdown isOpen={this.state.dropdownOpen} toggle={this.toggle} className="d-block d-md-none flex-shrink-0 ml-4">
-          <DropdownToggle tag="span" className="mx-1" aria-label={gettext('More operations')}>
-            <Icon symbol="more-level" />
-          </DropdownToggle>
-          <DropdownMenu>
-            <DropdownItem onClick={this.props.toggleHeader}>{gettext('Fold')}</DropdownItem>
-            <DropdownItem onClick={this.props.toggleDetailsPanel}>{gettext('Details')}</DropdownItem>
-            <DropdownItem>
-              <a href={`${siteRoot}library/${repoID}/${Utils.encodePath(repoName + parentDir)}`} className="text-inherit">
-                {gettext('Open parent folder')}
-              </a>
-            </DropdownItem>
-            <DropdownItem onClick={this.props.toggleCommentPanel}>
-              {gettext('Comment')}
-            </DropdownItem>
-          </DropdownMenu>
-        </Dropdown>
+        <CustomDropdown
+          target="onlyoffice-file-toolbar-mobile-more"
+          items={mobileMenuItems}
+          className="d-block d-md-none flex-shrink-0 ml-4"
+          triggerClassName="mx-1"
+          menuPortal={false}
+        />
       </Fragment>
     );
   }

@@ -1,13 +1,14 @@
 import React, { Suspense } from 'react';
-import { createRoot } from 'react-dom/client';
-import { ShareLinkEditor, SimpleViewer } from '@seafile/seafile-sdoc-editor';
 import { I18nextProvider } from 'react-i18next';
-import i18n from './_i18n/i18n-sdoc-editor';
-import Loading from './components/loading';
-import { Utils } from './utils/utils';
+import { ShareLinkEditor, SimpleViewer } from '@seafile/seafile-sdoc-editor';
+import { createRoot } from 'react-dom/client';
+import i18n from '@/_i18n/i18n-sdoc-editor';
+import Loading from '@/components/loading';
+import { mediaUrl } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 
 const { serviceURL, siteRoot, avatarURL } = window.app.config;
-const { shareLinkUsername: username } = window.shared.pageOptions;
+const { shareLinkUsername: username, name = 'Anonymous' } = window.shared.pageOptions;
 
 const {
   repoID, filePerm,
@@ -30,7 +31,7 @@ window.seafile = {
   serviceUrl: serviceURL,
   accessToken: seadocAccessToken,
   sdocServer: seadocServerUrl,
-  name: 'Anonymous',
+  name,
   username,
   avatarURL,
   siteRoot,
@@ -52,8 +53,8 @@ const root = createRoot(document.getElementById('wrapper'));
 root.render(
   <I18nextProvider i18n={ i18n } >
     <Suspense fallback={<Loading />}>
-      {!canEdit && <SimpleViewer />}
-      {canEdit && <ShareLinkEditor showComment={false} collaborators={[]}/>}
+      {!canEdit && <SimpleViewer mathJaxSource={mediaUrl + 'js/mathjax/tex-svg.js'} />}
+      {canEdit && <ShareLinkEditor showComment={false} collaborators={[]} mathJaxSource={mediaUrl + 'js/mathjax/tex-svg.js'} />}
     </Suspense>
   </I18nextProvider>
 );

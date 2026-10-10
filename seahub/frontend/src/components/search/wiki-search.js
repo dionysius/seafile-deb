@@ -1,14 +1,15 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
 import MediaQuery from 'react-responsive';
-import { seafileAPI } from '../../utils/seafile-api';
-import { gettext } from '../../utils/constants';
-import SearchResultItem from './search-result-item';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { SEARCH_MASK, SEARCH_CONTAINER } from '@/constants/zIndexes';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../icon';
 import More from '../more';
-import { Utils } from '../../utils/utils';
 import toaster from '../toast';
 import { getValueLength } from './constant';
-import { SEARCH_MASK, SEARCH_CONTAINER } from '../../constants/zIndexes';
+import SearchResultItem from './search-result-item';
 
 const propTypes = {
   repoID: PropTypes.string,
@@ -228,7 +229,9 @@ class Search extends Component {
             <div className={`search-mask ${this.state.isMaskShow ? '' : 'hide'}`} onClick={this.onCloseHandler} style={{ zIndex: SEARCH_MASK }}></div>
             <div className="search-container" style={{ zIndex: SEARCH_CONTAINER }}>
               <div className="input-icon">
-                <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+                <span className="search-icon-left input-icon-addon">
+                  <Icon symbol="search" />
+                </span>
                 <input
                   type="text"
                   className="form-control search-input"
@@ -240,7 +243,11 @@ class Search extends Component {
                   onChange={this.onChangeHandler}
                   autoComplete="off"
                 />
-                {this.state.isCloseShow && <i className='search-icon-right input-icon-addon sf3-font sf3-font-x-01' onClick={this.onCloseHandler}></i>}
+                {this.state.isCloseShow && (
+                  <span className="search-icon-right input-icon-addon" onClick={this.onCloseHandler}>
+                    <Icon symbol="close" />
+                  </span>
+                )}
               </div>
               <div className="search-result-container dropdown-search-result-container">
                 {this.renderSearchResult()}
@@ -250,14 +257,18 @@ class Search extends Component {
         </MediaQuery>
         <MediaQuery query="(max-width: 767.8px)">
           <div className="search-icon-container">
-            <i className="search-icon sf3-font sf3-font-search" onClick={this.onSearchToggle}></i>
+            <span className="search-icon" onClick={this.onSearchToggle}>
+              <Icon symbol="search" />
+            </span>
           </div>
           {this.state.isSearchInputShow &&
             <div className="search">
               <div className={`search-mask ${this.state.isMaskShow ? '' : 'hide'}`} onClick={this.onCloseHandler} style={{ zIndex: SEARCH_MASK }}></div>
               <div className="search-container" style={{ zIndex: SEARCH_CONTAINER }}>
                 <div className="input-icon">
-                  <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+                  <span className="search-icon-left input-icon-addon">
+                    <Icon symbol="search" />
+                  </span>
                   <input
                     type="text"
                     className="form-control search-input"
@@ -269,7 +280,11 @@ class Search extends Component {
                     onChange={this.onChangeHandler}
                     autoComplete="off"
                   />
-                  {this.state.isCloseShow && <i className='search-icon-right input-icon-addon sf3-font sf3-font-x-01' onClick={this.onCloseHandler}></i>}
+                  {this.state.isCloseShow && (
+                    <span className="search-icon-right input-icon-addon" onClick={this.onCloseHandler}>
+                      <Icon symbol="close" />
+                    </span>
+                  )}
                 </div>
                 <div className="search-result-container dropdown-search-result-container">
                   {this.renderSearchResult()}

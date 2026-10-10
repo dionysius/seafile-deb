@@ -40,6 +40,7 @@ var (
 	SkipBlockHash             bool
 	FsCacheLimit              int64
 	VerifyClientBlocks        bool
+	MaxIndexingFiles          uint32
 
 	// general options
 	CloudMode bool
@@ -115,6 +116,7 @@ func initDefaultOptions() {
 	RedisExpiry = 24 * 3600
 	RedisMaxConn = 100
 	RedisTimeout = 1 * time.Second
+	MaxIndexingFiles = 10
 }
 
 func LoadFileServerOptions(centralDir string) {
@@ -241,6 +243,12 @@ func parseFileServerSection(section *ini.Section) {
 	if key, err := section.GetKey("verify_client_blocks_after_sync"); err == nil {
 		VerifyClientBlocks, _ = key.Bool()
 	}
+	if key, err := section.GetKey("max_indexing_files"); err == nil {
+		threads, err := key.Uint()
+		if err == nil && threads > 0 {
+			MaxIndexingFiles = uint32(threads)
+		}
+	}
 }
 
 func parseQuota(quotaStr string) int64 {
@@ -300,7 +308,7 @@ func loadCacheOptionFromEnv() {
 	redisPort := os.Getenv("REDIS_PORT")
 	if redisPort != "" {
 		port, err := strconv.ParseUint(redisPort, 10, 32)
-		if err != nil {
+		if err == nil {
 			RedisPort = uint32(port)
 		}
 	}
@@ -311,14 +319,14 @@ func loadCacheOptionFromEnv() {
 	redisMaxConn := os.Getenv("REDIS_MAX_CONNECTIONS")
 	if redisMaxConn != "" {
 		maxConn, err := strconv.ParseUint(redisMaxConn, 10, 32)
-		if err != nil {
+		if err == nil {
 			RedisMaxConn = uint32(maxConn)
 		}
 	}
 	redisExpiry := os.Getenv("REDIS_EXPIRY")
 	if redisExpiry != "" {
 		expiry, err := strconv.ParseUint(redisExpiry, 10, 32)
-		if err != nil {
+		if err == nil {
 			RedisExpiry = uint32(expiry)
 		}
 	}
@@ -423,6 +431,9 @@ func loadDBOptionFromFile(centralDir string) (*DBOption, error) {
 	}
 	if key, err = section.GetKey("connection_charset"); err == nil {
 		dbOpt.Charset = key.String()
+	}
+	if dbOpt.Charset == "" {
+		dbOpt.Charset = "utf8mb4"
 	}
 
 	return dbOpt, nil

@@ -565,6 +565,11 @@ static void start_rpc_service (const char *seafile_dir,
                                      searpc_signature_object__string_string_string());
 
     searpc_server_register_function ("seafserv-threaded-rpcserver",
+                                     seafile_set_base_commit,
+                                     "set_base_commit",
+                                     searpc_signature_int__string_string());
+
+    searpc_server_register_function ("seafserv-threaded-rpcserver",
                                      seafile_get_upload_tmp_file_offset,
                                      "seafile_get_upload_tmp_file_offset",
                                      searpc_signature_int64__string_string());
@@ -837,10 +842,6 @@ static void start_rpc_service (const char *seafile_dir,
                                      "search_emailusers",
                                      searpc_signature_objlist__string_string_int_int());
     searpc_server_register_function ("seafserv-threaded-rpcserver",
-                                     ccnet_rpc_search_ldapusers,
-                                     "search_ldapusers",
-                                     searpc_signature_objlist__string_int_int());
-    searpc_server_register_function ("seafserv-threaded-rpcserver",
                                      ccnet_rpc_count_emailusers,
                                      "count_emailusers",
                                      searpc_signature_int64__string());
@@ -1064,14 +1065,6 @@ static void start_rpc_service (const char *seafile_dir,
                                      ccnet_rpc_set_org_name,
                                      "set_org_name",
                                      searpc_signature_int__int_string());
-    searpc_server_register_function ("seafserv-threaded-rpcserver",
-                                     ccnet_rpc_set_reference_id,
-                                     "set_reference_id",
-                                     searpc_signature_int__string_string());
-    searpc_server_register_function ("seafserv-threaded-rpcserver",
-                                     ccnet_rpc_get_primary_id,
-                                     "get_primary_id",
-                                     searpc_signature_string__string());
 
     if (rpc_pipe_path) {
         pipe_path = g_build_path ("/", rpc_pipe_path, SEAFILE_RPC_PIPE_NAME, NULL);

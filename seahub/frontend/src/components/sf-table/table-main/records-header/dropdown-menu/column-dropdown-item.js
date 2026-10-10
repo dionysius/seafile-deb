@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { UncontrolledTooltip, DropdownItem } from 'reactstrap';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
 import Icon from '../../../../icon';
 
 const ColumnDropdownItem = ({
@@ -32,7 +32,7 @@ const ColumnDropdownItem = ({
   if (!disabled) {
     return (
       <DropdownItem id={target} onClick={onChange} onMouseEnter={onMouseEnter} className={className}>
-        <Icon symbol={iconName} />
+        <Icon className="sf-metadata-icon" symbol={iconName} />
         <span className="item-text">{title}</span>
       </DropdownItem>
     );
@@ -47,10 +47,10 @@ const ColumnDropdownItem = ({
         onMouseEnter={onMouseEnter}
         id={target}
       >
-        <Icon symbol={iconName} />
+        <Icon className="sf-metadata-icon" symbol={iconName} />
         <span className="item-text">{title}</span>
         {isShowToolTip && (
-          <UncontrolledTooltip placement="right" target={target} fade={false} delay={{ show: 0, hide: 0 }} className="sf-table-tooltip">
+          <UncontrolledTooltip placement="right" target={target} fade={false} delay={{ show: 0, hide: 0 }} className="sf-tooltip">
             {tip}
           </UncontrolledTooltip>
         )}
@@ -68,7 +68,7 @@ ColumnDropdownItem.propTypes = {
   tip: PropTypes.string.isRequired,
   className: PropTypes.string,
   onChange: PropTypes.func.isRequired,
-  onMouseEnter: PropTypes.func.isRequired,
+  onMouseEnter: PropTypes.func,
 };
 
 export default ColumnDropdownItem;

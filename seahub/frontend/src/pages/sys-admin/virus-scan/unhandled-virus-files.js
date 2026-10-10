@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { gettext } from '../../../utils/constants';
-import { Utils } from '../../../utils/utils';
-import toaster from '../../../components/toast';
-import OpMenu from '../../../components/dialog/op-menu';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
-import { eventBus } from '../../../components/common/event-bus';
-import { EVENT_BUS_TYPE } from '../../../components/common/event-bus-type';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import CommonOperationConfirmationDialog from '@/components/dialog/common-operation-confirmation-dialog';
+import OpMenu from '@/components/dialog/op-menu';
+import { eventBus, EVENT_BUS_TYPE } from '@/components/event-bus';
+import Loading from '@/components/loading';
+import Paginator from '@/components/paginator';
+import toaster from '@/components/toast';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 
 const virusFileItemPropTypes = {
   resetPerPage: PropTypes.func,
@@ -103,6 +103,7 @@ class VirusFileItem extends Component {
         <td>{virusFile.repo_name}</td>
         <td>{virusFile.repo_owner}</td>
         <td>{virusFile.file_path}</td>
+        <td>{virusFile.virus_signature || '--'}</td>
         <td>{fileStatus}</td>
         <td>
           {fileOpList.length > 0 && this.state.isOpIconShown &&
@@ -183,10 +184,11 @@ class Content extends Component {
                 <th width="3%" className="text-center">
                   <input type="checkbox" className="form-check-input" checked={isAllItemsSelected} onChange={this.props.toggleAllSelected} />
                 </th>
-                <th width="24%">{gettext('Library')}</th>
-                <th width="25%">{gettext('Owner')}</th>
-                <th width="28%">{gettext('Virus File')}</th>
-                <th width="15%">{gettext('Status')}</th>
+                <th width="20%">{gettext('Library')}</th>
+                <th width="18%">{gettext('Owner')}</th>
+                <th width="22%">{gettext('Infected File')}</th>
+                <th width="22%">{gettext('Signature')}</th>
+                <th width="10%">{gettext('Status')}</th>
                 <th width="5%">{/* Operations */}</th>
               </tr>
             </thead>
@@ -237,6 +239,8 @@ class UnhandledVirusFiles extends Component {
       isAllItemsSelected: false,
       selectedItems: [],
 
+      confirmDialog: null,
+
       currentPage: 1,
       perPage: 100,
       hasNextPage: false
@@ -254,15 +258,8 @@ class UnhandledVirusFiles extends Component {
     }, () => {
       this.getListByPage(this.state.currentPage);
     });
-    this.unsubscribeHandleSelectedOp = eventBus.subscribe(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, (op) => {
-      switch (op) {
-        case 'delete-virus':
-          this.deleteSelectedItems();
-          break;
-        case 'ignore-virus':
-          this.ignoreSelectedItems();
-          break;
-      }
+    this.unsubscribeHandleSelectedOp = eventBus.subscribe(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, (payload) => {
+      this.handleBulkOperation(payload);
     });
   }
 
@@ -282,6 +279,8 @@ class UnhandledVirusFiles extends Component {
       this.setState({
         loading: false,
         virusFiles: items,
+        currentPage: page,
+        isAllItemsSelected: false,
         hasNextPage: data.has_next_page
       });
     }).catch((error) => {
@@ -356,8 +355,7 @@ class UnhandledVirusFiles extends Component {
     });
   };
 
-  handleSelectedItems = (op) => {
-    // op: 'delete-virus', 'ignore-virus'
+  executeSelectedItemsOperation = (op) => {
     const virusIDs = this.state.virusFiles
       .filter(item => {
         if (op == 'delete-virus') {
@@ -367,6 +365,7 @@ class UnhandledVirusFiles extends Component {
         }
       })
       .map(item => item.virus_id);
+    if (!virusIDs.length) return;
     systemAdminAPI.sysAdminBatchProcessVirusFiles(virusIDs, op).then((res) => {
       let fileList = this.state.virusFiles;
       res.data.success.forEach(item => {
@@ -396,28 +395,77 @@ class UnhandledVirusFiles extends Component {
     });
   };
 
+  executeAllItemsOperation = (op) => {
+    const hasHandled = false;
+    systemAdminAPI.sysAdminBatchProcessAllVirusFiles(op, hasHandled).then((res) => {
+      const successCount = res.data.success.length;
+      const message = op == 'delete-virus'
+        ? gettext('Successfully deleted {count} items.').replace('{count}', successCount)
+        : gettext('Successfully ignored {count} items.').replace('{count}', successCount);
+      toaster.success(message);
+      this.closeConfirmDialog();
+      this.getListByPage(this.state.currentPage);
+    }).catch((error) => {
+      this.closeConfirmDialog();
+      toaster.danger(Utils.getErrorMsg(error));
+    });
+  };
+
+  openConfirmDialog = (op) => {
+    const isDelete = op == 'delete-virus';
+    const title = isDelete ? gettext('Delete all unhandled files') : gettext('Ignore all unhandled files');
+    const message = isDelete
+      ? gettext('Are you sure you want to delete all unhandled infected files across all pages?')
+      : gettext('Are you sure you want to ignore all unhandled infected files across all pages?');
+    const confirmBtnText = isDelete ? gettext('Delete all') : gettext('Ignore all');
+    this.setState({
+      confirmDialog: { op, title, message, confirmBtnText }
+    });
+  };
+
+  closeConfirmDialog = () => {
+    this.setState({ confirmDialog: null });
+  };
+
+  handleBulkOperation = (payload) => {
+    const operation = typeof payload === 'string' ? payload : payload.operation;
+    const scope = typeof payload === 'string' ? 'selected' : payload.scope;
+
+    if (scope === 'all') {
+      this.openConfirmDialog(operation);
+      return;
+    }
+
+    this.executeSelectedItemsOperation(operation);
+  };
+
   render() {
     return (
-      <div className="main-panel-center">
-        <div className="cur-view-container">
-          <div className="cur-view-content">
-            <Content
-              loading={this.state.loading}
-              errorMsg={this.state.errorMsg}
-              virusFiles={this.state.virusFiles}
-              currentPage={this.state.currentPage}
-              hasNextPage={this.state.hasNextPage}
-              curPerPage={this.state.perPage}
-              resetPerPage={this.resetPerPage}
-              getListByPage={this.getListByPage}
-              handleFile={this.handleFile}
-              isAllItemsSelected={this.state.isAllItemsSelected}
-              toggleAllSelected={this.toggleAllSelected}
-              toggleItemSelected={this.toggleItemSelected}
-            />
-          </div>
-        </div>
-      </div>
+      <>
+        <Content
+          loading={this.state.loading}
+          errorMsg={this.state.errorMsg}
+          virusFiles={this.state.virusFiles}
+          currentPage={this.state.currentPage}
+          hasNextPage={this.state.hasNextPage}
+          curPerPage={this.state.perPage}
+          resetPerPage={this.resetPerPage}
+          getListByPage={this.getListByPage}
+          handleFile={this.handleFile}
+          isAllItemsSelected={this.state.isAllItemsSelected}
+          toggleAllSelected={this.toggleAllSelected}
+          toggleItemSelected={this.toggleItemSelected}
+        />
+        {this.state.confirmDialog && (
+          <CommonOperationConfirmationDialog
+            title={this.state.confirmDialog.title}
+            message={this.state.confirmDialog.message}
+            executeOperation={() => this.executeAllItemsOperation(this.state.confirmDialog.op)}
+            confirmBtnText={this.state.confirmDialog.confirmBtnText}
+            toggleDialog={this.closeConfirmDialog}
+          />
+        )}
+      </>
     );
   }
 }

@@ -1,17 +1,17 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Button } from 'reactstrap';
 import classnames from 'classnames';
-import { gettext, isPro, isSeafilePlus, enableShareToDepartment } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils, isMobile } from '../../utils/utils';
-import toaster from '../toast';
-import SharePermissionEditor from '../select-editor/share-permission-editor';
-import EventBus from '../common/event-bus';
-import { EVENT_BUS_TYPE } from '../common/event-bus-type';
-import GroupSelect from '../common/group-select';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { gettext, isPro, isSeafilePlus, enableShareToDepartment } from '@/utils/constants';
+import { Utils, isMobile } from '@/utils/utils';
 import EmptyTip from '../../components/empty-tip';
 import Loading from '../../components/loading';
+import EventBus, { EVENT_BUS_TYPE } from '../event-bus';
+import GroupSelect from '../group-select';
+import OpIcon from '../op-icon';
+import SharePermissionEditor from '../select-editor/share-permission-editor';
+import toaster from '../toast';
 
 class GroupItem extends React.Component {
 
@@ -48,8 +48,8 @@ class GroupItem extends React.Component {
   };
 
   render() {
+    const { index, item } = this.props;
     const { isHighlighted } = this.state;
-    let item = this.props.item;
     let currentPermission = Utils.getSharedPermission(item);
     if (isMobile) {
       return (
@@ -67,16 +67,12 @@ class GroupItem extends React.Component {
             />
           </td>
           <td>
-            <span
-              tabIndex="0"
-              role="button"
-              className="sf3-font sf3-font-x-01 op-icon"
-              onClick={this.deleteShareItem}
-              onKeyDown={Utils.onKeyDown}
+            <OpIcon
+              symbol="close"
+              className="op-icon"
+              op={this.deleteShareItem}
               title={gettext('Delete')}
-              aria-label={gettext('Delete')}
-            >
-            </span>
+            />
           </td>
         </tr>
       );
@@ -104,16 +100,13 @@ class GroupItem extends React.Component {
           />
         </td>
         <td>
-          <span
-            tabIndex="0"
-            role="button"
-            className={`sf3-font sf3-font-x-01 op-icon ${this.state.isOperationShow ? '' : 'd-none'}`}
-            onClick={this.deleteShareItem}
-            onKeyDown={Utils.onKeyDown}
-            title={gettext('Delete')}
-            aria-label={gettext('Delete')}
-          >
-          </span>
+          <OpIcon
+            id={`delete-icon-${index}`}
+            symbol="close"
+            className={`op-icon ${this.state.isOperationShow ? '' : 'd-none'}`}
+            op={this.deleteShareItem}
+            tooltip={gettext('Delete')}
+          />
         </td>
       </tr>
     );
@@ -121,39 +114,9 @@ class GroupItem extends React.Component {
 }
 
 GroupItem.propTypes = {
-  repoID: PropTypes.string.isRequired,
+  index: PropTypes.number.isRequired,
   item: PropTypes.object.isRequired,
-  permissions: PropTypes.array.isRequired,
-  deleteShareItem: PropTypes.func.isRequired,
-  onChangeUserPermission: PropTypes.func.isRequired,
-};
-
-class GroupList extends React.Component {
-
-  render() {
-    let items = this.props.items;
-    return (
-      <tbody>
-        {items.map((item, index) => {
-          return (
-            <GroupItem
-              key={index}
-              item={item}
-              repoID={this.props.repoID}
-              permissions={this.props.permissions}
-              deleteShareItem={this.props.deleteShareItem}
-              onChangeUserPermission={this.props.onChangeUserPermission}
-            />
-          );
-        })}
-      </tbody>
-    );
-  }
-}
-
-GroupList.propTypes = {
   repoID: PropTypes.string.isRequired,
-  items: PropTypes.array.isRequired,
   permissions: PropTypes.array.isRequired,
   deleteShareItem: PropTypes.func.isRequired,
   onChangeUserPermission: PropTypes.func.isRequired,
@@ -407,26 +370,17 @@ class ShareToGroup extends React.Component {
 
   render() {
     const enableAddCustomPermission = isPro && !isSeafilePlus;
-    let thead = (
+    const isDesktop = Utils.isDesktop();
+    const columnWidths = isDesktop ? ['47%', '35%', '18%'] : ['40%', '35%', '25%'];
+    const thead = (
       <thead>
         <tr>
-          <th width="47%">{gettext('Group')}</th>
-          <th width="35%">{gettext('Permission')}</th>
-          <th width="18%"></th>
+          <th width={columnWidths[0]}>{gettext('Group')}</th>
+          <th width={columnWidths[1]}>{gettext('Permission')}</th>
+          <th width={columnWidths[2]}></th>
         </tr>
       </thead>
     );
-    if (isMobile) {
-      thead = (
-        <thead>
-          <tr>
-            <th width="43%">{gettext('Group')}</th>
-            <th width="35%">{gettext('Permission')}</th>
-            <th width="22%"></th>
-          </tr>
-        </thead>
-      );
-    }
     return (
       <div className='h-100 d-flex flex-column'>
         <table>
@@ -458,7 +412,7 @@ class ShareToGroup extends React.Component {
                 />
               </td>
               <td>
-                <Button color="primary" onClick={this.shareToGroup} size={isMobile ? 'sm' : 'md'}>{gettext('Submit')}</Button>
+                <Button color="primary" onClick={this.shareToGroup}>{gettext('Submit')}</Button>
               </td>
             </tr>
             {this.state.errorMsg.length > 0 &&
@@ -483,13 +437,22 @@ class ShareToGroup extends React.Component {
               ) : (
                 <table className="table-thead-hidden">
                   {thead}
-                  <GroupList
-                    repoID={this.props.repoID}
-                    items={this.state.sharedItems}
-                    permissions={this.permissions}
-                    deleteShareItem={this.deleteShareItem}
-                    onChangeUserPermission={this.onChangeUserPermission}
-                  />
+
+                  <tbody>
+                    {this.state.sharedItems.map((item, index) => {
+                      return (
+                        <GroupItem
+                          key={index}
+                          index={index}
+                          item={item}
+                          repoID={this.props.repoID}
+                          permissions={this.permissions}
+                          deleteShareItem={this.deleteShareItem}
+                          onChangeUserPermission={this.onChangeUserPermission}
+                        />
+                      );
+                    })}
+                  </tbody>
                 </table>
               )}
             </>

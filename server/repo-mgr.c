@@ -580,8 +580,8 @@ seaf_repo_manager_del_repo (SeafRepoManager *mgr,
         return -1;
     }
     if (!head_commit) {
-        // head commit is missing, del repo directly
-        goto del_repo;
+        // head commit is missing, repo has beed deleted.
+        return 0;
     }
 
     if (add_deleted_repo_to_trash (mgr, repo_id, head_commit) < 0) {
@@ -2526,7 +2526,7 @@ seaf_repo_manager_search_repos_by_name (SeafRepoManager *mgr, const char *name)
             "LEFT JOIN RepoFileCount fc ON i.repo_id = fc.repo_id "
             "LEFT JOIN Repo r ON i.repo_id = r.repo_id "
             "LEFT JOIN VirtualRepo v ON i.repo_id = v.repo_id "
-            "WHERE i.name COLLATE UTF8_GENERAL_CI LIKE ? AND "
+            "WHERE CONVERT(i.name USING utf8mb4) COLLATE UTF8MB4_GENERAL_CI LIKE ? AND "
             "r.repo_id IS NOT NULL AND "
             "v.repo_id IS NULL "
             "ORDER BY i.update_time DESC, i.repo_id";
@@ -5049,8 +5049,19 @@ int
 seaf_repo_manager_get_repo_status(SeafRepoManager *mgr,
                                   const char *repo_id)
 {
-    char *sql = "SELECT status FROM RepoInfo WHERE repo_id=?";
+    // First, check origin repo's status
+    char *sql = "SELECT i.status FROM VirtualRepo v LEFT JOIN RepoInfo i "
+          "ON i.repo_id=v.origin_repo WHERE v.repo_id=? "
+          "AND i.repo_id IS NOT NULL";
+    int status = seaf_db_statement_get_int (mgr->seaf->db, sql,
+                                        1, "string", repo_id);
+    if (status >= 0) {
+        return status;
+    }
 
-    return seaf_db_statement_get_int (mgr->seaf->db, sql,
-                                      1, "string", repo_id);
+    // Then check repo's own status
+    sql = "SELECT status FROM RepoInfo WHERE repo_id=?";
+    status = seaf_db_statement_get_int (mgr->seaf->db, sql,
+                                            1, "string", repo_id);
+    return status;
 }

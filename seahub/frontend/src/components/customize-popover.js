@@ -1,7 +1,7 @@
 import React from 'react';
 import { Popover } from 'reactstrap';
 import PropTypes from 'prop-types';
-import { KeyCodes } from '../constants';
+import { KeyCodes } from '@/constants';
 
 const propTypes = {
   target: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
@@ -48,7 +48,7 @@ class CustomizePopover extends React.Component {
     const { canHidePopover = true } = this.props;
     if (!canHidePopover) return;
 
-    const clickOutside = this.popoverRef && !this.popoverRef.contains(e.target) && !e.target.closest('.popover');
+    const clickOutside = this.popoverRef && !this.popoverRef.contains(e.target);
     if (clickOutside) {
       this.props.hidePopover(e);
     }

@@ -1,12 +1,12 @@
 import React, { useCallback, useState, useRef, useEffect } from 'react';
 import classnames from 'classnames';
 import { v4 as uuidv4 } from 'uuid';
-import toaster from '../../../../../components/toast';
+import Icon from '@/components/icon';
+import toaster from '@/components/toast';
+import { gettext } from '@/utils/constants';
 import context from '../../../context';
 import { getErrorMsg } from '../../../utils/common-utils';
 import { addDataToTree } from '../helpers';
-import { gettext } from '../../../../../utils/constants';
-import Icon from '../../../../../components/icon';
 
 import './index.css';
 
@@ -127,14 +127,14 @@ const LocalFiles = ({ onSelectedFile, toggle, fileType, searchContent, isOpenSea
       return (
         <div key={indexId} className={classnames('sdoc-folder-container', { 'sdoc-folder-search-results': hasSearchResult === true })}>
           {type === 'dir' && (
-            <div ref={folderRef} className='sdoc-folder'>
+            <div ref={folderRef} className='sdoc-folder-wrapper'>
               <div
                 className={classnames('sdoc-folder-info sdoc-file-info', { 'expanded': expandedFolder.has(indexId) })}
                 onClick={(e) => onToggle(e, item, treeData)}
               >
                 <div className='sdoc-file-icon-container'>
-                  <i className='sdoc-file-icon sdoc-file-icon-toggle sdocfont sdoc-right-slide'></i>
-                  <i className='sdoc-file-icon sdocfont sdoc-file sdoc-folder-icon'></i>
+                  <i className='sdoc-file-icon sdoc-file-icon-toggle sdocfont sdoc-arrow-right'></i>
+                  <i className='sdoc-file-icon sdocfont sdoc-folder'></i>
                 </div>
                 <span className='sdoc-folder-name sdoc-file-name'>{name}</span>
               </div>

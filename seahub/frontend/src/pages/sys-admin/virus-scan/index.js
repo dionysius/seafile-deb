@@ -1,11 +1,10 @@
 import React from 'react';
-import MainPanelTopbar from '../main-panel-topbar';
-import Nav from './nav';
-import { useLocation } from '@gatsbyjs/reach-router';
 import { Button } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
-import { eventBus } from '../../../components/common/event-bus';
-import { EVENT_BUS_TYPE } from '../../../components/common/event-bus-type';
+import { useLocation } from '@gatsbyjs/reach-router';
+import MainPanelTopbar from '@/components/admin/layout/main-panel-topbar';
+import { eventBus, EVENT_BUS_TYPE } from '@/components/event-bus';
+import { gettext } from '@/utils/constants';
+import Nav from './nav';
 
 const VirusScan = ({ children, ...commonProps }) => {
   const location = useLocation();
@@ -13,29 +12,54 @@ const VirusScan = ({ children, ...commonProps }) => {
 
 
   const deleteSelectedItems = () => {
-    const op = 'delete-virus';
-    eventBus.dispatch(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, op);
+    eventBus.dispatch(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, {
+      operation: 'delete-virus',
+      scope: 'selected'
+    });
   };
 
   const ignoreSelectedItems = () => {
-    const op = 'ignore-virus';
-    eventBus.dispatch(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, op);
+    eventBus.dispatch(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, {
+      operation: 'ignore-virus',
+      scope: 'selected'
+    });
   };
+
+  const deleteAllUnhandledItems = () => {
+    eventBus.dispatch(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, {
+      operation: 'delete-virus',
+      scope: 'all'
+    });
+  };
+
+  const ignoreAllUnhandledItems = () => {
+    eventBus.dispatch(EVENT_BUS_TYPE.HANDLE_SELECTED_OPERATIONS, {
+      operation: 'ignore-virus',
+      scope: 'all'
+    });
+  };
+
   return (
-    <div>
+    <>
       {path === 'unhandled' ? (
         <MainPanelTopbar {...commonProps}>
           <>
             <Button onClick={deleteSelectedItems} className="operation-item">{gettext('Delete')}</Button>
             <Button onClick={ignoreSelectedItems} className="operation-item">{gettext('Ignore')}</Button>
+            <Button onClick={deleteAllUnhandledItems} className="operation-item">{gettext('Delete all')}</Button>
+            <Button onClick={ignoreAllUnhandledItems} className="operation-item">{gettext('Ignore all')}</Button>
           </>
         </MainPanelTopbar>
       ) : (
         <MainPanelTopbar {...commonProps} />
       )}
-      <Nav currentItem={path} />
-      <div className="h-100 d-flex overflow-auto">{children}</div>
-    </div>
+      <div className="main-panel-center">
+        <div className="cur-view-container">
+          <Nav currentItem={path} />
+          <div className="cur-view-content">{children}</div>
+        </div>
+      </div>
+    </>
   );
 };
 

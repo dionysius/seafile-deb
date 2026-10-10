@@ -1,19 +1,19 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Link } from '@gatsbyjs/reach-router';
-import { Utils } from '../../../utils/utils';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { gettext, siteRoot, isPro } from '../../../utils/constants';
-import toaster from '../../../components/toast';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
-import ModalPortal from '../../../components/modal-portal';
-import OpMenu from '../../../components/dialog/op-menu';
-import TransferDialog from '../../../components/dialog/transfer-dialog';
-import DeleteRepoDialog from '../../../components/dialog/delete-repo-dialog';
-import SysAdminShareDialog from '../../../components/dialog/sysadmin-dialog/sysadmin-share-dialog';
-import SysAdminLibHistorySettingDialog from '../../../components/dialog/sysadmin-dialog/sysadmin-lib-history-setting-dialog';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import DeleteRepoDialog from '@/components/dialog/delete-repo-dialog';
+import OpMenu from '@/components/dialog/op-menu';
+import SysAdminLibHistorySettingDialog from '@/components/dialog/sysadmin-dialog/sysadmin-lib-history-setting-dialog';
+import SysAdminShareDialog from '@/components/dialog/sysadmin-dialog/sysadmin-share-dialog';
+import TransferDialog from '@/components/dialog/transfer-dialog';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import ModalPortal from '@/components/modal-portal';
+import Paginator from '@/components/paginator';
+import toaster from '@/components/toast';
+import { gettext, siteRoot, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UserLink from '../user-link';
 
 const { enableSysAdminViewRepo } = window.sysadmin.pageOptions;
@@ -185,6 +185,9 @@ class Item extends Component {
 
   onMenuItemClick = (operation) => {
     switch (operation) {
+      case 'History':
+        this.openHistory();
+        break;
       case 'Share':
         this.toggleShareDialog();
         break;
@@ -218,6 +221,10 @@ class Item extends Component {
     this.setState({ isHistorySettingDialogOpen: !this.state.isHistorySettingDialogOpen });
   };
 
+  openHistory = () => {
+    window.open(`${siteRoot}sys/libraries/${this.props.repo.id}/history/`, '_blank', 'noopener');
+  };
+
   renderRepoName = () => {
     const { repo } = this.props;
     if (repo.name) {
@@ -237,6 +244,9 @@ class Item extends Component {
       case 'Share':
         translateResult = gettext('Share');
         break;
+      case 'History':
+        translateResult = gettext('History');
+        break;
       case 'Delete':
         translateResult = gettext('Delete');
         break;
@@ -254,19 +264,25 @@ class Item extends Component {
   };
 
   getOperations = () => {
+
     const { repo } = this.props;
+
     if (this.props.isWiki) {
       return ['Delete'];
     }
-    let operations = ['Delete', 'Transfer'];
+
     const index = repo.owner_email.indexOf('@seafile_group');
     let isGroupOwnedRepo = index != -1;
     if (isGroupOwnedRepo) {
-      operations = ['Transfer'];
-      return operations;
+      return ['History', 'Transfer'];
     }
+
+    let operations = ['Delete', 'Transfer'];
     if (!repo.encrypted) {
       operations.push('Share');
+    }
+    if (isPro && enableSysAdminViewRepo && !repo.encrypted) {
+      operations.push('History');
     }
     operations.push('History Setting');
     return operations;

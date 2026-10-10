@@ -1,0 +1,70 @@
+.group-select.sf-select {
+  flex: 1;
+  display: flex;
+  padding: 6px 28px 6px 8px;
+  align-items: center;
+  justify-content: space-between;
+  height: auto;
+  min-height: 38px;
+}
+
+.group-select.sf-select.disabled:focus,
+.group-select.sf-select.focus.disabled,
+.group-select.sf-select.disabled:hover {
+  border-color: var(--bs-form-select-border-color);
+  box-shadow: unset;
+  cursor: default;
+}
+
+.group-select .selected-option {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  background: inherit;
+}
+
+.group-select.selector-collaborator .sf-option-group .sf-option-group-content {
+  padding: 10px;
+}
+
+.group-select.selector-collaborator .sf-select-option {
+  padding: 5px 0 5px 10px !important;
+  line-height: 20px;
+}
+
+.group-select .select-placeholder {
+  line-height: 1;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.group-select .selected-option-show {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.group-select .selected-option-show .selected-option-item {
+  background-color: var(--bs-body-secondary-bg);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  line-height: 24px;
+}
+
+.group-select .selected-option-show .selected-option-item .selected-option-item-name {
+  font-size: 14px;
+  color: var(--bs-body-color);
+  margin-right: 8px;
+}
+
+.group-select .selected-option-show .selected-option-item .seafile-multicolor-icon {
+  width: 12px;
+  height: 12px;
+  cursor: pointer;
+  color: var(--bs-icon-color);
+}

@@ -1,13 +1,14 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Modal, ModalBody, ModalFooter } from 'reactstrap';
+import PropTypes from 'prop-types';
 import CreatableSelect from 'react-select/creatable';
-import { gettext } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
+import { seafileAPI } from '@/api/seafile-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import Loading from '../loading';
+import { MenuSelectStyle } from '../select/seahub-select-style';
 import toaster from '../toast';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
 
 const propTypes = {
   repoID: PropTypes.string.isRequired,
@@ -115,6 +116,7 @@ class Content extends React.Component {
           onChange={this.props.handleChange}
           placeholder=''
           options={existingLabels.map((item, index) => { return { label: item, value: item }; })}
+          styles={MenuSelectStyle}
         />
         {formErrorMsg && <p className="error m-0 mt-2">{formErrorMsg}</p>}
       </React.Fragment>

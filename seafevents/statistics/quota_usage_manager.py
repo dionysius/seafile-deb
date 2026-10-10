@@ -46,7 +46,8 @@ class QuotaUsageCounter(object):
         else:
             repo_owner = self.seafile_api.get_repo_owner(repo_id)
         
-        cache.set(cache_key, repo_owner, CACHE_TIME_OUT)
+        if repo_owner:
+            cache.set(cache_key, repo_owner, CACHE_TIME_OUT)
         return repo_owner
     
     def get_available_user_info_by_repo_id(self, repo_id):
@@ -131,7 +132,7 @@ class QuotaUsageCounter(object):
             session.commit()
     
     def start_count(self):
-        repos = storage_changed_repo_ids.keys()
+        repos = list(storage_changed_repo_ids.keys())
         if len(repos) > 0:
             logging.info('Start counting quota usage by repos, current %s repos waiting to count' % len(repos))
         for repo_id in repos:

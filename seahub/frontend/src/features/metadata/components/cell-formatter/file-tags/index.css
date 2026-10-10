@@ -1,0 +1,59 @@
+.sf-metadata-ui.tags-formatter .sf-metadata-tags-operation-container {
+  display: flex;
+  align-items: center;
+}
+
+.sf-metadata-ui.tags-formatter .sf-metadata-tags-operation-container .sf-metadata-tags-operation-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  width: 20px;
+  background: #eceff4;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.sf-metadata-ui.tags-formatter .sf-metadata-tags-operation-container .sf-metadata-tags-operation-add-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.sf-metadata-ui.tags-formatter .sf-metadata-tags-operation-add-btn .seafile-multicolor-icon-add-table {
+  font-size: 12px;
+  fill: #212519;
+}
+
+.sf-metadata-ui.tags-formatter .sf-metadata-ui-tags-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: max-content;
+  min-height: 1rem;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.sf-table-cell .sf-metadata-ui.cell-formatter-container.tags-formatter.multi-line-tags-formatter {
+  height: 100%;
+  align-self: stretch;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.sf-table-cell .sf-metadata-ui.cell-formatter-container.tags-formatter.multi-line-tags-formatter .sf-metadata-ui-tags-container {
+  width: 100%;
+  align-items: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  overflow: hidden;
+  row-gap: 4px;
+}
+
+.sf-metadata-ui.tags-formatter .sf-metadata-ui-tags-container .sf-metadata-ui-tag {
+  margin-right: 4px;
+}
+
+.sf-metadata-ui.tags-formatter .sf-metadata-ui-tags-container .sf-metadata-ui-tag .sf-metadata-ui-tag-color {
+  margin-right: 4px;
+}

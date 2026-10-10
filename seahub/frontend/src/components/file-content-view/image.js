@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Utils } from '../../utils/utils';
-import { gettext, siteRoot } from '../../utils/constants';
+import { gettext, siteRoot, enableThumbnailServer } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../icon';
 
-import '../../css/image-file-view.css';
+import '@/css/image-file-view.css';
 
 const {
   repoID, repoEncrypted,
@@ -16,10 +17,10 @@ const {
 let previousImageUrl;
 let nextImageUrl;
 if (previousImage) {
-  previousImageUrl = `${siteRoot}lib/${repoID}/file${Utils.encodePath(previousImage)}`;
+  previousImageUrl = siteRoot + 'lib/' + repoID + '/file' + Utils.encodePath(previousImage);
 }
 if (nextImage) {
-  nextImageUrl = `${siteRoot}lib/${repoID}/file${Utils.encodePath(nextImage)}`;
+  nextImageUrl = siteRoot + 'lib/' + repoID + '/file' + Utils.encodePath(nextImage);
 }
 
 class FileContent extends React.Component {
@@ -56,19 +57,20 @@ class FileContent extends React.Component {
     // request thumbnails for some files
     // only for 'file view'. not for 'history/trash file view'
     let thumbnailURL = '';
-    const fileExtList = ['tif', 'tiff', 'psd', 'heic'];
-    if (!repoEncrypted && fileExtList.includes(fileExt)) {
-      thumbnailURL = `${siteRoot}thumbnail/${repoID}/${thumbnailSizeForOriginal}${Utils.encodePath(filePath)}?mtime=${lastModificationTime}`;
+    const fileExtList = ['tif', 'tiff', 'psd', 'psb', 'heic'];
+    const shouldUseThumbnail = fileExtList.includes(fileExt) || (fileExt === 'avif' && enableThumbnailServer);
+    if (!repoEncrypted && shouldUseThumbnail) {
+      thumbnailURL = siteRoot + 'thumbnail/' + repoID + '/' + thumbnailSizeForOriginal + Utils.encodePath(filePath) + '?mtime=' + lastModificationTime;
     }
 
     const { scale, angle, offset } = this.props;
     let transforms = [];
 
     if (scale) {
-      transforms.push(`scale(${scale})`);
+      transforms.push('scale(' + scale + ')');
     }
     if (angle !== undefined) {
-      transforms.push(`rotate(${angle}deg)`);
+      transforms.push('rotate(' + angle + 'deg)');
     }
 
     let style = {};
@@ -88,14 +90,16 @@ class FileContent extends React.Component {
     return (
       <div className="file-view-content flex-1 image-file-view d-flex align-items-center justify-content-center">
         {previousImage && (
-          <a href={previousImageUrl} id="img-prev" title={gettext('you can also press ← ')} className="sf3-font sf3-font-down rotate-90">
+          <a href={previousImageUrl} id="img-prev" title={gettext('You can also press ← ')}>
+            <Icon symbol="down" className="rotate-90" />
           </a>
         )}
         {nextImage && (
-          <a href={nextImageUrl} id="img-next" title={gettext('you can also press →')} className="sf3-font sf3-font-down rotate-270">
+          <a href={nextImageUrl} id="img-next" title={gettext('You can also press →')}>
+            <Icon symbol="down" className="rotate-270" />
           </a>
         )}
-        <img src={thumbnailURL || rawPath} alt={fileName} id="image-view" onError={this.handleLoadFailure} style={style} />
+        <img className={this.props.imgClass || ''} src={thumbnailURL || rawPath} alt={fileName} id="image-view" onError={this.handleLoadFailure} style={style} />
       </div>
     );
   }
@@ -106,6 +110,7 @@ FileContent.propTypes = {
   scale: PropTypes.number,
   angle: PropTypes.number,
   offset: PropTypes.object,
+  imgClass: PropTypes.string,
 };
 
 export default FileContent;

@@ -1,5 +1,6 @@
 import logging
 from threading import Thread, Event
+from requests.exceptions import RequestException
 
 from seafevents.seasearch.index_store.index_manager import IndexManager
 from seafevents.seasearch.index_store.wiki_index import WikiIndex
@@ -7,7 +8,8 @@ from seafevents.seasearch.index_store.wiki_status_index import WikiStatusIndex
 from seafevents.seasearch.utils.constants import WIKI_STATUS_INDEX_NAME, SHARD_NUM
 from seafevents.seasearch.utils.seasearch_api import SeaSearchAPI
 from seafevents.repo_data import repo_data
-from seafevents.utils import parse_bool, get_opt_from_conf_or_env, parse_interval
+from seafevents.utils import get_opt_from_conf_or_env, parse_interval
+from seafevents.app.config import ENABLE_SEARCH, IS_PRO_VERSION, SEARCH_ENGINE
 
 
 logger = logging.getLogger('seasearch')
@@ -27,26 +29,20 @@ class SeasearchWikiIndexUpdater(object):
     def _parse_config(self, config):
         """Parse wiki index update related parts of events.conf"""
         section_name = 'SEASEARCH'
-        key_enabled = 'enabled'
         key_index_interval = 'interval'
 
         default_index_interval = 30 * 60 # 30 min
 
-        if not config.has_section(section_name):
+        if not IS_PRO_VERSION or not ENABLE_SEARCH or SEARCH_ENGINE != 'seasearch':
             return
 
-        # [ enabled ]
-        enabled = get_opt_from_conf_or_env(config, section_name, key_enabled, default=False)
-        enabled = parse_bool(enabled)
-        if not enabled:
-            return
         self._enabled = True
 
         seasearch_url = get_opt_from_conf_or_env(
-            config, section_name, 'seasearch_url'
+            config, section_name, 'seasearch_url', 'SEASEARCH_URL'
         )
         seasearch_token = get_opt_from_conf_or_env(
-            config, section_name, 'seasearch_token'
+            config, section_name, 'seasearch_token', 'SEASEARCH_TOKEN'
         )
         wiki_size_limit = get_opt_from_conf_or_env(
             config, section_name, 'wiki_file_size_limit', default=int(10)
@@ -151,6 +147,8 @@ class WikiIndexUpdaterTimer(Thread):
                 logger.info('Start to update wiki index...')
                 try:
                     update_wiki_indexes(self.wiki_status_index, self.wiki_index, self.index_manager, self.repo_data)
+                except RequestException as e:
+                    logger.error('SeaSearch request failed; aborting this wiki-index update pass: %s', e)
                 except Exception as e:
                     logger.exception('periodical update wiki index error: %s', e)
 

@@ -2,9 +2,10 @@
 {% load i18n %}
 {% block sub_title %}{% trans "Signup" %} - {% endblock %}
 
-{% block extra_style %}{{block.super}}
+{% block extra_base_style %}
 <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}bootstrap/bootstrap.min.css" />
 <link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}bootstrap/bootstrap.popover.min.css" />
+{{ block.super }}
 {% endblock %}
 
 {% block main_content %}
@@ -54,6 +55,11 @@
       {{ form.note }}             {{ form.note.errors }}
       {% endif %}
 
+      {{ form.non_field_errors }}
+      {% if enable_turnstile %}
+      <div class="cf-turnstile mt-2" data-sitekey="{{ turnstile_site_key }}"></div>
+      {% endif %}
+
       <p class="error hide"></p>
       <button type="submit" class="submit btn btn-primary btn-block">{% trans "Sign Up" %}</button>
     </form>
@@ -67,6 +73,9 @@
 {% endblock %}
 
 {% block extra_script %}{{ block.super }}
+{% if enable_turnstile %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
 <script type="text/javascript" src="{{MEDIA_URL}}bootstrap/bootstrap.popover.min.js"></script>
 <script type="text/javascript" src="{{MEDIA_URL}}bootstrap/bootstrap.min.js"></script>
 <script type="text/javascript">

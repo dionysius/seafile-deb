@@ -1,0 +1,83 @@
+.permission-editor-explanation {
+  user-select: none;
+  color: var(--bs-icon-color);
+  font-size: 12px;
+  word-break: normal;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.permission-editor .permission-editor__option {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.permission-editor .permission-editor__control .permission-editor-explanation {
+  display: none;
+}
+
+.cur-view-content .permission-editor-select .permission-editor__control,
+.cur-view-content .permission-editor-select .permission-editor__control div,
+.cur-view-content .permission-editor-select .permission-editor__control .permission-editor__input,
+.cur-view-content .permission-editor-select .permission-editor__indicators  {
+  height: 1.5rem;
+  min-height: 1.5rem;
+}
+
+.cur-view-content .permission-editor-select .permission-editor__value-container div:nth-child(2) {
+  margin: 0;
+  padding: 0;
+}
+
+.cur-view-content .permission-editor-select .permission-editor__indicators .permission-editor__indicator {
+  padding: 0 0.5rem;
+}
+
+.permission-editor__menu .permission-editor__option--is-disabled {
+  color: var(--bs-disabled-color);
+  border-top: 1px solid var(--bs-border-color);
+  margin-top: 8px;
+  border-radius: 0px;
+  padding: 0;
+  padding-top: 8px;
+}
+
+.permission-editor__menu .permission-editor__option--is-disabled:hover {
+  background-color: var(--bs-popover-bg) !important;
+}
+
+.permission-editor-btn-add-custom-permission {
+  display: flex;
+  align-items: center;
+  padding: 6px 8px;
+  line-height: 20px;
+  cursor: pointer;
+  color: var(--bs-body-color);
+  border-radius: 4px;
+  width: 100%;
+}
+
+.permission-editor-btn-add-custom-permission:hover {
+  background-color: var(--bs-bg-color) !important;
+}
+
+.share-dialog-main .permission-editor .permission-editor__placeholder,
+.share-dialog-main .true__menu,
+.share-dialog-main .true__placeholder,
+.permission-editor .btn-add-custom-permission span {
+  word-break: normal;
+}
+
+.permission-editor__control {
+  background-color: inherit !important;
+  border: 1px solid var(--bs-border-color);
+}
+
+.permission-editor-value-container .seafile-multicolor-icon-check {
+  display: none;
+}
+
+.permission-editor__option--is-focused .permission-editor-btn-add-custom-permission {
+  background-color: var(--bs-dropdown-link-hover-bg);
+  border-radius: 4px;
+}

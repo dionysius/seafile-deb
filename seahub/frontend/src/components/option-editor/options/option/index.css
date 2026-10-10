@@ -1,0 +1,43 @@
+.option-editor-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  height: 32px;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.option-editor-option:hover,
+.option-editor-option.active {
+  background-color: rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.option-editor-option .option-editor-option-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.option-editor-option .option-editor-option-content .option-editor-option-icon,
+.option-editor-option .option-editor-option-content .option-editor-option-icon .sea-ai-icon-svg {
+  height: 16px;
+  width: 16px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.option-editor-option .option-editor-option-check-btn,
+.option-editor-option .option-editor-option-check-btn .sea-ai-icon-svg {
+  height: 14px;
+  width: 14px;
+}
+
+/* check check-placement left */
+.option-editor-option.check-placement-left {
+  justify-content: flex-start;
+  padding: 0 8px;
+}

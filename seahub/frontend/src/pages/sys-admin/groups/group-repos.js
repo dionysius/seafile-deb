@@ -1,14 +1,15 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { Utils } from '../../../utils/utils';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { siteRoot, gettext, isPro } from '../../../utils/constants';
-import toaster from '../../../components/toast';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import CommonOperationConfirmationDialog from '../../../components/dialog/common-operation-confirmation-dialog';
-import MainPanelTopbar from '../main-panel-topbar';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import MainPanelTopbar from '@/components/admin/layout/main-panel-topbar';
+import CommonOperationConfirmationDialog from '@/components/dialog/common-operation-confirmation-dialog';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import OpIcon from '@/components/op-icon';
+import toaster from '@/components/toast';
+import { siteRoot, gettext, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UserLink from '../user-link';
 import GroupNav from './group-nav';
 
@@ -149,13 +150,12 @@ class Item extends Component {
             <UserLink email={item.shared_by} name={item.shared_by_name} />
           </td>
           <td>
-            <i
-              role="button"
-              className={`op-icon sf2-icon-x3 ${isOpIconShown ? '' : 'invisible'}`}
+            <OpIcon
+              className={isOpIconShown ? '' : 'invisible'}
+              symbol="close"
               title={gettext('Unshare')}
-              onClick={this.toggleUnshareRepoDialog}
-            >
-            </i>
+              op={this.toggleUnshareRepoDialog}
+            />
           </td>
         </tr>
         {isUnshareRepoDialogOpen &&

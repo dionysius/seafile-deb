@@ -1,13 +1,15 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, ModalFooter, ModalBody, Alert, Row, Col } from 'reactstrap';
-import RepoListWrapper from '../file-chooser/repo-list-wrapper';
-import { MODE_TYPE_MAP } from '../../constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { gettext } from '../../utils/constants';
-import { RepoInfo } from '../../models';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { MODE_TYPE_MAP } from '@/constants';
+import { RepoInfo } from '@/models';
+import { gettext, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import CreateFolder from '../dialog/create-folder-dialog';
-import { Utils } from '../../utils/utils';
+import RepoListWrapper from '../file-chooser/repo-list-wrapper';
+import Searcher from '../file-chooser/searcher';
+import Icon from '../icon';
 
 const LibraryOption = ({ mode, label, currentMode, onUpdateMode }) => {
   return (
@@ -117,6 +119,13 @@ class SelectDirentBody extends React.Component {
   };
 
   selectMode = (mode) => {
+    if (mode === MODE_TYPE_MAP.SEARCH_RESULTS && this.props.onOpenSearch) {
+      if (this.props.mode !== MODE_TYPE_MAP.SEARCH_RESULTS) {
+        this.props.onOpenSearch();
+      }
+      return;
+    }
+
     this.props.onUpdateMode(mode);
     switch (mode) {
       case MODE_TYPE_MAP.ONLY_CURRENT_LIBRARY:
@@ -128,10 +137,33 @@ class SelectDirentBody extends React.Component {
       case MODE_TYPE_MAP.RECENTLY_USED:
         this.props.selectRepo(null);
         break;
+      case MODE_TYPE_MAP.FAVORITES:
+        this.props.selectRepo(null);
+        break;
       default:
         break;
     }
     this.props.setSelectedPath('');
+  };
+
+  handleSearchPanelKeyDown = (event) => {
+    const { mode, searchResults } = this.props;
+    if (mode !== MODE_TYPE_MAP.SEARCH_RESULTS || !isPro || searchResults.length === 0) return;
+
+    if (event.nativeEvent?.isComposing || event.keyCode === 229) return;
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.props.onSearchInputArrowKeyDown?.(event.key);
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.props.onSearchInputEnterKeyDown?.();
+    }
   };
 
   render() {
@@ -143,7 +175,7 @@ class SelectDirentBody extends React.Component {
 
     return (
       <Row>
-        <Col className='repo-list-col border-end'>
+        <Col xs="12" md="3" className='repo-list-col border-end'>
           <LibraryOption
             mode={MODE_TYPE_MAP.ONLY_CURRENT_LIBRARY}
             label={gettext('Current Library')}
@@ -164,9 +196,35 @@ class SelectDirentBody extends React.Component {
             currentMode={mode}
             onUpdateMode={this.selectMode}
           />
+          <LibraryOption
+            mode={MODE_TYPE_MAP.FAVORITES}
+            label={gettext('Favorites')}
+            currentMode={mode}
+            onUpdateMode={this.selectMode}
+          />
+          {isPro && (
+            <LibraryOption
+              mode={MODE_TYPE_MAP.SEARCH_RESULTS}
+              label={gettext('Search')}
+              currentMode={mode}
+              onUpdateMode={this.selectMode}
+            />
+          )}
         </Col>
-        <Col className='file-list-col'>
-          <ModalBody>
+        <Col xs="12" md="9" className='file-list-col'>
+          <ModalBody
+            className={mode === MODE_TYPE_MAP.SEARCH_RESULTS ? 'copy-move-dirent-search-body' : ''}
+            onKeyDown={this.handleSearchPanelKeyDown}
+          >
+            {(mode === MODE_TYPE_MAP.SEARCH_RESULTS && isPro) && (
+              <div className="copy-move-dirent-search-input">
+                <Searcher
+                  className="file-chooser-searcher-inline"
+                  onUpdateSearchStatus={this.props.onUpdateSearchStatus}
+                  onUpdateSearchResults={this.props.onUpdateSearchResults}
+                />
+              </div>
+            )}
             <RepoListWrapper
               key={repoListWrapperKey}
               mode={mode}
@@ -183,24 +241,32 @@ class SelectDirentBody extends React.Component {
               onSearchedItemClick={this.props.onSearchedItemClick}
               onSearchedItemDoubleClick={this.props.onSearchedItemDoubleClick}
               selectedSearchedRepo={selectedSearchedRepo}
+              currentSearchedItem={selectedSearchedItem}
+              currentSearchedIndex={this.props.currentSearchedIndex}
+              enableSearchedListDocumentKeyboardNavigation={false}
+              isKeyboardSelectionActive={this.props.isKeyboardSelectionActive}
               newFolderName={this.newFolderName}
               initToShowChildren={this.props.initToShowChildren}
             />
             {errMessage && <Alert color="danger" className="alert-message">{errMessage}</Alert>}
           </ModalBody>
-          <ModalFooter className='move-dirent-dialog-footer'>
+          <ModalFooter className="move-dirent-dialog-footer">
             <Button
               className="footer-left-btn"
               color="secondary"
               onClick={this.onToggleCreateFolder}
-              disabled={mode === MODE_TYPE_MAP.SEARCH_RESULTS || mode === MODE_TYPE_MAP.RECENTLY_USED}
+              disabled={
+                mode === MODE_TYPE_MAP.SEARCH_RESULTS ||
+                mode === MODE_TYPE_MAP.RECENTLY_USED ||
+                mode === MODE_TYPE_MAP.FAVORITES
+              }
             >
-              <i className='sf3-font-new sf3-font mr-2'></i>
+              <Icon symbol="new" className="mr-2" />
               <span>{gettext('New folder')}</span>
             </Button>
             <div className='footer-right-btns'>
-              <Button color="secondary m-1" onClick={this.onCancel}>{gettext('Cancel')}</Button>
-              <Button color="primary m-1" onClick={this.handleSubmit} disabled={!this.props.selectedPath}>{gettext('Submit')}</Button>
+              <Button color="secondary" onClick={this.onCancel}>{gettext('Cancel')}</Button>
+              <Button color="primary ml-2" onClick={this.handleSubmit} disabled={!this.props.selectedPath}>{gettext('Submit')}</Button>
             </div>
           </ModalFooter>
         </Col>
@@ -231,16 +297,22 @@ SelectDirentBody.propTypes = {
   setErrMessage: PropTypes.func,
   mode: PropTypes.string,
   onUpdateMode: PropTypes.func,
+  onOpenSearch: PropTypes.func,
+  onUpdateSearchStatus: PropTypes.func,
+  onUpdateSearchResults: PropTypes.func,
   searchStatus: PropTypes.string,
   searchResults: PropTypes.array,
+  onSearchInputArrowKeyDown: PropTypes.func,
+  onSearchInputEnterKeyDown: PropTypes.func,
   onSearchedItemClick: PropTypes.func,
   onSearchedItemDoubleClick: PropTypes.func,
   selectedSearchedRepo: PropTypes.object,
   onSelectSearchedRepo: PropTypes.func,
   onAddFolder: PropTypes.func,
   initToShowChildren: PropTypes.bool,
-  fetchRepoInfo: PropTypes.func,
   selectedSearchedItem: PropTypes.object,
+  currentSearchedIndex: PropTypes.number,
+  isKeyboardSelectionActive: PropTypes.bool,
 };
 
 export default SelectDirentBody;

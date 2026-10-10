@@ -1,17 +1,18 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Link } from '@gatsbyjs/reach-router';
 import dayjs from 'dayjs';
-import { Utils } from '../../../utils/utils';
-import { siteRoot, gettext } from '../../../utils/constants';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import Selector from '../../../components/single-selector';
-import CommonOperationConfirmationDialog from '../../../components/dialog/common-operation-confirmation-dialog';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import CommonOperationConfirmationDialog from '@/components/dialog/common-operation-confirmation-dialog';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import OpIcon from '@/components/op-icon';
+import Paginator from '@/components/paginator';
+import Selector from '@/components/single-selector';
+import toaster from '@/components/toast';
+import { siteRoot, gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UserLink from '../user-link';
-import toaster from '../../../components/toast';
 
 const { availableRoles } = window.sysadmin.pageOptions;
 
@@ -77,14 +78,14 @@ class Content extends Component {
             </tbody>
           </table>
           {this.props.currentPage &&
-          <Paginator
-            currentPage={this.props.currentPage}
-            hasNextPage={this.props.hasNextPage}
-            curPerPage={this.props.curPerPage}
-            resetPerPage={this.props.resetPerPage}
-            gotoPreviousPage={this.getPreviousPage}
-            gotoNextPage={this.getNextPage}
-          />
+            <Paginator
+              currentPage={this.props.currentPage}
+              hasNextPage={this.props.hasNextPage}
+              curPerPage={this.props.curPerPage}
+              resetPerPage={this.props.resetPerPage}
+              gotoPreviousPage={this.getPreviousPage}
+              gotoNextPage={this.getNextPage}
+            />
           }
         </Fragment>
       );
@@ -277,12 +278,12 @@ class Item extends Component {
             {`${item.last_activity_time ? dayjs(item.last_activity_time).fromNow() : '--'} `}
           </td>
           <td>
-            <i
-              className={`op-icon sf3-font-delete1 sf3-font ${highlighted ? '' : 'invisible'}`}
+            <OpIcon
+              className={`op-icon ${highlighted ? '' : 'invisible'}`}
+              symbol="delete"
               title={gettext('Delete')}
-              onClick={this.toggleDeleteDialog}
-            >
-            </i>
+              op={this.toggleDeleteDialog}
+            />
           </td>
         </tr>
         {isDeleteDialogOpen &&

@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { gettext, username, canCreateWiki, isPro } from '../../utils/constants';
-import WikiCardGroup from './wiki-card-group';
-import wikiAPI from '../../utils/wiki-api';
-import { Utils } from '../../utils/utils';
+import wikiAPI from '@/api/wiki-api';
+import { gettext, username, canCreateWiki, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import toaster from '../toast';
+import WikiCardGroup from './wiki-card-group';
 
 import './wiki-card-view.css';
 
@@ -12,6 +12,8 @@ const propTypes = {
   data: PropTypes.object.isRequired,
   deleteWiki: PropTypes.func.isRequired,
   renameWiki: PropTypes.func.isRequired,
+  updateWiki: PropTypes.func.isRequired,
+  transferWiki: PropTypes.func.isRequired,
   leaveSharedWiki: PropTypes.func.isRequired,
   unshareGroupWiki: PropTypes.func.isRequired,
   convertWiki: PropTypes.func.isRequired,
@@ -63,7 +65,6 @@ class WikiCardView extends Component {
     return { department2WikisMap, myWikis, v1Wikis, sharedWikis };
   };
 
-
   render() {
     let { loading, errorMsg, wikis, groupWikis } = this.props.data;
     const { toggleAddWikiDialog, sidePanelRate, isSidePanelFolded } = this.props;
@@ -81,6 +82,8 @@ class WikiCardView extends Component {
         key='my-Wikis'
         deleteWiki={this.props.deleteWiki}
         renameWiki={this.props.renameWiki}
+        updateWiki={this.props.updateWiki}
+        transferWiki={this.props.transferWiki}
         unshareGroupWiki={this.props.unshareGroupWiki}
         sidePanelRate={sidePanelRate}
         isSidePanelFolded={isSidePanelFolded}
@@ -97,6 +100,8 @@ class WikiCardView extends Component {
         key='shared-Wikis'
         deleteWiki={this.props.leaveSharedWiki}
         renameWiki={this.props.renameWiki}
+        updateWiki={this.props.updateWiki}
+        transferWiki={this.props.transferWiki}
         unshareGroupWiki={this.props.unshareGroupWiki}
         wikis={sharedWikis}
         title={gettext('Shared with me')}
@@ -118,6 +123,8 @@ class WikiCardView extends Component {
             deleteWiki={this.props.deleteWiki}
             unshareGroupWiki={this.props.unshareGroupWiki}
             renameWiki={this.props.renameWiki}
+            updateWiki={this.props.updateWiki}
+            transferWiki={this.props.transferWiki}
             sidePanelRate={sidePanelRate}
             isSidePanelFolded={isSidePanelFolded}
             group={groupWiki}
@@ -136,6 +143,8 @@ class WikiCardView extends Component {
           key='old-Wikis'
           deleteWiki={this.props.deleteWiki}
           renameWiki={this.props.renameWiki}
+          updateWiki={this.props.updateWiki}
+          transferWiki={this.props.transferWiki}
           unshareGroupWiki={this.props.unshareGroupWiki}
           convertWiki={this.props.convertWiki}
           isSidePanelFolded={isSidePanelFolded}

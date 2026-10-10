@@ -1,20 +1,21 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
-import dayjs from 'dayjs';
-import copy from 'copy-to-clipboard';
 import { Button, Input, InputGroup } from 'reactstrap';
-import { gettext, shareLinkExpireDaysMin, shareLinkExpireDaysMax, shareLinkExpireDaysDefault, canSendShareLinkEmail } from '../../utils/constants';
-import CommonOperationConfirmationDialog from '../../components/dialog/common-operation-confirmation-dialog';
-import { shareLinkAPI } from '../../utils/share-link-api';
-import { Utils } from '../../utils/utils';
-import ShareLink from '../../models/share-link';
-import toaster from '../toast';
-import SendLink from '../send-link';
-import SharedLink from '../shared-link';
-import SetLinkExpiration from '../set-link-expiration';
-import ShareLinkScopeEditor from '../select-editor/share-link-scope-editor';
-import SelectEditor from '../select-editor/select-editor';
+import copy from 'copy-to-clipboard';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { shareLinkAPI } from '@/api/share-link-api';
+import ShareLink from '@/models/share-link';
+import { gettext, shareLinkExpireDaysMin, shareLinkExpireDaysMax, shareLinkExpireDaysDefault, canSendShareLinkEmail } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import BackIcon from '../../components/back-icon';
+import CommonOperationConfirmationDialog from '../../components/dialog/common-operation-confirmation-dialog';
+import Icon from '../icon';
+import SelectEditor from '../select-editor/select-editor';
+import ShareLinkScopeEditor from '../select-editor/share-link-scope-editor';
+import SendLink from '../send-link';
+import SetLinkExpiration from '../set-link-expiration';
+import SharedLink from '../shared-link';
+import toaster from '../toast';
 
 const propTypes = {
   sharedLinkInfo: PropTypes.object.isRequired,
@@ -51,10 +52,10 @@ class LinkDetails extends React.Component {
     toaster.success(gettext('Share link is copied to the clipboard.'));
   };
 
-  onCopyDownloadLink = () => {
+  onCopyRawFileLink = () => {
     const { sharedLinkInfo } = this.props;
     copy(`${sharedLinkInfo.download_link}?op=view`);
-    toaster.success(gettext('Direct download link is copied to the clipboard.'));
+    toaster.success(gettext('Raw file link is copied to the clipboard.'));
   };
 
   toggleStoredPasswordVisible = () => {
@@ -163,7 +164,7 @@ class LinkDetails extends React.Component {
     return (
       <div>
         <div className="d-flex align-items-center pb-2 border-bottom">
-          <h6 className="font-weight-normal m-0">
+          <h6 className="font-weight-normal m-0 d-flex align-items-center">
             <BackIcon onClick={this.goBack} />
             {gettext('Link')}
           </h6>
@@ -179,12 +180,12 @@ class LinkDetails extends React.Component {
           </dd>
           {!sharedLinkInfo.is_dir && sharedLinkInfo.permissions.can_download && sharedLinkInfo.show_download_link && ( // just for file
             <>
-              <dt className="text-secondary font-weight-normal">{gettext('Direct download link')}</dt>
+              <dt className="text-secondary font-weight-normal">{gettext('Raw file link')}</dt>
               <dd>
                 <SharedLink
                   link={`${sharedLinkInfo.download_link}?op=view`}
                   linkExpired={sharedLinkInfo.is_expired}
-                  copyLink={this.onCopyDownloadLink}
+                  copyLink={this.onCopyRawFileLink}
                 />
               </dd>
             </>
@@ -201,8 +202,9 @@ class LinkDetails extends React.Component {
                   <Button
                     aria-label={this.state.storedPasswordVisible ? gettext('Hide') : gettext('Show')}
                     onClick={this.toggleStoredPasswordVisible}
-                    className={`link-operation-icon eye-icon sf3-font sf3-font-eye${this.state.storedPasswordVisible ? '' : '-slash'}`}
+                    className="link-operation-icon eye-icon"
                   >
+                    <Icon symbol={this.state.storedPasswordVisible ? 'eye' : 'eye-slash'} />
                   </Button>
                 </InputGroup>
               </dd>
@@ -236,9 +238,10 @@ class LinkDetails extends React.Component {
                     <Button
                       aria-label={gettext('Edit')}
                       title={gettext('Edit')}
-                      className="link-operation-icon sf3-font sf3-font-rename"
+                      className="link-operation-icon"
                       onClick={this.editingExpirationToggle}
                     >
+                      <Icon symbol="rename" />
                     </Button>
                   </InputGroup>
                 )}
@@ -289,6 +292,7 @@ class LinkDetails extends React.Component {
           <SendLink
             linkType='shareLink'
             token={sharedLinkInfo.token}
+            hasPassword={!!sharedLinkInfo.password}
             toggleSendLink={this.toggleSendLink}
             closeShareDialog={this.props.closeShareDialog}
           />

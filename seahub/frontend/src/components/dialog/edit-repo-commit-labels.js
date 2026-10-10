@@ -1,12 +1,16 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import { components } from 'react-select';
 import { Modal, ModalBody, ModalFooter } from 'reactstrap';
+import PropTypes from 'prop-types';
 import CreatableSelect from 'react-select/creatable';
-import { gettext } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
+import { seafileAPI } from '@/api/seafile-api';
+import Icon from '@/components/icon';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import { MenuSelectStyle } from '../select/seahub-select-style';
+import SelectDropdownIndicator from '../select-dropdown-indicator';
 import toaster from '../toast';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
 
 const propTypes = {
   repoID: PropTypes.string.isRequired,
@@ -14,6 +18,29 @@ const propTypes = {
   commitLabels: PropTypes.array.isRequired,
   updateCommitLabels: PropTypes.func.isRequired,
   toggleDialog: PropTypes.func.isRequired
+};
+
+const DropdownIndicator = props => {
+  return (
+    <components.DropdownIndicator {...props}>
+      <SelectDropdownIndicator />
+    </components.DropdownIndicator>
+  );
+};
+
+const ClearIndicator = ({ innerProps, ...props }) => {
+  const onMouseDown = e => {
+    e.nativeEvent.stopImmediatePropagation();
+    innerProps.onMouseDown(e);
+  };
+  props.innerProps = { ...innerProps, onMouseDown };
+  return (
+    <components.ClearIndicator {...props} >
+      <span className="d-flex align-items-center" style={{ marginRight: '16px' }} aria-hidden="true">
+        <Icon symbol="close" style={{ width: '12px', height: '12px' }} />
+      </span>
+    </components.ClearIndicator>
+  );
 };
 
 class UpdateRepoCommitLabels extends React.Component {
@@ -43,7 +70,10 @@ class UpdateRepoCommitLabels extends React.Component {
     });
 
     seafileAPI.updateRepoCommitLabels(repoID, commitID, labels).then((res) => {
-      this.props.updateCommitLabels(res.data.revisionTags.map((item, index) => item.tag));
+      // Extract tag names from API response
+      const updatedTags = res.data.revisionTags.map((item) => item.tag);
+      // Call callback to update frontend state with the latest tags
+      this.props.updateCommitLabels(updatedTags);
       this.props.toggleDialog();
       toaster.success(gettext('Successfully edited labels.'));
     }).catch((error) => {
@@ -69,11 +99,14 @@ class UpdateRepoCommitLabels extends React.Component {
               placeholder=''
               noOptionsMessage={() => {return gettext('No options available');}}
               formatCreateLabel={(inputValue) => {return gettext('Add option: %s').replace('%s', inputValue);}}
+              styles={MenuSelectStyle}
+              components={{ DropdownIndicator, ClearIndicator }}
             />
             {formErrorMsg && <p className="error m-0 mt-2">{formErrorMsg}</p>}
           </React.Fragment>
         </ModalBody>
         <ModalFooter>
+          <button className="btn btn-secondary" onClick={this.props.toggleDialog}>{gettext('Cancel')}</button>
           <button className="btn btn-primary" disabled={this.state.submitBtnDisabled} onClick={this.formSubmit}>{gettext('Submit')}</button>
         </ModalFooter>
       </Modal>

@@ -18,18 +18,17 @@ from seahub.api2.throttling import UserRateThrottle
 from seahub.api2.authentication import TokenAuthentication
 
 from seahub.utils import get_org_traffic_by_month
-from seahub.utils.file_size import get_file_size_unit, get_quota_from_string
-from seahub.role_permissions.utils import get_enabled_role_permissions_by_role
+from seahub.utils.file_size import get_file_size_unit
 
+from seahub.organizations.utils import get_org_monthly_download_traffic_limit
 from seahub.organizations.api.permissions import IsOrgAdmin
 from seahub.organizations.models import OrgAdminSettings, \
         OrgMemberQuota, FORCE_ADFS_LOGIN, DISABLE_ORG_ENCRYPTED_LIBRARY, \
-        DISABLE_ORG_USER_CLEAN_TRASH, OrgSettings
-from seahub.organizations.settings import ORG_MEMBER_QUOTA_ENABLED, \
-        ORG_ENABLE_ADMIN_CUSTOM_NAME
+        DISABLE_ORG_USER_CLEAN_TRASH
+from seahub.organizations.settings import ORG_ENABLE_ADMIN_CUSTOM_NAME
 
 from django.conf import settings as dj_settings
-from seahub.ai.utils import get_ai_cost_by_user, get_ai_credit_by_user
+from seahub.ai.utils import get_ai_credit_by_user, get_ai_credit_used_by_user
 
 logger = logging.getLogger(__name__)
 
@@ -58,10 +57,7 @@ def get_org_info(request, org_id):
         user_default_quota = 0
 
     # member quota
-    if ORG_MEMBER_QUOTA_ENABLED:
-        member_quota = OrgMemberQuota.objects.get_quota(org_id)
-    else:
-        member_quota = None
+    member_quota = OrgMemberQuota.objects.get_quota(org_id)
 
     # member usage
     try:
@@ -94,18 +90,11 @@ def get_org_info(request, org_id):
 
     current_date = datetime.now()
     info['traffic_this_month'] = get_org_traffic_by_month(org_id, current_date)
-
-    info['traffic_limit'] = ''
-    org_role = OrgSettings.objects.get_role_by_org(request.user.org)
-    role_perm_dict = get_enabled_role_permissions_by_role(org_role)
-    monthly_rate_limit_per_user = role_perm_dict.get('monthly_rate_limit_per_user', '')
-    if monthly_rate_limit_per_user:
-        traffic_limit = get_quota_from_string(monthly_rate_limit_per_user) * member_quota
-        info['traffic_limit'] = traffic_limit
+    info['monthly_download_traffic_limit'] = get_org_monthly_download_traffic_limit(request.user.org)
 
     if dj_settings.ENABLE_SEAFILE_AI and dj_settings.SEAFILE_AI_SERVER_URL:
-        info['ai_cost'] = round(get_ai_cost_by_user(request.user, org_id), 2)
         info['ai_credit'] = get_ai_credit_by_user(request.user, org_id)
+        info['ai_credit_used'] = round(get_ai_credit_used_by_user(request.user, org_id), 2)
 
     info['storage_quota'] = storage_quota
     info['storage_usage'] = storage_usage

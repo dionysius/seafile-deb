@@ -1,9 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
-import { isPro, gettext, mediaUrl, siteRoot } from '../../utils/constants';
-import InternalLinkOperation from '../operations/internal-link-operation';
+import PropTypes from 'prop-types';
+import { isPro, gettext, mediaUrl, siteRoot } from '@/utils/constants';
 import OpIcon from '../../components/op-icon';
+import InternalLinkOperation from '../operations/internal-link-operation';
 
 const propTypes = {
   toggleStar: PropTypes.func.isRequired,
@@ -32,8 +32,10 @@ class FileInfo extends React.PureComponent {
         <h2 className="file-title d-flex align-items-center">
           <span className="file-name text-truncate" title={fileName}>{fileName}</span>
           <OpIcon
-            className={`op-icon mr-0 file-star sf3-font ${isStarred ? 'sf3-font-star' : 'sf3-font-star-empty'}`}
-            title={starredText}
+            id="file-star"
+            className="ml-2 file-star"
+            symbol={isStarred ? 'starred' : 'unstarred'}
+            tooltip={starredText}
             op={this.props.toggleStar}
           />
           <InternalLinkOperation repoID={repoID} path={filePath} />

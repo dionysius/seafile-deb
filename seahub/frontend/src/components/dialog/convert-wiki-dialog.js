@@ -1,12 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, Modal, ModalBody, ModalFooter, Input, Label } from 'reactstrap';
-import { gettext, isPro } from '../../utils/constants';
-import wikiAPI from '../../utils/wiki-api';
-import { Utils } from '../../utils/utils';
+import PropTypes from 'prop-types';
+import wikiAPI from '@/api/wiki-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import { SeahubSelect } from '../select';
 import toaster from '../toast';
-import { SeahubSelect } from '../common/select';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
 
 const propTypes = {
   toggleCancel: PropTypes.func.isRequired,
@@ -41,6 +41,13 @@ class ConvertWikiDialog extends React.Component {
         obj.label = departments[i].name;
         options.push(obj);
       }
+      const myWikiOption = {
+        id: '',
+        value: 'My wiki',
+        email: '',
+        label: gettext('My Wikis'),
+      };
+      options.unshift(myWikiOption);
       this.setState({ options });
     }).catch(error => {
       let errMessage = Utils.getErrorMsg(error);

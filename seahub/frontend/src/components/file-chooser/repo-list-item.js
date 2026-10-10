@@ -1,15 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import TreeListView from './tree-list-view';
-import TreeNode from '../../components/tree-view/tree-node';
+import { seafileAPI } from '@/api/seafile-api';
+import Dirent from '@/models/dirent';
+import { Utils } from '@/utils/utils';
 import treeHelper from '../../components/tree-view/tree-helper';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
-import Dirent from '../../models/dirent';
-import toaster from '../toast';
+import TreeNode from '../../components/tree-view/tree-node';
 import Icon from '../icon';
-import { gettext } from '../../utils/constants';
-import OpIcon from '../op-icon';
+import toaster from '../toast';
+import TreeListView from './tree-list-view';
 
 const propTypes = {
   isCurrentRepo: PropTypes.bool,
@@ -70,6 +68,8 @@ class RepoListItem extends React.Component {
 
   componentDidUpdate(prevProps) {
     const { repo, selectedRepo, selectedPath, newFolderName } = this.props;
+    if (!newFolderName) return;
+
     let parentPath;
     if (selectedPath == '/' + newFolderName) {
       parentPath = '/';
@@ -86,7 +86,7 @@ class RepoListItem extends React.Component {
       seafileAPI.listDir(repo.repo_id, parentPath).then(res => {
         const { dirent_list = [], dir_id = '', user_perm = 'r' } = res?.data || {};
         const dirent = dirent_list.find(item => item.type === 'dir' && item.name === newFolderName);
-        const direntData = dirent || new Dirent({ name: newFolderName, tye: 'dir', id: dir_id, permission: user_perm });
+        const direntData = dirent || new Dirent({ name: newFolderName, type: 'dir', id: dir_id, permission: user_perm });
         const object = new Dirent(direntData);
         const direntNode = new TreeNode({ object });
         const newTreeData = treeHelper.addNodeToParentByPath(this.state.treeData, direntNode, parentPath);
@@ -258,21 +258,19 @@ class RepoListItem extends React.Component {
           onKeyDown={Utils.onKeyDown}
         >
           <div className="item-left-icon">
-            <OpIcon
-              className={`item-toggle icon sf3-font sf3-font-down ${this.state.isShowChildren ? '' : 'rotate-270 d-inline-block'}`}
-              op={this.onToggleClick}
-              title={this.state.isShowChildren ? gettext('Fold') : gettext('Unfold')}
-            />
-            <i className="tree-node-icon">
-              <span className="icon sf3-font sf3-font-folder tree-node-icon"></span>
-            </i>
+            <span className="d-flex justify-content-center align-items-center item-toggle tree-node-icon icon" onClick={this.onToggleClick}>
+              <Icon symbol="down" className={this.state.isShowChildren ? '' : 'rotate-270'} />
+            </span>
+            <span className="tree-node-icon icon">
+              <Icon symbol="folder" />
+            </span>
           </div>
           <div className="item-text">
             <span className="name user-select-none ellipsis" title={repo.repo_name}>{repo.repo_name}</span>
           </div>
           {repoActive &&
             <div className="item-right-icon">
-              <Icon symbol="check" color="currentColor"/>
+              <Icon symbol="check" />
             </div>
           }
         </div>

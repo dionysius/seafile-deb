@@ -1,13 +1,15 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import classnames from 'classnames';
 import Select, { components } from 'react-select';
-import { gettext } from '../../utils/constants';
-import { MenuSelectStyle } from '../common/select';
+import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import OpIcon from '../../components/op-icon';
-import { Utils } from '../../utils/utils';
+import Icon from '../icon';
+import { MenuSelectStyle } from '../select';
+import SelectDropdownIndicator from '../select-dropdown-indicator';
 
-import '../../css/select-editor.css';
+import './index.css';
 
 const propTypes = {
   isTextMode: PropTypes.bool.isRequired, // there will be two mode. first: text and select. second: just select
@@ -27,11 +29,9 @@ const propTypes = {
 
 const DropdownIndicator = props => {
   return (
-    components.DropdownIndicator && (
-      <components.DropdownIndicator {...props}>
-        <span className="sf3-font sf3-font-down" style={{ fontSize: '12px', marginLeft: '-2px' }}></span>
-      </components.DropdownIndicator>
-    )
+    <components.DropdownIndicator {...props}>
+      <SelectDropdownIndicator />
+    </components.DropdownIndicator>
   );
 };
 
@@ -44,10 +44,29 @@ class SelectEditor extends React.Component {
       options: []
     };
     this.options = [];
+    this.selectRef = React.createRef();
+    this.focusTimer = null;
+    this.clearFocusTimer = null;
   }
 
   componentDidMount() {
     this.setOptions();
+  }
+
+  componentWillUnmount() {
+    this.cleanupKeyboardListener();
+    clearTimeout(this.focusTimer);
+    clearTimeout(this.clearFocusTimer);
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (!prevState.isEditing && this.state.isEditing) {
+      this.focusTimer = setTimeout(() => {
+        if (this.selectRef.current) {
+          this.selectRef.current.focus();
+        }
+      }, 0);
+    }
   }
 
   setOptions = () => {
@@ -83,7 +102,7 @@ class SelectEditor extends React.Component {
             tabIndex={0}
             onKeyDown={Utils.onKeyDown}
           >
-            <i className="sf3-font sf3-font-enlarge" aria-hidden="true"></i>
+            <Icon symbol="new" className="mr-2" aria-hidden="true" />
             <span>{gettext('Add custom permission')}</span>
           </div>
         )
@@ -120,20 +139,71 @@ class SelectEditor extends React.Component {
     e.nativeEvent.stopImmediatePropagation();
   };
 
+  cleanupKeyboardListener = () => {
+    document.body.classList.remove('keyboard-nav-active');
+    document.removeEventListener('keydown', this.handleKeyDown, true);
+  };
+
   onMenuClose = () => {
+    this.cleanupKeyboardListener();
+    clearTimeout(this.clearFocusTimer);
     this.setState({ isEditing: false });
     this.props.toggleItemFreezed && this.props.toggleItemFreezed(false);
   };
 
+  handleKeyDown = (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      document.body.classList.add('keyboard-nav-active');
+      if (this.selectRef.current) {
+        this.selectRef.current.focusOption(e.key === 'ArrowDown' ? 'down' : 'up');
+      }
+    } else if (e.key === 'Enter') {
+      const focusedOption = this.selectRef.current?.state?.focusedOption;
+      if (focusedOption && focusedOption.isDisabled && this.props.enableAddCustomPermission) {
+        this.props.onAddCustomPermissionToggle && this.props.onAddCustomPermissionToggle();
+      }
+    }
+  };
+
+  onMenuOpen = () => {
+    this.clearFocusTimer = setTimeout(() => {
+      if (this.selectRef.current) {
+        this.selectRef.current.setState({ focusedOption: null });
+      }
+    }, 0);
+    document.addEventListener('keydown', this.handleKeyDown, true);
+  };
+
+  // Prevent react-select's internal handler from double-processing arrow keys
+  handleSelectKeyDown = (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+    }
+  };
+
   render() {
     const {
-      currentOption, isTextMode, autoFocus = false, isEditIconShow
+      currentOption, isTextMode, autoFocus = false, isEditIconShow, isSearchable = false
     } = this.props;
+    const optionsWithCheck = this.state.options.map(option => {
+      return {
+        ...option,
+        label: (
+          <span className="d-flex align-items-center justify-content-between">
+            {option.label}
+            {currentOption === option.value &&
+              <Icon className="flex-shrink-0" symbol="check" style={{ width: '12px', height: '12px' }} />
+            }
+          </span>
+        )
+      };
+    });
     return (
       <div className="permission-editor" onClick={this.onSelectHandler}>
         {(!isTextMode || this.state.isEditing) &&
           <Select
-            options={this.state.options}
+            ref={this.selectRef}
+            options={optionsWithCheck}
             className="permission-editor-select"
             classNamePrefix="permission-editor"
             value={this.state.options.filter(item => item.value == currentOption)[0]}
@@ -145,7 +215,10 @@ class SelectEditor extends React.Component {
             styles={MenuSelectStyle}
             components={{ DropdownIndicator }}
             onMenuClose={this.onMenuClose}
+            onMenuOpen={this.onMenuOpen}
+            onKeyDown={this.handleSelectKeyDown}
             autoFocus={autoFocus}
+            isSearchable={isSearchable}
             menuShouldScrollIntoView
           />
         }
@@ -153,8 +226,10 @@ class SelectEditor extends React.Component {
           <div className="d-flex align-item-center">
             <span>{this.props.translateOption(currentOption)}</span>
             <OpIcon
-              className={classnames('sf3-font sf3-font-rename op-icon ml-1', { 'invisible': !isEditIconShow })}
-              title={gettext('Edit')}
+              id="permission-editor-edit-btn"
+              className={classnames('op-icon ml-1', { 'invisible': !isEditIconShow })}
+              symbol="rename"
+              tooltip={gettext('Edit')}
               op={this.onEditPermission}
             />
           </div>

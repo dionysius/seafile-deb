@@ -2,8 +2,11 @@
 import os
 import tempfile
 import subprocess
+import shlex
+from datetime import datetime, timezone
 
 from seafobj import commit_mgr, fs_mgr, block_mgr
+from seaserv import seafile_api
 
 from .db_oper import DBOper
 from .commit_differ import CommitDiffer
@@ -60,32 +63,74 @@ class VirusScan(object):
             differ = CommitDiffer(scan_task.repo_id, 1, sroot_id, hroot_id)
             scan_files = differ.diff()
 
-            if len(scan_files) == 0:
+            repo = seafile_api.get_repo(scan_task.repo_id)
+            scan_commit = None
+            head_commit = None
+            if scan_task.scan_commit_id:
+                scan_commit = seafile_api.get_commit(
+                    repo.id, repo.version, scan_task.scan_commit_id)
+            if scan_task.head_commit_id:
+                head_commit = seafile_api.get_commit(
+                    repo.id, repo.version, scan_task.head_commit_id)
+
+            scan_file_keys = {(fpath, fid) for fpath, fid, _ in scan_files}
+
+            known_virus_records = []
+            known_virus_keys = set()
+            if scan_commit and head_commit:
+                start_time = datetime.fromtimestamp(
+                    scan_commit.ctime, timezone.utc).replace(tzinfo=None)
+                end_time = datetime.fromtimestamp(
+                    head_commit.ctime, timezone.utc).replace(tzinfo=None)
+                deleted_virus_files = self.db_oper.get_deleted_virus_files(
+                    scan_task.repo_id, start_time, end_time) or []
+
+                for fpath, fid, virus_signature in deleted_virus_files:
+                    key = (fpath, fid)
+                    if key in scan_file_keys or key in known_virus_keys:
+                        continue
+
+                    current_file_id = seafile_api.get_file_id_by_commit_and_path(
+                        repo.id, scan_task.head_commit_id, fpath)
+                    if current_file_id != fid:
+                        continue
+
+                    known_virus_keys.add(key)
+                    known_virus_records.append((
+                        scan_task.repo_id,
+                        scan_task.head_commit_id,
+                        fpath,
+                        fid,
+                        virus_signature,
+                    ))
+
+            if not scan_files and not known_virus_records:
                 logger.debug('No change occur for repo %.8s, skip virus scan.', scan_task.repo_id)
                 self.db_oper.update_vscan_record(scan_task.repo_id, scan_task.head_commit_id)
                 return
-            else:
-                logger.info('Start to scan virus for repo %.8s.', scan_task.repo_id)
 
-            vnum = 0
+            logger.info('Start to scan virus for repo %.8s.', scan_task.repo_id)
+
+            vnum = len(known_virus_records)
             nvnum = 0
             nfailed = 0
-            vrecords = []
+            vrecords = list(known_virus_records)
 
             for scan_file in scan_files:
                 fpath, fid, fsize = scan_file
                 if not self.should_scan_file(fpath, fsize):
                     continue
 
-                ret = self.scan_file_virus(scan_task.repo_id, fid, fpath)
+                status_code, virus_signature = self.scan_file_virus(scan_task.repo_id, fid, fpath)
 
-                if ret == 0:
+                if status_code == 0:
                     logger.debug('File %s virus scan by %s: OK.', fpath, self.settings.scan_cmd)
                     nvnum += 1
-                elif ret == 1:
+                elif status_code == 1:
                     logger.info('File %s virus scan by %s: Found virus.', fpath, self.settings.scan_cmd)
                     vnum += 1
-                    vrecords.append((scan_task.repo_id, scan_task.head_commit_id, fpath))
+                    vrecords.append((scan_task.repo_id, scan_task.head_commit_id,
+                                     fpath, fid, virus_signature))
                 else:
                     logger.debug('File %s virus scan by %s: Failed.', fpath, self.settings.scan_cmd)
                     nfailed += 1
@@ -114,14 +159,18 @@ class VirusScan(object):
 
             log_dir = os.path.join(os.environ.get('SEAFEVENTS_LOG_DIR', ''))
             logfile = os.path.join(log_dir, 'virus_scan.log')
+            scan_cmd = shlex.split(self.settings.scan_cmd) + [tpath]
             with open(logfile, 'a') as fp:
-                ret_code = subprocess.call([self.settings.scan_cmd, tpath], stdout=fp, stderr=fp)
+                completed = subprocess.run(scan_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                output = completed.stdout.decode('utf-8', errors='replace')
+                if output:
+                    fp.write(output)
 
-            return self.parse_scan_result(ret_code)
+            return self.parse_scan_result(completed.returncode, output)
 
         except Exception as e:
             logger.warning('Virus scan for file %s encounter error: %s.', file_path, e)
-            return -1
+            return -1, None
         finally:
             if tfd > 0:
                 os.close(tfd)
@@ -136,18 +185,32 @@ class VirusScan(object):
         ] + args
         subprocess.Popen(cmd, cwd=SEAHUB_DIR)
 
-    def parse_scan_result(self, ret_code):
+    def parse_scan_result(self, ret_code, output=''):
         rcode_str = str(ret_code)
 
         for code in self.settings.nonvir_codes:
             if rcode_str == code:
-                return 0
+                return 0, None
 
         for code in self.settings.vir_codes:
             if rcode_str == code:
-                return 1
+                return 1, self.extract_virus_signature(output)
 
-        return ret_code
+        return ret_code, None
+
+    def extract_virus_signature(self, output):
+        if not output:
+            return None
+
+        for line in output.splitlines():
+            if ' FOUND' not in line:
+                continue
+
+            signature = line.rsplit(' FOUND', 1)[0].rsplit(': ', 1)[-1].strip()
+            if signature:
+                return signature
+
+        return None
 
     def should_scan_file(self, fpath, fsize):
         if fsize >= self.settings.scan_size_limit << 20:

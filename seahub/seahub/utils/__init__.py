@@ -17,6 +17,8 @@ from datetime import datetime
 from urllib.parse import urlparse
 
 from constance import config
+from seahub.auth.models import SocialAuthUser
+from seahub.utils.ldap import MULTI_LDAP_1_PROVIDER, LDAP_PROVIDER
 import seaserv
 from seaserv import seafile_api, ccnet_api
 
@@ -29,6 +31,8 @@ from urllib.parse import quote
 from django.utils.html import escape
 from django.utils.timezone import make_naive, is_aware
 from django.utils.crypto import get_random_string
+from django.core.validators import EmailValidator
+from django.core.exceptions import ValidationError
 
 from seahub.auth import REDIRECT_FIELD_NAME
 from seahub.api2.models import Token, TokenV2
@@ -115,17 +119,19 @@ EMPTY_SHA1 = '0000000000000000000000000000000000000000'
 MAX_INT = 2147483647
 
 PREVIEW_FILEEXT = {
-    IMAGE: ('gif', 'jpeg', 'jpg', 'png', 'heic', 'ico', 'bmp', 'tif', 'tiff', 'psd', 'webp', 'jfif'),
+    IMAGE: ('gif', 'jpeg', 'jpg', 'png', 'heic', 'ico', 'bmp', 'tif', 'tiff', 'psd', 'psb', 'webp', 'jfif', 'avif'),
     DOCUMENT: ('doc', 'docx', 'docxf', 'oform', 'ppt', 'pptx', 'odt', 'fodt', 'odp', 'fodp', 'odg', 'pages'),
     SPREADSHEET: ('xls', 'xlsx', 'ods', 'fods'),
     SVG: ('svg',),
     PDF: ('pdf', 'ai'),
+    EPUB: ('epub',),
     MARKDOWN: ('markdown', 'md'),
-    VIDEO: ('mp4', 'ogv', 'webm', 'mov'),
+    VIDEO: ('mp4', 'ogv', 'webm', 'mov', 'm4v'),
     AUDIO: ('mp3', 'oga', 'ogg', 'wav', 'flac', 'opus'),
     #'3D': ('stl', 'obj'),
     SEADOC: ('sdoc',),
     EXCALIDRAW: ('exdraw',),
+    TEXT: ('admin', 'txt', 'log', 'csv', 'py', 'c', 'cpp', 'h', 'java', 'js', 'css', 'html', 'htm', 'xml', 'json', 'yml', 'yaml', 'sh', 'rb', 'php', 'go', 'rs', 'swift', 'kt", "kts', 'dart', 'ini', 'cfg', 'conf', 'toml'),
 }
 
 def get_non_sdoc_file_exts():
@@ -263,19 +269,15 @@ def normalize_file_path(path):
     else:
         return '/' + path
 
-# modified from django1.5:/core/validators, and remove the support for single
-# quote in email address
-email_re = re.compile(
-    r"(^[-!#$%&*+/=?^_`{}|~0-9A-Z]+(\.[-!#$%&*+/=?^_`{}|~0-9A-Z]+)*"  # dot-atom
-    # quoted-string, see also http://tools.ietf.org/html/rfc2822#section-3.2.5
-    r'|^"([\001-\010\013\014\016-\037!#-\[\]-\177]|\\[\001-\011\013\014\016-\177])*"'
-    r')@((?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)$)'  # domain
-    r'|\[(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}\]$', re.IGNORECASE)  # literal form, ipv4 address (SMTP 4.1.3)
 
-def is_valid_email(email):
-    """A heavy email format validation.
-    """
-    return True if email_re.match(email) is not None else False
+def is_valid_email(email: str) -> bool:
+    validator = EmailValidator()
+    try:
+        validator(email)
+        return True
+    except ValidationError:
+        return False
+
 
 def is_valid_username(username):
     """Check whether username is valid, currently only email can be a username.
@@ -287,24 +289,49 @@ def is_valid_username2(username):
     """
     return (not username.startswith(' ')) and (not username.endswith(' '))
 
+
 def is_valid_dirent_name(name):
     """Check whether repo/dir/file name is valid.
     """
+    if not name or '..' in name:
+        return False
+
+    # Core Unicode ranges for most common single-code-point emojis
+    # Refer to Unicode Standard 15.0+, classified by emoji type for easy maintenance
+    EMOJI_UNICODE_RANGES = [
+        (0x1F600, 0x1F64F),  # Face & emotion emojis (😀😃😄😁😆 etc.)
+        (0x1F300, 0x1F5FF),  # Symbols, patterns & natural scenes (🌲🌊⭐️🎨 etc.)
+        (0x1F680, 0x1F6FF),  # Transport, technology & tools (🚗✈️💻⌚️ etc.)
+        (0x1F1E0, 0x1F1FF),  # Country flags & letter emojis (🇨🇳🇺🇸🇬🇧 etc.)
+        (0x2600, 0x26FF),    # Miscellaneous symbols (☀️⭐️☁️⚡️ etc.)
+        (0x2700, 0x27BF),    # Dingbats & hand gestures (❤️✋✌️👍 etc.)
+        (0x1F900, 0x1F9FF),  # Extended emojis (🦸🦹🧑💻🧶 etc.)
+        (0x1FA00, 0x1FAFF),  # Further extended emojis (🫶🫵🫰 etc., single-code-point)
+    ]
+
     for character in name:
-        # Emojis fall within the range \U0001F300 to \U0001FAD6
-        if 0x1F300 <= ord(character) <= 0x1FAD6:
+        char_ord = ord(character)
+        if any(start <= char_ord <= end for start, end in EMOJI_UNICODE_RANGES):
             return False
-    if name == '..':
+
+        if character == '/' or character == '\\':
+            return False
+
+    try:
+        encoded = name.encode("utf-8")
+    except UnicodeEncodeError:
         return False
-    if '/' in name:
+
+    if len(encoded) > 256:
         return False
-    # `repo_id` parameter is not used in seafile api
-    return seafile_api.is_valid_filename('fake_repo_id', name)
+
+    return True
+
 
 def is_ldap_user(user):
     """Check whether user is a LDAP user.
     """
-    return user.source == 'LDAP' or user.source == 'LDAPImport'
+    return SocialAuthUser.objects.filter(provider__in=[LDAP_PROVIDER, MULTI_LDAP_1_PROVIDER], username=user.username).exists()
 
 def get_no_duplicate_obj_name(obj_name, exist_obj_names):
 
@@ -410,11 +437,6 @@ def get_file_type_and_ext(filename):
     otherwise, return unknown type.
     """
     fileExt = os.path.splitext(filename)[1][1:].lower()
-
-    if fileExt == 'csv' \
-            and ENABLE_ONLYOFFICE \
-            and fileExt in ONLYOFFICE_FILE_EXTENSION:
-        return (SPREADSHEET, fileExt)
 
     if fileExt in get_conf_text_ext():
         return (TEXT, fileExt)
@@ -578,6 +600,12 @@ if EVENTS_CONFIG_FILE:
         logging.exception('Failed to import seafevents package.')
         seafevents = None
         EVENTS_ENABLED = False
+
+    try:
+        redis_client = seafevents_api.RedisClient(socket_timeout=30)
+    except Exception:
+        logging.exception('Failed to initialize seafevents RedisClient.')
+        redis_client = None
 
     @contextlib.contextmanager
     def _get_seafevents_session():
@@ -828,6 +856,13 @@ if EVENTS_CONFIG_FILE:
             res, total_count = seafevents_api.get_delete_records(session, repo_id, show_time, start, limit)
         return res, total_count
 
+    def risk_control_statistics(message):
+        if not redis_client:
+            return
+        try:
+            redis_client.publish('risk-control-statistics', json.dumps(message))
+        except Exception:
+            logger.exception('Failed to publish risk-control-statistics message.')
 else:
     parsed_events_conf = None
     EVENTS_ENABLED = False
@@ -894,6 +929,8 @@ else:
     def get_user_activities_by_timestamp():
         pass
     def get_trash_records():
+        pass
+    def risk_control_statistics(message):
         pass
 
 

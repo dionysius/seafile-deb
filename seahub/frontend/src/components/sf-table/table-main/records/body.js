@@ -1,18 +1,18 @@
 import React, { Component, Fragment } from 'react';
 import PropTypes from 'prop-types';
+import { EVENT_BUS_TYPE, ROW_HEIGHT } from '@/features/metadata/constants';
+import { isShiftKeyDown } from '@/utils/keyboard-utils';
+import EventBus from '../../../event-bus';
 import Loading from '../../../loading';
-import { RightScrollbar } from '../../scrollbar';
-import Record from './record';
+import { SEQUENCE_COLUMN_WIDTH } from '../../constants/grid';
 import InteractionMasks from '../../masks/interaction-masks';
-import { RecordMetrics } from '../../utils/record-metrics';
-import { getColumnScrollPosition, getColVisibleStartIdx, getColVisibleEndIdx } from '../../utils/records-body-utils';
-import EventBus from '../../../common/event-bus';
-import { EVENT_BUS_TYPE } from '../../constants/event-bus-type';
-import { isShiftKeyDown } from '../../../../utils/keyboard-utils';
+import { RightScrollbar } from '../../scrollbar';
 import { checkEditableViaClickCell, checkIsColumnSupportDirectEdit, getColumnByIndex, getColumnIndexByKey } from '../../utils/column';
-import { checkIsCellSupportOpenEditor } from '../../utils/selected-cell-utils';
+import { RecordMetrics } from '../../utils/record-metrics';
+import { getColumnScrollPosition, getColVisibleStartIdx, getColVisibleEndIdx } from '../../utils/records-body';
+import { checkIsCellSupportOpenEditor } from '../../utils/selection';
+import Record from './record';
 
-const ROW_HEIGHT = 33;
 const RENDER_MORE_NUMBER = 10;
 const CONTENT_HEIGHT = window.innerHeight - 174;
 const { max, min, ceil, round } = Math;
@@ -20,9 +20,12 @@ const { max, min, ceil, round } = Math;
 class RecordsBody extends Component {
   constructor(props) {
     super(props);
+    let { rowHeight } = props;
+    rowHeight = rowHeight || ROW_HEIGHT; // ROW_HEIGHT for 'trash view', 'history view'
     this.state = {
+      rowHeight,
       startRenderIndex: 0,
-      endRenderIndex: this.getInitEndIndex(props),
+      endRenderIndex: this.getInitEndIndex(props, rowHeight),
       activeRecords: [],
       selectedPosition: null,
       isScrollingRightScrollbar: false,
@@ -32,7 +35,7 @@ class RecordsBody extends Component {
     this.resultRef = null;
     this.recordFrozenRefs = [];
     this.rowVisibleStart = 0;
-    this.rowVisibleEnd = this.setRecordVisibleEnd();
+    this.rowVisibleEnd = this.setRecordVisibleEnd(rowHeight);
     this.columnVisibleStart = 0;
     this.columnVisibleEnd = this.props.getColumnVisibleEnd();
     this.timer = null;
@@ -46,7 +49,14 @@ class RecordsBody extends Component {
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
-    const { recordsCount, recordIds } = nextProps;
+    const { recordsCount, recordIds, rowHeight: newRowHeight } = nextProps;
+    const { rowHeight } = this.state;
+    if (
+      newRowHeight && // for 'trash view', 'history view'
+      rowHeight != newRowHeight
+    ) {
+      this.setState({ rowHeight: newRowHeight });
+    }
     if (recordsCount !== this.props.recordsCount || recordIds !== this.props.recordIds) {
       this.recalculateRenderIndex(recordIds);
     }
@@ -92,16 +102,16 @@ class RecordsBody extends Component {
     return this.getShownRecordIds().map((id) => this.props.recordGetterById(id));
   };
 
-  setRecordVisibleEnd = () => {
-    return max(ceil(CONTENT_HEIGHT / ROW_HEIGHT), 0);
+  setRecordVisibleEnd = (rowHeight) => {
+    return max(ceil(CONTENT_HEIGHT / rowHeight), 0);
   };
 
   recalculateRenderIndex = (recordIds) => {
-    const { startRenderIndex, endRenderIndex } = this.state;
+    const { rowHeight, startRenderIndex, endRenderIndex } = this.state;
     const contentScrollTop = this.resultContentRef.scrollTop;
-    const start = Math.max(0, Math.floor(contentScrollTop / ROW_HEIGHT) - RENDER_MORE_NUMBER);
+    const start = Math.max(0, Math.floor(contentScrollTop / rowHeight) - RENDER_MORE_NUMBER);
     const { height } = this.props.getTableContentRect();
-    const end = Math.min(Math.ceil((contentScrollTop + height) / ROW_HEIGHT) + RENDER_MORE_NUMBER, recordIds.length);
+    const end = Math.min(Math.ceil((contentScrollTop + height) / rowHeight) + RENDER_MORE_NUMBER, recordIds.length);
     if (start !== startRenderIndex) {
       this.setState({ startRenderIndex: start });
     }
@@ -110,8 +120,8 @@ class RecordsBody extends Component {
     }
   };
 
-  getInitEndIndex = (props) => {
-    return Math.min(Math.ceil(window.innerHeight / ROW_HEIGHT) + RENDER_MORE_NUMBER, props.recordsCount);
+  getInitEndIndex = (props, rowHeight) => {
+    return Math.min(Math.ceil(window.innerHeight / rowHeight) + RENDER_MORE_NUMBER, props.recordsCount);
   };
 
   getShownRecordIds = () => {
@@ -121,11 +131,13 @@ class RecordsBody extends Component {
   };
 
   getRowTop = (rowIdx) => {
-    return ROW_HEIGHT * rowIdx;
+    const { rowHeight } = this.state;
+    return rowHeight * rowIdx;
   };
 
   getRowHeight = () => {
-    return ROW_HEIGHT;
+    const { rowHeight } = this.state;
+    return rowHeight;
   };
 
   jumpToRow = (scrollToRowIndex) => {
@@ -196,16 +208,16 @@ class RecordsBody extends Component {
 
   onScroll = () => {
     const { recordsCount } = this.props;
-    const { startRenderIndex, endRenderIndex } = this.state;
+    const { rowHeight, startRenderIndex, endRenderIndex } = this.state;
     const { offsetHeight, scrollTop: contentScrollTop } = this.resultContentRef;
 
     // Calculate the start rendering row index, and end rendering row index
-    const start = Math.max(0, Math.floor(contentScrollTop / ROW_HEIGHT) - RENDER_MORE_NUMBER);
-    const end = Math.min(Math.ceil((contentScrollTop + this.resultContentRef.offsetHeight) / ROW_HEIGHT) + RENDER_MORE_NUMBER, recordsCount);
+    const start = Math.max(0, Math.floor(contentScrollTop / rowHeight) - RENDER_MORE_NUMBER);
+    const end = Math.min(Math.ceil((contentScrollTop + this.resultContentRef.offsetHeight) / rowHeight) + RENDER_MORE_NUMBER, recordsCount);
 
     this.oldScrollTop = contentScrollTop;
-    const renderedRecordsCount = ceil(this.resultContentRef.offsetHeight / ROW_HEIGHT);
-    const newRecordVisibleStart = max(0, round(contentScrollTop / ROW_HEIGHT));
+    const renderedRecordsCount = ceil(this.resultContentRef.offsetHeight / rowHeight);
+    const newRecordVisibleStart = max(0, round(contentScrollTop / rowHeight));
     const newRecordVisibleEnd = min(newRecordVisibleStart + renderedRecordsCount, recordsCount);
     this.rowVisibleStart = newRecordVisibleStart;
     this.rowVisibleEnd = newRecordVisibleEnd;
@@ -292,10 +304,10 @@ class RecordsBody extends Component {
       const isFromKeyboard = true;
       this.selectUpdate(cell, isFromKeyboard);
     } else {
-      const { columns, recordGetterByIndex, checkCanModifyRecord } = this.props;
+      const { columns, recordGetterByIndex, canModifyRow } = this.props;
       const column = getColumnByIndex(cell.idx, columns);
       const supportOpenEditor = checkIsColumnSupportDirectEdit(column);
-      const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, false, recordGetterByIndex, checkCanModifyRecord);
+      const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, false, recordGetterByIndex, canModifyRow);
       this.selectCell(cell, supportOpenEditor && hasOpenPermission);
     }
     this.props.onCellClick(cell);
@@ -303,11 +315,15 @@ class RecordsBody extends Component {
   };
 
   onCellDoubleClick = (cell, e) => {
-    const { columns, recordGetterByIndex, checkCanModifyRecord } = this.props;
+    const { columns, recordGetterByIndex, canModifyRow, onCellDoubleClick } = this.props;
     const column = getColumnByIndex(cell.idx, columns);
     const supportOpenEditor = checkEditableViaClickCell(column);
-    const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, false, recordGetterByIndex, checkCanModifyRecord);
+    const hasOpenPermission = checkIsCellSupportOpenEditor(cell, column, false, recordGetterByIndex, canModifyRow);
     this.selectCell(cell, supportOpenEditor && hasOpenPermission);
+    // Call the onCellDoubleClick prop if provided, special for history view
+    if (onCellDoubleClick) {
+      onCellDoubleClick(cell);
+    }
   };
 
   // onRangeSelectStart
@@ -417,7 +433,6 @@ class RecordsBody extends Component {
   getCellMetaData = () => {
     if (!this.cellMetaData) {
       this.cellMetaData = {
-        CellOperationBtn: this.props.CellOperationBtn,
         onCellClick: this.onCellClick,
         onCellDoubleClick: this.onCellDoubleClick,
         onCellMouseDown: this.onCellMouseDown,
@@ -459,18 +474,23 @@ class RecordsBody extends Component {
     return (this.resultContentRef && this.resultContentRef.clientHeight) || 0;
   };
 
+  onContainerClick = (e) => {
+    e.preventDefault();
+    this.interactionMask && this.interactionMask.selectNone();
+    this.props.selectNone();
+  };
+
   renderRecords = () => {
     this.recordFrozenRefs = [];
     const {
-      recordsCount, columns, sequenceColumnWidth, colOverScanStartIdx, colOverScanEndIdx, lastFrozenColumnKey,
+      recordsCount, columns, totalWidth, sequenceColumnWidth, colOverScanStartIdx, colOverScanEndIdx, lastFrozenColumnKey,
       recordMetrics, showSequenceColumn, showCellColoring, columnColors,
     } = this.props;
-    const { startRenderIndex, endRenderIndex, selectedPosition } = this.state;
+    const { rowHeight, startRenderIndex, endRenderIndex, selectedPosition } = this.state;
     const cellMetaData = this.getCellMetaData();
     const lastRecordIndex = recordsCount - 1;
     const shownRecordIds = this.getShownRecordIds();
     const scrollLeft = this.props.getScrollLeft();
-    const rowHeight = this.getRowHeight();
     let shownRecords = shownRecordIds.map((recordId, index) => {
       const record = this.props.recordGetterById(recordId);
       const isSelected = RecordMetrics.isRecordSelected(recordId, recordMetrics);
@@ -496,21 +516,26 @@ class RecordsBody extends Component {
           lastFrozenColumnKey={lastFrozenColumnKey}
           scrollLeft={scrollLeft}
           height={rowHeight}
+          totalWidth={totalWidth}
           cellMetaData={cellMetaData}
           columnColor={columnColor}
           searchResult={this.props.searchResult}
-          checkCanModifyRecord={this.props.checkCanModifyRecord}
+          canModifyRow={this.props.canModifyRow}
           checkCellValueChanged={this.props.checkCellValueChanged}
           hasSelectedCell={hasSelectedCell}
           selectedPosition={this.state.selectedPosition}
           selectNoneCells={this.selectNoneCells}
           onSelectRecord={this.props.onSelectRecord}
+          recordDraggable={this.props.recordDraggable}
+          recordDragDropEvents={this.props.recordDragDropEvents}
+          draggingRecordSource={this.props.draggingRecordSource}
+          onShowRowDetails={this.props.onShowRowDetails}
         />
       );
     });
 
-    const upperHeight = startRenderIndex * ROW_HEIGHT;
-    const belowHeight = (recordsCount - endRenderIndex) * ROW_HEIGHT;
+    const upperHeight = startRenderIndex * rowHeight;
+    const belowHeight = (recordsCount - endRenderIndex) * rowHeight;
 
     // add top placeholder
     if (upperHeight > 0) {
@@ -573,7 +598,7 @@ class RecordsBody extends Component {
             getCopiedRecordsAndColumnsFromRange={this.props.getCopiedRecordsAndColumnsFromRange}
             getTableCanvasContainerRect={this.props.getTableCanvasContainerRect}
           />
-          <div className="sf-table-records-wrapper" style={{ width: this.props.totalWidth + this.props.sequenceColumnWidth }} ref={this.setResultRef}>
+          <div className="sf-table-records-wrapper" style={{ width: this.props.totalWidth + SEQUENCE_COLUMN_WIDTH }} ref={this.setResultRef}>
             {this.renderRecords()}
           </div>
         </div>
@@ -597,7 +622,6 @@ RecordsBody.propTypes = {
   recordIds: PropTypes.array,
   recordsCount: PropTypes.number,
   columns: PropTypes.array.isRequired,
-  CellOperationBtn: PropTypes.object,
   colOverScanStartIdx: PropTypes.number,
   colOverScanEndIdx: PropTypes.number,
   lastFrozenColumnKey: PropTypes.string,
@@ -624,7 +648,7 @@ RecordsBody.propTypes = {
   onCellClick: PropTypes.func,
   onCellRangeSelectionUpdated: PropTypes.func,
   onSelectRecord: PropTypes.func,
-  checkCanModifyRecord: PropTypes.func,
+  canModifyRow: PropTypes.func,
   deleteRecordsLinks: PropTypes.func,
   paste: PropTypes.func,
   searchResult: PropTypes.object,
@@ -641,6 +665,8 @@ RecordsBody.propTypes = {
   cacheDownloadFilesProps: PropTypes.func,
   onCellContextMenu: PropTypes.func,
   getTableCanvasContainerRect: PropTypes.func,
+  createContextMenuOptions: PropTypes.func,
+  onShowRowDetails: PropTypes.func,
 };
 
 export default RecordsBody;

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { Utils } from '../../../utils/utils';
+import PropTypes from 'prop-types';
+import { Utils } from '@/utils/utils';
 
 class Option extends Component {
 
@@ -27,7 +27,7 @@ class Option extends Component {
   render() {
     return (
       <div
-        className={classnames('seafile-select-option', { 'seafile-select-option-active': this.props.isActive })}
+        className={classnames('sf-select-option', { 'sf-select-option-active': this.props.isActive })}
         tabIndex="0"
         role="menuitem"
         onClick={this.onSelectOption}

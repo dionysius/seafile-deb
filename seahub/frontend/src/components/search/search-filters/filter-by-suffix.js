@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
-import { gettext } from '../../../utils/constants';
+import PropTypes from 'prop-types';
+import { DROPDOWN_MENU_OFFSET_DEFAULT } from '@/components/dropdown/utils';
+import Tooltip from '@/components/tooltip';
+import { SEARCH_FILTERS_KEY } from '@/constants';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../../icon';
 import ModalPortal from '../../modal-portal';
-import { SEARCH_FILTERS_KEY } from '../../../constants';
-import { Utils } from '../../../utils/utils';
 
 const FilterBySuffix = ({ suffixes, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,7 +41,7 @@ const FilterBySuffix = ({ suffixes, onChange }) => {
 
   return (
     <div className="search-filter filter-by-suffix-container">
-      <Dropdown isOpen={isOpen} toggle={toggle}>
+      <Dropdown isOpen={isOpen} toggle={toggle} direction="down">
         <DropdownToggle
           tag="div"
           className={classNames('search-filter-toggle', {
@@ -52,10 +55,10 @@ const FilterBySuffix = ({ suffixes, onChange }) => {
           aria-expanded={isOpen}
         >
           <span className="filter-label" title={gettext('File suffix')}>{gettext('File suffix')}</span>
-          <i className="sf3-font sf3-font-down pl-1"></i>
+          <Icon symbol="down" className="w-3 h-3 ml-1" />
         </DropdownToggle>
         <ModalPortal>
-          <DropdownMenu className="search-filter-menu filter-by-suffix-menu p-4">
+          <DropdownMenu className="search-filter-menu filter-by-suffix-menu p-4" modifiers={[DROPDOWN_MENU_OFFSET_DEFAULT]}>
             <input
               ref={inputRef}
               type="text"
@@ -68,13 +71,15 @@ const FilterBySuffix = ({ suffixes, onChange }) => {
             />
             {inputValue.length > 0 && (
               <button
+                id="clear-suffix-input-btn"
                 type="button"
-                className="clear-icon-right sf3-font sf3-font-x-01"
+                className="clear-icon-right"
                 onClick={handleClearInput}
                 onKeyDown={Utils.onKeyDown}
                 aria-label={gettext('Clear')}
-                title={gettext('Clear')}
               >
+                <Icon symbol="close" />
+                <Tooltip target="clear-suffix-input-btn">{gettext('Clear')}</Tooltip>
               </button>
             )}
           </DropdownMenu>

@@ -1,8 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { Utils } from '../../utils/utils';
-import { gettext } from '../../utils/constants';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import IconBtn from '../icon-btn';
 
 const propTypes = {
   item: PropTypes.object.isRequired,
@@ -73,14 +74,12 @@ class SearchResultItem extends React.Component {
           <div className="item-text ellipsis" dangerouslySetInnerHTML={{ __html: item.content }}></div>
         </div>
         {isHighlight && onDeleteItem && (
-          <button
-            type="button"
-            className="search-icon-right sf3-font sf3-font-x-01"
+          <IconBtn
+            symbol="close"
+            className="search-icon-right"
             onClick={this.deleteItem}
             aria-label={gettext('Delete')}
-            onKeyDown={Utils.onKeyDown}
-          >
-          </button>
+          />
         )}
       </li>
     );

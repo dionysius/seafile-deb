@@ -1,9 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { checkIsColumnFrozen } from '../../../../utils/column';
+import PropTypes from 'prop-types';
 import { GROUP_HEADER_HEIGHT } from '../../../../constants/group';
 import { GROUP_FROZEN_HEADER as Z_INDEX_GROUP_FROZEN_HEADER } from '../../../../constants/z-index';
+import { checkIsColumnFrozen } from '../../../../utils/column';
 
 class GroupHeaderCell extends React.PureComponent {
 
@@ -25,11 +25,11 @@ class GroupHeaderCell extends React.PureComponent {
   };
 
   getStyle = () => {
-    let { offsetLeft, column, isExpanded } = this.props;
+    let { offsetLeft, column } = this.props;
     const style = {
       position: 'absolute',
       width: column.width,
-      height: GROUP_HEADER_HEIGHT - (isExpanded ? 1 : 2), // header height - border-top(1px) - !isExpanded && border-bottom(1px)
+      height: GROUP_HEADER_HEIGHT - 2, // header height - border-top(1px) - !isExpanded && border-bottom(1px)
       left: offsetLeft
     };
     if (checkIsColumnFrozen(column)) {

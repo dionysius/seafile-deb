@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { gettext } from '../../utils/constants';
+import { gettext } from '@/utils/constants';
 import OpIcon from '../op-icon';
-import { SeahubSelect } from '../common/select';
+import { SeahubSelect } from '../select';
 
 const propTypes = {
   isTextMode: PropTypes.bool.isRequired,
@@ -61,7 +61,7 @@ class RepoAPITokenPermissionEditor extends React.Component {
           <div className="d-flex align-items-center">
             <span>{optionTranslation}</span>
             {this.props.isEditIconShow &&
-              <OpIcon title={gettext('Edit')} className="sf3-font sf3-font-rename op-icon ml-1" op={this.onEditPermission} />
+              <OpIcon title={gettext('Edit')} symbol="rename" className="op-icon ml-1" op={this.onEditPermission} />
             }
           </div>
           :

@@ -1,16 +1,18 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
-import dayjs from 'dayjs';
 import { Button, Form, FormGroup, Label, Input, InputGroup, Alert } from 'reactstrap';
-import { gettext, shareLinkExpireDaysMin, shareLinkExpireDaysMax, shareLinkExpireDaysDefault, shareLinkForceUsePassword, shareLinkPasswordMinLength, shareLinkPasswordStrengthLevel, isEmailConfigured, canUseGlobalAddressBook } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { shareLinkAPI } from '../../utils/share-link-api';
-import { Utils } from '../../utils/utils';
-import ShareLink from '../../models/share-link';
-import toaster from '../toast';
-import SetLinkExpiration from '../set-link-expiration';
-import UserSelect from '../user-select';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { shareLinkAPI } from '@/api/share-link-api';
+import ShareLink from '@/models/share-link';
+import { gettext, shareLinkExpireDaysMin, shareLinkExpireDaysMax, shareLinkExpireDaysDefault, shareLinkForceUsePassword, shareLinkPasswordMinLength, shareLinkPasswordStrengthLevel, isEmailConfigured, canUseGlobalAddressBook } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import BackIcon from '../../components/back-icon';
+import Icon from '../icon';
+import SetLinkExpiration from '../set-link-expiration';
+import toaster from '../toast';
+import Tooltip from '../tooltip';
+import UserSelect from '../user-select';
 
 const propTypes = {
   itemPath: PropTypes.string.isRequired,
@@ -44,6 +46,8 @@ class LinkCreation extends React.Component {
       expDate: null,
       password: '',
       newPassword: '',
+      description: '',
+      isShowDescriptionInput: false,
       errorInfo: '',
       currentPermission: props.currentPermission,
 
@@ -102,12 +106,24 @@ class LinkCreation extends React.Component {
     this.setState({ currentPermission: e.target.value });
   };
 
+  inputDescription = (e) => {
+    let description = e.target.value.trim();
+    this.setState({ description: description });
+  };
+
+  onDescriptionInputChecked = () => {
+    this.setState({
+      isShowDescriptionInput: !this.state.isShowDescriptionInput,
+      description: ''
+    });
+  };
+
   generateShareLink = () => {
     let isValid = this.validateParamsInput();
     if (isValid) {
       this.setState({ errorInfo: '' });
       let { type, itemPath, repoID } = this.props;
-      let { linkAmount, isShowPasswordInput, password, isExpireChecked, expType, expireDays, expDate } = this.state;
+      let { linkAmount, isShowPasswordInput, password, isExpireChecked, expType, expireDays, expDate, description } = this.state;
 
       const permissionDetails = Utils.getShareLinkPermissionObject(this.state.currentPermission).permissionDetails;
       let permissions;
@@ -135,7 +151,7 @@ class LinkCreation extends React.Component {
         if (currentScope === 'specific_emails' && inputEmails) {
           users = inputEmails;
         }
-        request = shareLinkAPI.createMultiShareLink(repoID, itemPath, password, expirationTime, permissions, currentScope, users);
+        request = shareLinkAPI.createMultiShareLink(repoID, itemPath, password, expirationTime, permissions, currentScope, users, description);
       }
 
       request.then((res) => {
@@ -284,7 +300,7 @@ class LinkCreation extends React.Component {
     return (
       <Fragment>
         <div className="d-flex align-items-center pb-2 border-bottom">
-          <h6 className="font-weight-normal m-0">
+          <h6 className="font-weight-normal m-0 d-flex align-items-center">
             <BackIcon onClick={this.goBack} />
             {type === 'batch' ? gettext('Generate links in batch') : gettext('Generate Link')}
           </h6>
@@ -320,11 +336,13 @@ class LinkCreation extends React.Component {
                   <span className="tip">{gettext('(at least {passwordMinLength} characters and includes {passwordStrengthLevel} of the following: number, upper letter, lower letter and other symbols)').replace('{passwordMinLength}', shareLinkPasswordMinLength).replace('{passwordStrengthLevel}', shareLinkPasswordStrengthLevel)}</span>
                   <InputGroup style={{ width: inputWidth }}>
                     <Input id="passwd" type={this.state.isPasswordVisible ? 'text' : 'password'} value={this.state.password || ''} onChange={this.inputPassword} />
-                    <Button onClick={this.togglePasswordVisible}>
-                      <i className={`link-operation-icon sf3-font sf3-font-eye${this.state.isPasswordVisible ? '' : '-slash'}`}></i>
+                    <Button id="password-toggle-btn" className="d-flex align-items-center" aria-label={this.state.isPasswordVisible ? gettext('Hide password') : gettext('Show password')} onClick={this.togglePasswordVisible}>
+                      <Icon symbol={this.state.isPasswordVisible ? 'eye' : 'eye-slash'} className="link-operation-icon" />
+                      <Tooltip target="password-toggle-btn">{this.state.isPasswordVisible ? gettext('Hide password') : gettext('Show password')}</Tooltip>
                     </Button>
-                    <Button onClick={this.generatePassword}>
-                      <i className="link-operation-icon sf3-font sf3-font-magic"></i>
+                    <Button id="password-generate-btn" className="d-flex align-items-center" aria-label={gettext('Generate password')} onClick={this.generatePassword}>
+                      <Icon symbol="magic" className="link-operation-icon" />
+                      <Tooltip target="password-generate-btn">{gettext('Generate password')}</Tooltip>
                     </Button>
                   </InputGroup>
                 </FormGroup>
@@ -419,6 +437,33 @@ class LinkCreation extends React.Component {
                   <input type="text" className="form-control" value={this.state.inputEmails} onChange={this.handleInputChange} placeholder={gettext('Emails, separated by \',\'')}/>
                   }
                 </FormGroup>
+              )}
+            </FormGroup>
+          )}
+          {type !== 'batch' && (
+            <FormGroup check>
+              <Label check>
+                <Input
+                  type="checkbox"
+                  checked={this.state.isShowDescriptionInput}
+                  onChange={this.onDescriptionInputChecked}
+                  onKeyDown={Utils.onKeyDown}
+                />
+                <span>{gettext('Add description')}</span>
+              </Label>
+              {this.state.isShowDescriptionInput && (
+                <div className="ml-4">
+                  <FormGroup>
+                    <Label htmlFor="msg">{gettext('Description')}</Label>
+                    <textarea
+                      className="form-control w-75"
+                      id="msg"
+                      value={this.state.description}
+                      onChange={this.inputDescription}
+                    >
+                    </textarea>
+                  </FormGroup>
+                </div>
               )}
             </FormGroup>
           )}

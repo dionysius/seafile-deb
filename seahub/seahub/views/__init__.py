@@ -60,7 +60,7 @@ from seahub.settings import AVATAR_FILE_STORAGE, ENABLE_REPO_SNAPSHOT_LABEL, \
     UPLOAD_LINK_EXPIRE_DAYS_MIN, UPLOAD_LINK_EXPIRE_DAYS_MAX, UPLOAD_LINK_EXPIRE_DAYS_DEFAULT, \
     ENABLE_RESET_ENCRYPTED_REPO_PASSWORD, \
     ADDITIONAL_SHARE_DIALOG_NOTE, ADDITIONAL_ABOUT_DIALOG_LINKS, \
-    SEADOC_SERVER_URL, SHOW_WECHAT_SUPPORT_GROUP, MULTI_TENANCY
+    SEADOC_SERVER_URL, SHOW_WECHAT_SUPPORT_GROUP, MULTI_TENANCY, LLM_MODELS
 
 from seahub.ocm.settings import ENABLE_OCM, OCM_REMOTE_SERVERS
 from seahub.ocm_via_webdav.settings import ENABLE_OCM_VIA_WEBDAV
@@ -131,7 +131,13 @@ def check_folder_permission(request, repo_id, path):
         return PERMISSION_READ
 
     username = request.user.username
-    permission = seafile_api.check_permission_by_path(repo_id, path, username)
+    if not username:
+        return None
+    try:
+        permission = seafile_api.check_permission_by_path(repo_id, path, username)
+    except SearpcError as e:
+        logger.warning(e)
+        return None
     if permission == PERMISSION_INVISIBLE:
         return None
     return permission
@@ -147,7 +153,7 @@ def get_seadoc_file_uuid(repo, path):
     filename = os.path.basename(path)
 
     uuid_map = FileUUIDMap.objects.get_or_create_fileuuidmap(
-        repo_id, parent_dir, filename, is_dir=False)
+        repo_id, parent_dir, filename, is_dir=False, pending=True)
 
     file_uuid = str(uuid_map.uuid)  # 36 chars str
     return file_uuid
@@ -722,6 +728,7 @@ def file_revisions(request, repo_id):
         'can_revert_file': can_revert_file,
         'can_download_file': parse_repo_perm(repo_perm).can_download,
         'use_new_api': use_new_api,
+        'is_virtual_repo': repo.is_virtual,
     })
 
 
@@ -1171,7 +1178,8 @@ def react_fake_view(request, **kwargs):
         'enable_file_tags': settings.ENABLE_FILE_TAGS,
         'enable_show_about': settings.ENABLE_SHOW_ABOUT,
         'multi_tenancy': MULTI_TENANCY,
-        'is_seafile_plus': settings.IS_SEAFILE_PLUS
+        'is_seafile_plus': settings.IS_SEAFILE_PLUS,
+        'llm_models': json.dumps(LLM_MODELS)
     }
 
     return render(request, "react_app.html", return_dict)
@@ -1189,11 +1197,50 @@ def check_metric_auth(auth_header):
     return False
 
 
+def _format_metrics(metric_name: str, metric_value: int, metric_type="gauge", help_txt=""):
+    metrics = [
+        f"# HELP {metric_name} {help_txt}",
+        f"# TYPE {metric_name} {metric_type}",
+        f"{metric_name}{{}} {metric_value}"
+    ]
+    return "\n".join(metrics) + "\n"
+    
+
 def get_metrics(request):
     if not ENABLE_METRIC:
-        return Http404
+        raise Http404
     auth_header = request.META.get('HTTP_AUTHORIZATION')
     if not auth_header or not check_metric_auth(auth_header):
         return HttpResponseForbidden('Invalid Authentication')
     metrics = get_seafevents_metrics()
-    return HttpResponse(metrics, content_type='text/plain')
+    
+    metrics_text = metrics.content.decode()
+    total_repos_count = seafile_api.count_repos()
+    total_files_count = seafile_api.get_total_file_number()
+    
+    active_db_users = ccnet_api.count_emailusers('DB')
+    inactive_db_users = ccnet_api.count_inactive_emailusers('DB')
+    
+    total_users_count = active_db_users + inactive_db_users
+    
+    repos_count_metric = _format_metrics(
+        "seafile_total_repos",
+        total_repos_count,
+        help_txt="Total librarie numbers in seafile"
+    )
+    files_count_metric = _format_metrics(
+        "seafile_total_files",
+        total_files_count,
+        help_txt="Total file numbers in seafile"
+    )
+    
+    users_count_metric = _format_metrics(
+        "seafile_total_users",
+        total_users_count,
+        help_txt="Total user numbers in seafile including active and inactive users"
+    )
+    
+    metrics_text += repos_count_metric
+    metrics_text += files_count_metric
+    metrics_text += users_count_metric
+    return HttpResponse(metrics_text)

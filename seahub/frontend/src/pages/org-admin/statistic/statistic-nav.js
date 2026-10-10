@@ -1,7 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Link } from '@gatsbyjs/reach-router';
-import { siteRoot, gettext } from '../../../utils/constants';
+import PropTypes from 'prop-types';
+import { siteRoot, gettext } from '@/utils/constants';
+import '@/css/system-stat.css';
 
 const propTypes = {
   currentItem: PropTypes.string.isRequired
@@ -16,6 +17,7 @@ class Nav extends React.Component {
       { name: 'storageStatistic', urlPart: 'statistics-admin/total-storage', text: gettext('Storage') },
       { name: 'usersStatistic', urlPart: 'statistics-admin/active-users', text: gettext('Users') },
       { name: 'trafficStatistic', urlPart: 'statistics-admin/traffic', text: gettext('Traffic') },
+      { name: 'aiStatistic', urlPart: 'statistics-admin/ai', text: gettext('AI Usage') },
       { name: 'reportsStatistic', urlPart: 'statistics-admin/reports', text: gettext('Reports') },
     ];
   }
@@ -23,12 +25,12 @@ class Nav extends React.Component {
   render() {
     const { currentItem } = this.props;
     return (
-      <div className="cur-view-path tab-nav-container">
+      <div className="cur-view-path tab-nav-container statistic-nav">
         <ul className="nav">
           {this.navItems.map((item, index) => {
             return (
-              <li className="nav-item" key={index}>
-                <Link to={`${siteRoot}org/${item.urlPart}/`} className={`nav-link${currentItem == item.name ? ' active' : ''}`}>{item.text}</Link>
+              <li className="nav-item mx-4" key={index}>
+                <Link to={`${siteRoot}org/${item.urlPart}/`} className={`m-0 nav-link${currentItem == item.name ? ' active' : ''}`}>{item.text}</Link>
               </li>
             );
           })}

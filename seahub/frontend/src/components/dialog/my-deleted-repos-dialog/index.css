@@ -31,3 +31,22 @@
   font-size: .8125rem;
   color: var(--bs-body-secondary-color);
 }
+
+.my-deleted-repos-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .5rem;
+}
+
+.my-deleted-repos-clean-btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 767.98px) {
+  .my-deleted-repos-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

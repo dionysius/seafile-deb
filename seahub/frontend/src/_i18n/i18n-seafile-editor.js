@@ -1,10 +1,10 @@
-import i18n from 'i18next';
-import Backend from 'i18next-http-backend';
-import LanguageDetector from 'i18next-browser-languagedetector';
 import { initReactI18next } from 'react-i18next';
-import { mediaUrl } from '../utils/constants';
+import i18n from 'i18next';
+import LanguageDetector from 'i18next-browser-languagedetector';
+import Backend from 'i18next-http-backend';
+import { mediaUrl } from '@/utils/constants';
 
-const lang = window.app.pageOptions.lang;
+const lang = window.app.pageOptions.lang || window.app.config.lang;
 
 i18n
   .use(Backend)
@@ -13,7 +13,7 @@ i18n
   .init({
     lng: lang,
     fallbackLng: 'en',
-    ns: ['seafile-editor'],
+    ns: ['seafile-editor', 'comment-editor'],
     defaultNS: 'seafile-editor',
 
     whitelist: ['en', 'zh-CN', 'fr', 'de', 'cs', 'es', 'es-AR', 'es-MX', 'ru'],

@@ -18,15 +18,37 @@
   cursor: pointer;
 }
 
+.sf-table-searcher-btn .seafile-multicolor-icon {
+  display: inline-block;
+  color: var(--bs-icon-color);
+}
+
 .sf-table-searcher-input-wrapper {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sf-table-searcher-input-wrapper .seafile-multicolor-icon.seafile-multicolor-icon-search {
+  width: 12px;
+  height: 12px;
+  position: absolute;
+  left: 8px;
+  color: #868e96;
 }
 
 .sf-table-searcher-input {
-  padding-left: 35px;
-  padding-right: 60px;
-  height: 30px;
+  padding-left: 26px;
+  padding-right: 28px;
+  height: 28px;
   width: 260px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+.sf-table-searcher-input:focus {
+  border: 1px solid #3e84f7;
+  box-shadow: none;
 }
 
 .sf-table-searcher-input-wrapper .btn-close-searcher-wrapper {
@@ -41,11 +63,17 @@
   top: 50%;
   transform: translateY(-50%);
   color: var(--bs-icon-color);
-  font-size: 14px;
+  font-size: .75rem;
+  border-radius: 4px;
+}
+
+.sf-table-searcher-input-wrapper .btn-close-searcher-wrapper .seafile-multicolor-icon.seafile-multicolor-icon-close {
+  width: 12px;
+  height: 12px;
 }
 
 .sf-table-searcher-input-wrapper .btn-close-searcher-wrapper:hover {
-  background-color: var(--bs-hover-bg);
+  background-color: var(--bs-icon-btn-hover-bg-color);
   cursor: pointer;
 }
 
@@ -61,7 +89,7 @@
   text-align: center;
 }
 
-.toolbar-search-btn {
+.sf-table-searcher-input-wrapper .toolbar-search-btn {
   width: 20px;
   height: 20px;
   border-radius: 3px;
@@ -73,13 +101,14 @@
   margin-left: 4px;
 }
 
-.toolbar-search-btn:hover {
+.sf-table-searcher-input-wrapper .toolbar-search-btn:hover {
   background-color: var(--bs-hover-bg);
 }
 
-.toolbar-search-btn i.sf3-font {
+.sf-table-searcher-input-wrapper .toolbar-search-btn .seafile-multicolor-icon {
   color: var(--bs-icon-color);
-  font-size: 12px;
+  width: 12px;
+  height: 12px;
 }
 
 .sf-table-wrapper {
@@ -97,8 +126,13 @@
 }
 
 .sf-table-result-container {
+  height: 100%;
   overflow-x: scroll;
   overflow-y: hidden;
+}
+
+.sf-table-result-container.horizontal-scroll .table-last--frozen {
+  box-shadow: 2px 0 5px -2px hsla(0,0%,53%,.3) !important;
 }
 
 .sf-table-result-content {
@@ -116,14 +150,11 @@
 .sf-table-result-content .static-sf-table-result-content {
   width: 100%;
   position: relative;
-  background: var(--bs-header-secondary-bg);
-  border-bottom: 1px solid var(--bs-border-secondary-color);
+  background: var(--bs-th-secondary-bg);
   z-index: 3;
 }
 
-.sf-table-result-content .static-sf-table-result-content .sf-table-row {
-  position: relative;
-  width: fit-content;
+.sf-table-result-content .static-sf-table-result-content.grid-header .sf-table-row {
   background-color: var(--bs-th-bg);
 }
 
@@ -136,24 +167,26 @@
   margin: 3px 0px;
   height: 80%;
   cursor: col-resize;
-  z-index: 1;
+  z-index: 2 !important;
 }
 
 .record-HeaderCell__draggable:hover {
   background-color: #2d7ff9;
 }
 
-.sf-table-header-cell .sf-table-cell  {
+.sf-table-header-cell .sf-table-cell {
   overflow: unset;
 }
 
 .sf-table-row {
   width: 100%;
-  border-bottom: 1px solid var(--bs-border-secondary-color);
   display: inline-flex;
   margin-top: 0;
   margin-bottom: 0;
-  transition: all 0.3s;
+}
+
+.sf-table-row .sf-table-cell {
+  border-bottom: 1px solid var(--bs-border-quartus-color);
 }
 
 .static-sf-table-result-content.grid-header .sf-table-row {
@@ -168,8 +201,14 @@
   background: var(--bs-body-bg);
 }
 
+.sf-table-result-content .sf-table-canvas .sf-table-row:hover .sf-table-cell,
+.sf-table-result-content .sf-table-canvas .sf-table-row:hover .frozen-columns .sf-table-cell {
+  background-color: var(--bs-tr-hover-bg);
+}
+
 .sf-table-result-content .frozen-columns .sf-table-cell {
   position: relative;
+  overflow: hidden;
 }
 
 .sf-table-column-content {
@@ -181,12 +220,16 @@
 }
 
 .sf-table-column-content.row-index {
-  text-align: center;
+  width: 40px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  line-height: var(--bs-body-line-height);
 }
 
 .sf-table-column-content .sf-metadata-font {
   font-size: 14px;
-  color: #aaa;
+  color: var(--bs-icon-secondary-color);
 }
 
 .sf-table-column-content .header-name {
@@ -212,9 +255,10 @@
 
 .sf-table-canvas {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   position: relative;
   min-width: 100%;
-  padding-bottom: 150px;
   overflow-y: scroll;
 }
 
@@ -224,6 +268,7 @@
 }
 
 .sf-table-records-wrapper {
+  flex: 0 1;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -235,33 +280,6 @@
   position: relative;
   width: 100%;
   background-color: #f9f9f9;
-}
-
-.sf-table-tooltip .tooltip-inner {
-  max-width: 242px;
-  font-weight: lighter;
-  text-align: start;
-  background-color: #303133;
-}
-
-.sf-table-tooltip .bs-tooltip-right .arrow::before,
-.sf-table-tooltip .bs-tooltip-auto[x-placement^="right"] .arrow::before {
-  border-right-color: #303133;
-}
-
-.sf-table-tooltip .bs-tooltip-top .arrow::before,
-.sf-table-tooltip .bs-tooltip-auto[x-placement^="top"] .arrow::before {
-  border-top-color: #303133;
-}
-
-.sf-table-tooltip .bs-tooltip-bottom .arrow::before,
-.sf-table-tooltip .bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
-  border-bottom-color: #303133;
-}
-
-.sf-table-tooltip .bs-tooltip-left .arrow::before,
-.sf-table-tooltip .bs-tooltip-auto[x-placement^="left"] .arrow::before {
-  border-left-color: #303133;
 }
 
 .formula-formatter-content-item {
@@ -305,13 +323,8 @@
   margin-top: 0;
 }
 
-/* common */
-.sf-metadata-result-container.horizontal-scroll .table-last--frozen {
-  box-shadow: 2px 0 5px -2px rgb(136 136 136 / 30%) !important;
-}
-
 .table-last--frozen {
-  border-right: 1px solid var(--bs-border-secondary-color) !important;
+  border-right: 1px solid var(--bs-border-tertiary-color) !important;
 }
 
 .row-locked .actions-cell::after {
@@ -327,7 +340,8 @@
 
 /* table cell editor */
 .table-cell-editor .number-editor,
-.table-cell-editor .duration-editor {
+.table-cell-editor .duration-editor,
+.sf-table-cell .number-formatter {
   text-align: right;
 }
 
@@ -354,74 +368,6 @@
   justify-content: center;
 }
 
-.geolocation-editor-container {
-  background: var(--bs-body-bg);
-  box-shadow: 0 0 5px #ccc;
-  border-radius: 4px;
-  position: relative;
-  display: inline-block;
-  min-width: max-content;
-  width: 400px;
-}
-
-.geolocation-editor-container .geolocation-selector-container {
-  position: absolute;
-  min-width: 400px;
-  top: 100%;
-  left: 0;
-  background: var(--bs-body-bg);
-  box-shadow: 0 0 5px #ccc;
-  min-height: 165px;
-}
-
-.geolocation-editor-container .geolocation-selector-header {
-  height: 45px;
-  display: flex;
-  border-bottom: 1px solid var(--bs-border-secondary-color);
-  padding: 5px 20px 0 20px;
-  align-items: flex-end;
-}
-
-.geolocation-editor-container .geolocation-selector-header-item {
-  border: 1px solid var(--bs-border-secondary-color);
-  height: 35px;
-  margin-right: 10px;
-  display: flex;
-  margin-bottom: -1px;
-  border-radius: 3px 3px 0 0;
-  padding: 10px;
-  line-height: 15px;
-  cursor: pointer;
-  font-size: 14px;
-  word-break: keep-all;
-}
-
-.geolocation-editor-container .selected-geolocation-selector-header-item {
-  border-bottom: 1px solid var(--bs-border-secondary-color);
-}
-
-.geolocation-editor-container .geolocation-map-editor {
-  height: 384px;
-  width: 500px;
-  display: flex;
-  flex-direction: column;
-}
-
-.sf-metadata-wrapper .sf-metadata-main {
-  flex: 1;
-  overflow: hidden;
-}
-
-.sf-metadata-wrapper .sf-metadata-main .sf-metadata-container {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-}
-
-.sf-metadata-wrapper .sf-metadata-main .sf-metadata-container-transform {
-  transform: translateZ(10px);
-}
-
 .sf-table-records-wrapper .group-header-left .formatter-show {
   display: inline-flex;
   flex: 1;
@@ -446,4 +392,33 @@
 .sf-metadata-tip-default {
   font-size: 13px;
   color: #666;
+}
+
+.sf-table-canvas-ctx-wrapper {
+  min-height: 150px;
+  flex: 1;
+}
+
+.sf-metadata-single-select-editor .add-item-btn,
+.sf-metadata-tags-editor .add-item-btn {
+  height: fit-content;
+  padding: 8px;
+}
+
+.sf-metadata-single-select-editor .add-item-btn .add-item-btn-content,
+.sf-metadata-tags-editor .add-item-btn .add-item-btn-content {
+  width: 100%;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: .875rem;
+  cursor: pointer;
+}
+
+.sf-metadata-single-select-editor .add-item-btn .add-item-btn-content:hover,
+.sf-metadata-tags-editor .add-item-btn .add-item-btn-content:hover {
+  cursor: pointer;
+  background: var(--bs-icon-btn-hover-bg-color);
 }

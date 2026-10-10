@@ -1,25 +1,68 @@
-.sf-table-row .rdg-row-expand-icon {
+.sf-table-row .seafile-multicolor-icon-expand {
   opacity: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
   text-align: center;
   line-height: 20px;
   flex-shrink: 0;
   cursor: pointer;
+  color: var(--bs-icon-color);
 }
 
-.sf-table-row:hover .rdg-row-expand-icon {
+.sf-table-row:hover .seafile-multicolor-icon-expand {
   opacity: 1;
 }
 
+.sf-table-cell.actions-cell {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.sf-table-cell.actions-cell .action-cell-content {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sf-table-row:hover .sf-table-cell.actions-cell .action-cell-content {
+  width: 100%;
+  height: 100%;
+}
+
+.sf-table-row:hover .sf-table-cell.actions-cell .row-expand {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 4px;
+  font-size: .75rem;
+  background-color: var(--bs-body-bg);
+}
+
+.sf-table-row:hover .sf-table-cell.actions-cell .row-expand .seafile-multicolor-icon-expand {
+  display: block;
+}
+
+.sf-table-row .sf-table-cell.actions-cell .row-expand-icon .seafile-multicolor-icon-expand {
+  display: none;
+}
+
+.sf-table-row .sf-table-cell.actions-cell .row-expand:hover {
+  background-color: var(--bs-icon-btn-hover-bg-color);
+}
+
 .sf-table-row .sf-table-column-content.actions-checkbox {
+  width: auto;
+  height: 20px;
   text-align: center;
   display: none;
 }
 
 .sf-table-row:hover .sf-table-column-content.actions-checkbox {
-  display: block;
+  display: flex;
+  align-items: center;
 }
 
 .sf-table-row:hover .sf-table-column-content.row-index {
@@ -27,9 +70,13 @@
 }
 
 .sf-table-row.row-selected .sf-table-column-content.actions-checkbox {
-  display: block !important;
+  display: flex !important;
 }
 
 .sf-table-row.row-selected .sf-table-column-content.row-index {
   display: none !important;
+}
+
+.actions-checkbox .select-cell-checkbox.form-check-input {
+  margin: 3px 0;
 }

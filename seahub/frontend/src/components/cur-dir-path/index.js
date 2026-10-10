@@ -1,9 +1,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import {
+  SETTINGS_MODE,
+  TRASH_MODE
+} from '@/constants/view-mode';
 import SortOptionsDialog from '../../components/dialog/sort-options';
+import Icon from '../icon';
 import DirPath from './dir-path';
+import withDynamicPathWidth from './withDynamicPathWidth';
+
+// Wrap DirPath with dynamic width HOC (without extra wrapper)
+const DirPathWithDynamicWidth = withDynamicPathWidth(DirPath);
+
+DirPathWithDynamicWidth.displayName = 'DirPathWithDynamicWidth';
 
 const propTypes = {
+  currentMode: PropTypes.string.isRequired,
   currentRepoInfo: PropTypes.object.isRequired,
   repoID: PropTypes.string.isRequired,
   repoName: PropTypes.string.isRequired,
@@ -49,9 +61,10 @@ class CurDirPath extends React.Component {
   };
 
   render() {
+    const { currentMode } = this.props;
     return (
       <div className="cur-dir-path d-flex justify-content-between align-items-center">
-        <DirPath
+        <DirPathWithDynamicWidth
           currentRepoInfo={this.props.currentRepoInfo}
           repoID={this.props.repoID}
           repoName={this.props.repoName}
@@ -61,6 +74,7 @@ class CurDirPath extends React.Component {
           currentPath={this.props.currentPath}
           userPerm={this.props.userPerm}
           onPathClick={this.props.onPathClick}
+          onTrashPathClick={this.props.onTrashPathClick}
           onTabNavClick={this.props.onTabNavClick}
           fileTags={this.props.fileTags}
           toggleTreePanel={this.props.toggleTreePanel}
@@ -77,15 +91,20 @@ class CurDirPath extends React.Component {
           onItemMove={this.props.onItemMove}
           loadDirentList={this.props.loadDirentList}
         />
-        {!this.props.isDesktop && this.props.direntList.length > 0 &&
-        <span className="sf3-font sf3-font-sort action-icon" onClick={this.toggleSortOptionsDialog}></span>}
+        {!this.props.isDesktop &&
+          this.props.direntList.length > 0 &&
+          ![SETTINGS_MODE, TRASH_MODE].includes(currentMode) && (
+          <span className="action-icon d-flex align-items-center" onClick={this.toggleSortOptionsDialog}>
+            <Icon symbol="sort" aria-hidden="true" />
+          </span>
+        )}
         {this.state.isSortOptionsDialogOpen &&
-        <SortOptionsDialog
-          toggleDialog={this.toggleSortOptionsDialog}
-          sortBy={this.props.sortBy}
-          sortOrder={this.props.sortOrder}
-          sortItems={this.props.sortItems}
-        />
+          <SortOptionsDialog
+            toggleDialog={this.toggleSortOptionsDialog}
+            sortBy={this.props.sortBy}
+            sortOrder={this.props.sortOrder}
+            sortItems={this.props.sortItems}
+          />
         }
       </div>
     );

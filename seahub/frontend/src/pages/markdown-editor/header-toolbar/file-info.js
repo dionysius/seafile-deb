@@ -1,9 +1,9 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
-import { gettext } from '../../../utils/constants';
-import InternalLinkOperation from '../../../components/operations/internal-link-operation';
-import OpIcon from '../../../components/op-icon';
+import PropTypes from 'prop-types';
+import OpIcon from '@/components/op-icon';
+import InternalLinkOperation from '@/components/operations/internal-link-operation';
+import { gettext } from '@/utils/constants';
 
 const { repoID, filePath } = window.app.pageOptions;
 
@@ -12,7 +12,6 @@ class FileInfo extends React.PureComponent {
   render() {
     const { fileInfo, isPro, isLocked, mediaUrl } = this.props;
     const starTitle = fileInfo.starred ? gettext('starred') : gettext('unstarred');
-    const starIconClass = `iconfont ${fileInfo.starred ? 'icon-star1 star' : 'icon-star2'}`;
     const modifyTime = dayjs(fileInfo.mtime * 1000).format('YYYY-MM-DD HH:mm');
 
     const lockedText = gettext('locked');
@@ -21,8 +20,10 @@ class FileInfo extends React.PureComponent {
         <div className="file-title">
           <span className='file-name text-truncate'>{fileInfo.name}</span>
           <OpIcon
-            className={`op-icon file-star ${starIconClass}`}
-            title={starTitle}
+            id="file-star-icon"
+            className="file-star"
+            symbol={fileInfo.starred ? 'starred' : 'unstarred'}
+            tooltip={starTitle}
             op={this.props.toggleStar}
           />
           <InternalLinkOperation path={filePath} repoID={repoID} />

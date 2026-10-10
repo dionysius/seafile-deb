@@ -1,13 +1,14 @@
-import React, { cloneElement, isValidElement, useCallback, useMemo } from 'react';
-import PropTypes from 'prop-types';
+import React, { cloneElement, isValidElement, useCallback, useMemo, useRef } from 'react';
 import classnames from 'classnames';
-import { Utils } from '../../../../../../utils/utils';
-import OpIcon from '../../../../../../components/op-icon';
-import { getCellValueByColumn } from '../../../../utils/cell';
-import { cellCompare, checkCellValueChanged } from '../../../../utils/cell-comparer';
-import { checkIsColumnEditable, checkIsNameColumn } from '../../../../utils/column';
-import { NODE_CONTENT_LEFT_INDENT, NODE_ICON_LEFT_INDENT } from '../../../../constants/tree';
+import PropTypes from 'prop-types';
+import { ROW_HEIGHT } from '@/features/metadata/constants';
 import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import OpIcon from '../../../../../../components/op-icon';
+import { NODE_CONTENT_LEFT_INDENT, NODE_ICON_LEFT_INDENT } from '../../../../constants/tree';
+import { getCellValueByColumn } from '../../../../utils/cell';
+import { checkIsColumnEditable, checkIsNameColumn } from '../../../../utils/column';
+import { cellCompare, checkCellValueChanged } from '../../../../utils/selection';
 
 import './index.css';
 
@@ -30,12 +31,14 @@ const Cell = React.memo(({
   treeNodeDepth,
   hasChildNodes,
   isFoldedTreeNode,
-  checkCanModifyRecord,
+  canModifyRow,
   toggleExpandTreeNode,
 }) => {
+  const cellRef = useRef(null);
+
   const cellEditable = useMemo(() => {
-    return checkIsColumnEditable(column) && checkCanModifyRecord && checkCanModifyRecord(record);
-  }, [column, record, checkCanModifyRecord]);
+    return checkIsColumnEditable(column) && canModifyRow && canModifyRow(record);
+  }, [column, record, canModifyRow]);
 
   const isNameColumn = useMemo(() => {
     return checkIsNameColumn(column);
@@ -43,16 +46,16 @@ const Cell = React.memo(({
 
   const className = useMemo(() => {
     const { type } = column;
+    const isDefaultRowHeight = height === ROW_HEIGHT || height === ROW_HEIGHT - 1;
     return classnames('sf-table-cell', `sf-table-${type}-cell`, highlightClassName, {
       'table-cell-uneditable': !cellEditable,
       'last-cell': isLastCell,
       'table-last--frozen': isLastFrozenCell,
       'cell-selected': isCellSelected,
+      'default-row-height-cell': isDefaultRowHeight,
       'name-cell': isNameColumn,
-      // 'dragging-file-to-cell': ,
-      // 'row-comment-cell': ,
     });
-  }, [cellEditable, column, highlightClassName, isLastCell, isLastFrozenCell, isCellSelected, isNameColumn]);
+  }, [cellEditable, column, highlightClassName, height, isLastCell, isLastFrozenCell, isCellSelected, isNameColumn]);
 
   const style = useMemo(() => {
     const { left, width } = column;
@@ -110,6 +113,11 @@ const Cell = React.memo(({
   }, []);
 
   const onDragOver = useCallback((event) => {
+    const dataTransfer = event?.dataTransfer;
+    const isFileDrag = !!dataTransfer && ((dataTransfer.files && dataTransfer.files.length > 0) || Array.from(dataTransfer.types || []).includes('Files'));
+    if (isFileDrag) {
+      return;
+    }
     event.stopPropagation();
     event.preventDefault();
   }, []);
@@ -172,13 +180,14 @@ const Cell = React.memo(({
   };
 
   const renderCellContent = useCallback(() => {
-    const columnFormatter = isValidElement(column.formatter) && cloneElement(column.formatter, { isCellSelected, value: cellValue, column, record, treeNodeIndex, onChange: modifyRecord });
+    const columnFormatter = isValidElement(column.formatter) && cloneElement(column.formatter, { isCellSelected, height, cellRef, value: cellValue, column, record, treeNodeIndex, onChange: modifyRecord, readOnly: !cellEditable });
     if (showRecordAsTree && isNameColumn) {
       return (
         <div className="sf-table-cell-tree-node">
           {hasChildNodes &&
             <OpIcon
-              className={classnames('sf-table-record-tree-expand-icon sf3-font sf3-font-down', { 'rotate-270': isFoldedTreeNode })}
+              className={classnames('sf-table-record-tree-expand-icon', { 'rotate-270': isFoldedTreeNode })}
+              symbol="down"
               style={{ left: treeNodeDepth * NODE_ICON_LEFT_INDENT }}
               title={isFoldedTreeNode ? gettext('Unfold') : gettext('Fold')}
               op={toggleExpandTreeNode}
@@ -191,12 +200,11 @@ const Cell = React.memo(({
       );
     }
     return columnFormatter;
-  }, [isNameColumn, column, isCellSelected, cellValue, record, showRecordAsTree, treeNodeIndex, treeNodeDepth, hasChildNodes, isFoldedTreeNode, modifyRecord, toggleExpandTreeNode]);
+  }, [isNameColumn, column, isCellSelected, height, cellValue, record, showRecordAsTree, treeNodeIndex, treeNodeDepth, hasChildNodes, isFoldedTreeNode, modifyRecord, toggleExpandTreeNode, cellEditable]);
 
   return (
-    <div key={`${record._id}-${column.key}`} {...containerProps}>
+    <div key={`${record._id}-${column.key}`} {...containerProps} ref={cellRef}>
       {renderCellContent()}
-      {(isCellSelected && isValidElement(cellMetaData.CellOperationBtn)) && cloneElement(cellMetaData.CellOperationBtn, { record, column })}
     </div>
   );
 }, (props, nextProps) => {
@@ -225,5 +233,7 @@ Cell.propTypes = {
   modifyRecord: PropTypes.func,
   toggleExpandTreeNode: PropTypes.func,
 };
+
+Cell.displayName = 'Cell';
 
 export default Cell;

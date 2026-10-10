@@ -1,19 +1,24 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { SIDE_PANEL_FOLDED_WIDTH } from '@/constants';
+import { gettext } from '@/utils/constants';
+import { isMobile } from '@/utils/utils';
+import Icon from '../icon';
+import OpIcon from '../op-icon';
 import WikiCardItem from './wiki-card-item';
 import WikiCardItemAdd from './wiki-card-item-add';
-import { isMobile } from '../../utils/utils';
-import { SIDE_PANEL_FOLDED_WIDTH } from '../../constants';
 
 const propTypes = {
   wikis: PropTypes.array.isRequired,
   group: PropTypes.object,
   deleteWiki: PropTypes.func.isRequired,
   unshareGroupWiki: PropTypes.func.isRequired,
+  transferWiki: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,
   isDepartment: PropTypes.bool.isRequired,
   isShowAvatar: PropTypes.bool.isRequired,
   renameWiki: PropTypes.func.isRequired,
+  updateWiki: PropTypes.func.isRequired,
   convertWiki: PropTypes.func,
   toggleAddWikiDialog: PropTypes.func,
   sidePanelRate: PropTypes.number,
@@ -64,47 +69,60 @@ class WikiCardGroup extends Component {
       depIcon = group.owner === 'system admin';
     }
 
-    let iconName = 'share-with-me';
+    let iconSymbol = 'share-with-me';
     if (isDepartment && depIcon) {
-      iconName = 'department';
+      iconSymbol = 'department';
     } else if (isDepartment) {
-      iconName = 'group';
+      iconSymbol = 'group';
     } else if (isMyWikis) {
-      iconName = 'mine';
+      iconSymbol = 'my-libraries';
     }
 
     return (
-      <div className='wiki-card-group mb-4'>
+      <div className="wiki-card-group">
         <h4 className="sf-heading">
-          <span className={`sf3-font nav-icon sf3-font-${iconName}`} aria-hidden="true"></span>
+          <span className="nav-icon d-flex align-items-center"><Icon symbol={iconSymbol} /></span>
           {title}
+          {toggleAddWikiDialog &&
+            <OpIcon
+              id={`add-wiki-in-${isMyWikis ? 'my-wikis' : group.group_id}`}
+              className="wiki-card-group-add"
+              symbol="new"
+              op={toggleAddWikiDialog}
+              tooltip={gettext('Add Wiki')}
+            />
+          }
         </h4>
         {(wikis.length === 0 && noItemsTip) &&
           <div className="wiki-card-group-no-tip my-4">{noItemsTip}</div>
         }
         <div className='wiki-card-group-items' style={{ gridTemplateColumns: isMobile ? '48% 48%' : grids }} ref={this.groupItemsRef}>
-          {wikis.map((wiki, index) => {
+          {wikis.map(wiki => {
             return (isGroup ?
               <WikiCardItem
-                key={index + wiki.id + wiki.name}
+                key={`${wiki.version}-${wiki.id}`}
                 group={group}
                 wiki={wiki}
                 deleteWiki={this.props.deleteWiki}
                 unshareGroupWiki={this.props.unshareGroupWiki}
+                transferWiki={this.props.transferWiki}
                 isDepartment={isDepartment}
                 isShowAvatar={this.props.isShowAvatar}
                 renameWiki={this.props.renameWiki}
+                updateWiki={this.props.updateWiki}
                 convertWiki={this.props.convertWiki}
               />
               :
               <WikiCardItem
-                key={index + wiki.id + wiki.name}
+                key={`${wiki.version}-${wiki.id}`}
                 wiki={wiki}
                 deleteWiki={this.props.deleteWiki}
                 unshareGroupWiki={this.props.unshareGroupWiki}
+                transferWiki={this.props.transferWiki}
                 isDepartment={isDepartment}
                 isShowAvatar={this.props.isShowAvatar}
                 renameWiki={this.props.renameWiki}
+                updateWiki={this.props.updateWiki}
                 convertWiki={this.props.convertWiki}
               />
             );

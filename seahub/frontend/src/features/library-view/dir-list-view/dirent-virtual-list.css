@@ -1,0 +1,163 @@
+.dirent-virtual-list-view {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dirent-virtual-scroll-container {
+  overflow: auto;
+  height: 100%;
+  width: 100%;
+  min-width: fit-content;
+  padding: 0 16px 160px;
+  overflow-x: auto;
+}
+
+.dirent-virtual-list-header {
+  display: flex;
+  height: 40px;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  align-items: center;
+  background: var(--bs-body-bg);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dirent-virtual-list-header-cell {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  color: var(--bs-body-secondary-color);
+}
+
+.dirent-virtual-list-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: hidden;
+}
+
+.dirent-virtual-list-body .virtual-scroll-list {
+  overflow-x: visible;
+}
+
+.dirent-virtual-item {
+  display: flex;
+  height: 42px;
+  width: 100%;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  align-items: center;
+}
+
+.dirent-virtual-item.hover {
+  background: var(--bs-tr-hover-bg);
+}
+
+.dirent-virtual-item.tr-active {
+  background: var(--bs-tr-active-bg);
+}
+
+/* Mobile list item layout */
+.dirent-mobile-item {
+  display: flex;
+  align-items: center;
+  height: 59px;
+  width: 100%;
+  min-width: 0;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.dirent-mobile-thumb {
+  flex: 0 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+}
+
+.dirent-mobile-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.dirent-mobile-name {
+  font-weight: normal;
+  margin-bottom: 2px;
+}
+
+.dirent-mobile-meta {
+  font-size: 12px;
+  color: var(--bs-body-secondary-color);
+}
+
+.dirent-mobile-ops {
+  flex: 0 0 40px;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Mobile operations menu button */
+.dirent-mobile-ops .sf-dropdown-toggle {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+}
+
+.dirent-mobile-ops .sf-dropdown-toggle .seafile-multicolor-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--bs-icon-color);
+}
+
+/* Mobile dropdown menu positioning */
+.mobile-dropdown-menu {
+  position: fixed;
+  z-index: 1050;
+}
+
+.mobile-operation-menu {
+  background: var(--bs-body-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 768px) {
+  .dirent-virtual-list-view,
+  .dirent-virtual-scroll-container,
+  .dirent-virtual-list-body,
+  .dirent-virtual-list-body .virtual-scroll-list {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dirent-virtual-scroll-container {
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+
+  .dirent-virtual-list-body .virtual-scroll-list {
+    overflow-x: hidden;
+  }
+
+  .dirent-virtual-item {
+    height: 60px;
+  }
+
+  .dirent-virtual-list-header {
+    display: none;
+  }
+}

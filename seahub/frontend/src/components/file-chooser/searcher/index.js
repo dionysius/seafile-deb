@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { Input } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { SEARCH_CONTAINER } from '../../../constants/zIndexes';
-import { MODE_TYPE_MAP } from '../../../constants';
-import OpIcon from '../../op-icon';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import Tooltip from '@/components/tooltip';
+import { SEARCH_CONTAINER } from '@/constants/zIndexes';
+import { gettext } from '@/utils/constants';
+import Icon from '../../icon';
 
 import './index.css';
 
@@ -14,53 +14,65 @@ export const SearchStatus = {
   RESULTS: 'results',
 };
 
-const Searcher = ({ onUpdateMode, onUpdateSearchStatus, onUpdateSearchResults, onClose }) => {
+const Searcher = ({
+  className = '',
+  onUpdateSearchStatus,
+  onUpdateSearchResults,
+}) => {
   const [inputValue, setInputValue] = useState('');
-
-  const inputRef = useRef(null);
 
   const searchTimer = useRef(null);
   const source = useRef(null);
+  const isComposingRef = useRef(false);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (inputRef.current && !inputRef.current.contains(event.target) && inputValue === '') {
-        onClose();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [inputValue, onClose]);
+  const clearSearchRequest = useCallback(() => {
+    if (searchTimer.current) {
+      clearTimeout(searchTimer.current);
+      searchTimer.current = null;
+    }
+    if (source.current) {
+      source.current.cancel('prev request is cancelled');
+      source.current = null;
+    }
+  }, []);
 
   const getSearchResult = useCallback((queryData) => {
     if (source.current) {
       source.current.cancel('prev request is cancelled');
     }
 
-    source.current = seafileAPI.getSource();
-    seafileAPI.searchFiles(queryData, source.current.token).then(res => {
+    const requestSource = seafileAPI.getSource();
+    source.current = requestSource;
+    seafileAPI.searchFiles(queryData, requestSource.token).then(res => {
+      if (source.current !== requestSource) return;
       onUpdateSearchStatus(SearchStatus.RESULTS);
       onUpdateSearchResults(res.data.total ? formatResultItems(res.data.results) : []);
       source.current = null;
     }).catch(err => {
-      source.current = null;
+      if (source.current === requestSource) {
+        source.current = null;
+      }
     });
   }, [onUpdateSearchStatus, onUpdateSearchResults]);
+
+  useEffect(() => {
+    return clearSearchRequest;
+  }, [clearSearchRequest]);
 
   const handleSearchInputChange = useCallback((e) => {
     const newValue = e.target.value;
     setInputValue(newValue);
 
     if (newValue.trim().length === 0) {
+      clearSearchRequest();
+      onUpdateSearchStatus('');
       onUpdateSearchResults([]);
       return;
     }
 
     onUpdateSearchStatus(SearchStatus.LOADING);
+    clearSearchRequest();
+    onUpdateSearchResults([]);
 
     const queryData = {
       q: newValue.trim(),
@@ -69,14 +81,10 @@ const Searcher = ({ onUpdateMode, onUpdateSearchStatus, onUpdateSearchResults, o
       obj_type: 'dir',
     };
 
-    if (searchTimer) {
-      clearTimeout(searchTimer.current);
-    }
-
     searchTimer.current = setTimeout(() => {
       getSearchResult(queryData);
     }, 500);
-  }, [onUpdateSearchStatus, onUpdateSearchResults, getSearchResult]);
+  }, [onUpdateSearchStatus, onUpdateSearchResults, getSearchResult, clearSearchRequest]);
 
   const formatResultItems = (data) => {
     let items = [];
@@ -94,39 +102,48 @@ const Searcher = ({ onUpdateMode, onUpdateSearchStatus, onUpdateSearchResults, o
     return items;
   };
 
-  const handleKeyDown = useCallback((e) => {
-    e.stopPropagation();
+  const handleCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
 
-    if (e.key === 'Enter' && inputValue.trim().length > 0) {
-      onUpdateMode(MODE_TYPE_MAP.SEARCH_RESULTS);
+  const handleCompositionEnd = useCallback(() => {
+    isComposingRef.current = false;
+  }, []);
+
+  const handleKeyDown = useCallback((e) => {
+    const isImeComposing = isComposingRef.current || e.nativeEvent?.isComposing || e.keyCode === 229;
+    if (isImeComposing) {
+      e.stopPropagation();
     }
-  }, [inputValue, onUpdateMode]);
+  }, []);
 
   const onCloseSearching = useCallback(() => {
+    clearSearchRequest();
     setInputValue('');
-    onClose();
-  }, [onClose]);
+    onUpdateSearchStatus('');
+    onUpdateSearchResults([]);
+  }, [onUpdateSearchResults, onUpdateSearchStatus, clearSearchRequest]);
 
   return (
-    <div className='search-container file-chooser-searcher' style={{ zIndex: SEARCH_CONTAINER }}>
+    <div className={`search-container file-chooser-searcher ${className}`} style={{ zIndex: SEARCH_CONTAINER }}>
       <div className='search-input-container'>
-        <i className="search-icon-left input-icon-addon sf3-font sf3-font-search"></i>
+        <span className="search-icon-left input-icon-addon"><Icon symbol="search" /></span>
         <Input
-          innerRef={inputRef}
           className='search-input'
           placeholder={gettext('Search')}
           type='text'
           value={inputValue}
           onChange={handleSearchInputChange}
           onKeyDown={handleKeyDown}
+          onCompositionStart={handleCompositionStart}
+          onCompositionEnd={handleCompositionEnd}
           autoFocus
         />
         {inputValue.length !== 0 && (
-          <OpIcon
-            className="search-control op-icon op-icon-bg-light m-0 sf3-font sf3-font-x-01"
-            title={gettext('Clear')}
-            op={onCloseSearching}
-          />
+          <span id="clear-search-btn" className="search-control op-icon op-icon-bg-light m-0" onClick={onCloseSearching}>
+            <Icon symbol="close" />
+            <Tooltip target="clear-search-btn">{gettext('Clear search')}</Tooltip>
+          </span>
         )}
       </div>
     </div>
@@ -134,10 +151,9 @@ const Searcher = ({ onUpdateMode, onUpdateSearchStatus, onUpdateSearchResults, o
 };
 
 Searcher.propTypes = {
-  onUpdateMode: PropTypes.func,
+  className: PropTypes.string,
   onUpdateSearchStatus: PropTypes.func,
   onUpdateSearchResults: PropTypes.func,
-  onClose: PropTypes.func,
 };
 
 export default Searcher;

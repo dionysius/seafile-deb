@@ -1,8 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, Modal, ModalBody, ModalFooter, Form, FormGroup, Input } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
 
 const propTypes = {
   toggle: PropTypes.func.isRequired,
@@ -53,6 +53,7 @@ class SysAdminAddInstitutionDialog extends React.Component {
           </Form>
         </ModalBody>
         <ModalFooter>
+          <Button color="secondary" onClick={this.toggle}>{gettext('Cancel')}</Button>
           <Button color="primary" onClick={this.handleSubmit} disabled={!this.state.isSubmitBtnActive}>{gettext('Submit')}</Button>
         </ModalFooter>
       </Modal>

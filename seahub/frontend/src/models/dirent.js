@@ -1,9 +1,9 @@
 import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
-import { Utils } from '../utils/utils';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import { lang } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import FileTag from './file-tag';
-import { lang } from '../utils/constants';
 
 import 'dayjs/locale/ar';
 import 'dayjs/locale/de';
@@ -28,10 +28,11 @@ class Dirent {
       this.mtime_relative = dayjs.unix(json.mtime).locale(lang).fromNow();
     }
     this.permission = json.permission || 'rw';
-    this.isSelected = false;
+    this.isSelected = json.isSelected || false;
     this.starred = json.starred || false;
     if (json.type === 'dir') {
       this.has_been_shared_out = false;
+      this.size = (typeof json.size === 'number') ? Utils.bytesToSize(json.size) : '';
     }
     if (json.type === 'file') {
       this.size_original = json.size_original || json.size;
@@ -45,6 +46,8 @@ class Dirent {
       this.modifier_name = json.modifier_name || '';
       this.modifier_email = json.modifier_email || '';
       this.modifier_contact_email = json.modifier_contact_email || '';
+      this.file_modifier = json.modifier_email || '';
+      this.parent_dir = json.parent_dir || '';
       let file_tags = [];
       if (json.file_tags) {
         file_tags = json.file_tags.map(item => {
@@ -59,6 +62,10 @@ class Dirent {
         this.is_sdoc_revision = json.is_sdoc_revision || false;
         this.revision_id = json.revision_id || null;
       }
+
+    }
+    if (json.metadata) {
+      this.metadata = json.metadata;
     }
   }
 

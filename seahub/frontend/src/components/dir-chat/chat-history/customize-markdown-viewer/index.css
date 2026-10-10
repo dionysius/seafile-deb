@@ -1,0 +1,37 @@
+.sea-ai-message-reply.text * {
+  margin: 0;
+  padding: 0;
+}
+
+.sea-ai-message-reply .sf-slate-viewer-scroll-container {
+  padding-top: 0;
+  padding-bottom: 0;
+  background-color: inherit;
+}
+
+.sea-ai-message-reply .sf-slate-viewer-scroll-container .sf-slate-article-content {
+  overflow-x: hidden;
+}
+
+.sea-ai-message-reply .article {
+  padding: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  background-color: inherit !important;
+}
+
+.sea-ai-message-reply .article h1,
+.sea-ai-message-reply .article h2,
+.sea-ai-message-reply .article h3,
+.sea-ai-message-reply .article h4,
+.sea-ai-message-reply .article h5,
+.sea-ai-message-reply .article h6 {
+  color: inherit !important;
+}
+
+.sea-ai-message-reply.rich-text .article :last-child {
+  margin-bottom: 0;
+}

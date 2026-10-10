@@ -1,20 +1,21 @@
 import React from 'react';
+import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import watermark from 'watermark-dom';
-import { Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
-import Account from '../common/account';
-import { gettext, siteRoot, mediaUrl, logoPath, logoWidth, logoHeight, siteTitle } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
-import SaveSharedFileDialog from '../dialog/save-shared-file-dialog';
+import { gettext, siteRoot, mediaUrl, logoPath, logoWidth, logoHeight, siteTitle } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import AddAbuseReportDialog from '../../components/dialog/add-abuse-report-dialog';
-import toaster from '../toast';
+import Account from '../account';
+import SaveSharedFileDialog from '../dialog/save-shared-file-dialog';
+import CustomDropdown from '../dropdown';
 import Switch from '../switch';
+import toaster from '../toast';
 
-import '../../css/shared-file-view.css';
+import './index.css';
 
 const propTypes = {
   content: PropTypes.object.isRequired,
-  fileType: PropTypes.string
+  type: PropTypes.string,
 };
 
 let loginUser = window.app.pageOptions.name;
@@ -27,7 +28,6 @@ class SharedFileView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      moreDropdownOpen: false,
       showSaveSharedFileDialog: false,
       isAddAbuseReportDialogOpen: false
     };
@@ -57,16 +57,51 @@ class SharedFileView extends React.Component {
     });
   };
 
-  toggleMoreOpMenu = (event) => {
-    if (this.state.moreDropdownOpen) {
-      const el = document.getElementById('txt-line-wrap-menu');
-      if (el && el.contains(event.target)) {
-        return;
-      }
+  getMenuItems = () => {
+    const items = [];
+
+    if (canDownload && loginUser && (loginUser !== sharedBy)) {
+      items.push({
+        key: 'save-as',
+        label: gettext('Save as ...'),
+        onClick: this.handleSaveSharedFileDialog,
+      });
     }
-    this.setState({
-      moreDropdownOpen: !this.state.moreDropdownOpen
-    });
+
+    if (canDownload && !trafficOverLimit) {
+      items.push({
+        key: 'download',
+        label: `${gettext('Download')} (${Utils.bytesToSize(fileSize)})`,
+        onClick: () => {
+          window.location = zipped ? `?p=${encodeURIComponent(filePath)}&dl=1` : sharedFileDownloadURL;
+        },
+      });
+    }
+
+    if (enableShareLinkReportAbuse && (loginUser !== sharedBy)) {
+      items.push({
+        key: 'report-abuse',
+        label: gettext('Report Abuse'),
+        onClick: this.toggleAddAbuseReportDialog,
+      });
+    }
+
+    if (this.props.canWrapLine) {
+      items.push({
+        key: 'line-wrapping',
+        label: gettext('Line wrapping'),
+        right_slot: (
+          <Switch
+            checked={this.props.lineWrapping}
+            className="txt-line-wrap-menu"
+            onChange={() => this.props.updateLineWrapping(!this.props.lineWrapping)}
+          />
+        ),
+        keepOpen: true,
+      });
+    }
+
+    return items;
   };
 
   componentDidMount() {
@@ -115,69 +150,48 @@ class SharedFileView extends React.Component {
     );
   };
 
-  render() {
-    const { fileType } = this.props;
+  renderFileViewHeader = () => {
     return (
-      <div className="shared-file-view-md">
-        <div className="shared-file-view-md-header d-flex">
-          <React.Fragment>
-            <a href={siteRoot}>
-              <img src={mediaUrl + logoPath} height={logoHeight} width={logoWidth} title={siteTitle} alt="logo" />
-            </a>
-          </React.Fragment>
-          { loginUser && <Account /> }
+      <>
+        <div className="text-truncate">
+          <h2 className="shared-file-name ellipsis" title={fileName}>{fileName}</h2>
+          {zipped ?
+            <p className="m-0 d-flex shared-file-path">{gettext('Current path: ')}{this.renderPath()}</p> :
+            <p className="shared-by ellipsis m-0">{gettext('Shared by:')}{'  '}{sharedBy}</p>
+          }
         </div>
-        <div className="shared-file-view-md-main">
-          <div className={`shared-file-view-head ${(fileType == 'md' || fileType == 'pdf') ? 'w-100 px-4' : ''}`}>
-            <div className="text-truncate">
-              <h2 className="ellipsis" title={fileName}>{fileName}</h2>
-              {zipped ?
-                <p className="m-0 d-flex">{gettext('Current path: ')}{this.renderPath()}</p> :
-                <p className="share-by ellipsis">{gettext('Shared by:')}{'  '}{sharedBy}</p>
-              }
+        <div className="flex-shrink-0 ml-4">
+          <CustomDropdown
+            items={this.getMenuItems()}
+            triggerClassName="op-icon m-0"
+          />
+        </div>
+      </>
+    );
+  };
+
+  render() {
+    const isDesktop = Utils.isDesktop();
+    const { type } = this.props;
+    return (
+      <div className={classNames('h-100 d-flex flex-column shared-file-view', type !== '' ? `shared-${type}-file-view` : '')}>
+        <div className="top-header d-flex align-items-center flex-shrink-0">
+          <a href={siteRoot} className='mr-auto mr-md-0'>
+            <img src={mediaUrl + logoPath} height={logoHeight} width={logoWidth} title={siteTitle} alt="logo" />
+          </a>
+          {isDesktop && (
+            <div className='shared-file-view-top-head flex-fill d-flex justify-content-between align-items-center ml-4 pl-4'>
+              {this.renderFileViewHeader()}
             </div>
-            <div className="flex-shrink-0 ml-4">
-              <Dropdown isOpen={this.state.moreDropdownOpen} toggle={this.toggleMoreOpMenu}>
-                <DropdownToggle
-                  tag="i"
-                  role="button"
-                  tabIndex={0}
-                  className="sf3-font-more sf3-font op-icon m-0"
-                  aria-label={gettext('More operations')}
-                  title={gettext('More operations')}
-                />
-                <DropdownMenu>
-                  {(canDownload && loginUser && (loginUser !== sharedBy)) && (
-                    <DropdownItem onClick={this.handleSaveSharedFileDialog}>
-                      {gettext('Save as ...')}
-                    </DropdownItem>
-                  )}
-                  {(canDownload && !trafficOverLimit) &&
-                    <DropdownItem
-                      href={`${zipped ? '?p=' + encodeURIComponent(filePath) + '&dl=1' : sharedFileDownloadURL}`}
-                    >
-                      {gettext('Download')} ({Utils.bytesToSize(fileSize)})
-                    </DropdownItem>
-                  }
-                  {(enableShareLinkReportAbuse && (loginUser !== sharedBy)) && (
-                    <DropdownItem onClick={this.toggleAddAbuseReportDialog}>
-                      {gettext('Report Abuse')}
-                    </DropdownItem>
-                  )}
-                  {this.props.canWrapLine && (
-                    <DropdownItem id='txt-line-wrap-menu' className='dropdown-item'>
-                      <Switch
-                        checked={this.props.lineWrapping}
-                        placeholder={gettext('Line wrapping')}
-                        className="txt-line-wrap-menu w-100"
-                        onChange={() => this.props.updateLineWrapping(!this.props.lineWrapping)}
-                      />
-                    </DropdownItem>
-                  )}
-                </DropdownMenu>
-              </Dropdown>
+          )}
+          {loginUser && <Account />}
+        </div>
+        <div className="flex-fill d-flex flex-column overflow-auto">
+          {!isDesktop && (
+            <div className={'shared-file-view-head'}>
+              {this.renderFileViewHeader()}
             </div>
-          </div>
+          )}
           {this.props.content}
         </div>
         {this.state.showSaveSharedFileDialog &&
@@ -218,5 +232,8 @@ if (enableWatermark) {
 }
 
 SharedFileView.propTypes = propTypes;
+SharedFileView.defaultProps = {
+  type: '',
+};
 
 export default SharedFileView;

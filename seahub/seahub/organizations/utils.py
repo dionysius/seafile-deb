@@ -5,8 +5,9 @@ from django.urls import reverse
 from seaserv import ccnet_api
 
 from seahub.invitations.models import Invitation
-from seahub.organizations.models import OrgSettings
+from seahub.organizations.models import OrgSettings, OrgMemberQuota
 from seahub.utils import gen_token, get_service_url
+from seahub.utils.file_size import get_quota_from_string
 from seahub.role_permissions.utils import get_enabled_role_permissions_by_role
 
 
@@ -61,3 +62,24 @@ def can_use_sso_in_multi_tenancy(org_id):
     org_role = OrgSettings.objects.get_role_by_org(org)
     perm_dict = get_enabled_role_permissions_by_role(org_role)
     return perm_dict.get('can_use_sso_in_multi_tenancy', True)
+
+
+def get_org_monthly_download_traffic_limit(org):
+
+    # 0 means no limit
+
+    org_id = org.org_id
+
+    download_traffic_limit = OrgSettings.objects.get_monthly_download_traffic_limit_by_org(org)
+    if download_traffic_limit > 0:
+        return download_traffic_limit
+
+    download_traffic_limit = 0
+    org_role = OrgSettings.objects.get_role_by_org(org)
+    role_perm_dict = get_enabled_role_permissions_by_role(org_role)
+    monthly_download_traffic_limit_per_user = role_perm_dict.get('monthly_download_traffic_limit_per_user', '')
+    if monthly_download_traffic_limit_per_user:
+        member_quota = OrgMemberQuota.objects.get_quota(org_id)
+        download_traffic_limit = get_quota_from_string(monthly_download_traffic_limit_per_user) * member_quota
+
+    return download_traffic_limit

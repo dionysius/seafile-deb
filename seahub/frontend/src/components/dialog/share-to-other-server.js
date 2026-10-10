@@ -1,16 +1,16 @@
-import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
-import classnames from 'classnames';
-import { gettext, ocmRemoteServers } from '../../utils/constants';
+import React from 'react';
 import { Input, Button } from 'reactstrap';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
-import toaster from '../toast';
-import OpIcon from '../op-icon';
-import SharePermissionEditor from '../select-editor/share-permission-editor';
-import { SeahubSelect } from '../common/select';
+import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { gettext, ocmRemoteServers } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import EmptyTip from '../empty-tip';
 import Loading from '../loading';
+import OpIcon from '../op-icon';
+import { SeahubSelect } from '../select';
+import SharePermissionEditor from '../select-editor/share-permission-editor';
+import toaster from '../toast';
 
 class ShareItem extends React.Component {
 
@@ -48,7 +48,7 @@ class ShareItem extends React.Component {
   };
 
   render() {
-    let item = this.props.item;
+    const { item, index } = this.props;
     const { isOperationShow, isOpFrozen, isHighlighted } = this.state;
     return (
       <tr
@@ -64,9 +64,11 @@ class ShareItem extends React.Component {
         <td>{Utils.sharePerms(item.permission)}</td>
         <td>
           <OpIcon
-            className={`sf3-font sf3-font-x-01 op-icon ${isOperationShow && !isOpFrozen ? '' : 'd-none'}`}
+            id={`delete-${index}`}
+            symbol="close"
+            className={`op-icon ${isOperationShow && !isOpFrozen ? '' : 'd-none'}`}
             op={this.deleteShareItem}
-            title={gettext('Delete')}
+            tooltip={gettext('Delete')}
           />
         </td>
       </tr>
@@ -75,43 +77,8 @@ class ShareItem extends React.Component {
 }
 
 ShareItem.propTypes = {
+  index: PropTypes.number.isRequired,
   item: PropTypes.object.isRequired,
-  deleteShareItem: PropTypes.func.isRequired,
-};
-
-class ShareList extends React.Component {
-
-  render() {
-    return (
-      <>
-        <table className="table-thead-hidden">
-          <thead>
-            <tr>
-              <th width="30%">{gettext('Server')}</th>
-              <th width="25%">{gettext('User Email')}</th>
-              <th width="30%">{gettext('Permission')}</th>
-              <th width="15%"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {this.props.items.map((item, index) => {
-              return (
-                <ShareItem
-                  key={index}
-                  item={item}
-                  deleteShareItem={this.props.deleteShareItem}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-      </>
-    );
-  }
-}
-
-ShareList.propTypes = {
-  items: PropTypes.array.isRequired,
   deleteShareItem: PropTypes.func.isRequired,
 };
 
@@ -225,54 +192,59 @@ class ShareToOtherServer extends React.Component {
       toUser, selectedServer, permission,
       btnDisabled, isSubmitting
     } = this.state;
+    const thead = (
+      <thead>
+        <tr>
+          <th width="30%">{gettext('Server')}</th>
+          <th width="25%">{gettext('User Email')}</th>
+          <th width="30%">{gettext('Permission')}</th>
+          <th width="15%"></th>
+        </tr>
+      </thead>
+    );
     return (
       <div className="h-100 d-flex flex-column">
-        <table>
-          <thead>
-            <tr>
-              <th width="30%">{gettext('Server')}</th>
-              <th width="25%">{gettext('User Email')}</th>
-              <th width="30%">{gettext('Permission')}</th>
-              <th width="15%"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <SeahubSelect
-                  placeholder={gettext('Select a server')}
-                  value={selectedServer}
-                  options={ocmRemoteServers}
-                  onChange={this.handleServerChange}
-                />
-              </td>
-              <td>
-                <Input
-                  value={toUser}
-                  onChange={this.handleToUserChange}
-                />
-              </td>
-              <td>
-                <SharePermissionEditor
-                  isTextMode={false}
-                  isEditIconShow={false}
-                  currentPermission={permission}
-                  permissions={this.permissions}
-                  onPermissionChanged={this.setPermission}
-                />
-              </td>
-              <td>
-                <Button
-                  onClick={this.OCMShare}
-                  disabled={btnDisabled}
-                  color="primary"
-                  className={isSubmitting ? 'btn-loading' : ''}>
-                  {gettext('Submit')}
-                </Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className='overflow-auto'>
+          <table className='w-xs-200'>
+            {thead}
+            <tbody>
+              <tr>
+                <td>
+                  <SeahubSelect
+                    placeholder={gettext('Select a server')}
+                    value={selectedServer}
+                    options={ocmRemoteServers}
+                    onChange={this.handleServerChange}
+                  />
+                </td>
+                <td>
+                  <Input
+                    value={toUser}
+                    onChange={this.handleToUserChange}
+                  />
+                </td>
+                <td>
+                  <SharePermissionEditor
+                    isTextMode={false}
+                    isEditIconShow={false}
+                    currentPermission={permission}
+                    permissions={this.permissions}
+                    onPermissionChanged={this.setPermission}
+                  />
+                </td>
+                <td>
+                  <Button
+                    onClick={this.OCMShare}
+                    disabled={btnDisabled}
+                    color="primary"
+                    className={isSubmitting ? 'btn-loading' : ''}>
+                    {gettext('Submit')}
+                  </Button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <div className='share-list-container flex-fill'>
           {errorMsg
             ? <p className="error text-center mt-4">{errorMsg}</p>
@@ -280,7 +252,23 @@ class ShareToOtherServer extends React.Component {
               ? <Loading />
               : ocmShares.length === 0
                 ? <EmptyTip text={gettext('No items')} className="h-100 m-0" />
-                : <ShareList items={ocmShares} deleteShareItem={this.deleteShareItem} />
+                : (
+                  <table className="table-thead-hidden w-xs-200">
+                    {thead}
+                    <tbody>
+                      {ocmShares.map((item, index) => {
+                        return (
+                          <ShareItem
+                            key={index}
+                            index={index}
+                            item={item}
+                            deleteShareItem={this.deleteShareItem}
+                          />
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )
           }
         </div>
       </div>

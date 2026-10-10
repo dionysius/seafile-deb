@@ -1,14 +1,15 @@
 import React, { Component, Fragment } from 'react';
 import PropTypes from 'prop-types';
-import { gettext, repoID, siteRoot, username, isPro } from '../../utils/constants';
-import SeafileMarkdownViewer from '../../components/seafile-markdown-viewer';
-import WikiDirListView from '../../components/wiki-dir-list-view/wiki-dir-list-view';
-import Loading from '../../components/loading';
-import { Utils } from '../../utils/utils';
-import Search from '../../components/search/search';
-import Notification from '../../components/common/notification';
-import Account from '../../components/common/account';
-import SdocWikiPageViewer from '../../components/sdoc-wiki-page-viewer';
+import Account from '@/components/account';
+import Icon from '@/components/icon';
+import Loading from '@/components/loading';
+import Notification from '@/components/notification';
+import SeafileMarkdownViewer from '@/components/seafile-markdown-viewer';
+import Search from '@/components/search/search';
+import { gettext, repoID, siteRoot, username, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import SdocWikiPageViewer from './sdoc-wiki-page-viewer';
+import WikiDirListView from './wiki-dir-list-view/wiki-dir-list-view';
 
 const propTypes = {
   path: PropTypes.string.isRequired,
@@ -88,11 +89,13 @@ class MainPanel extends Component {
           {!username &&
             <Fragment>
               <div className="cur-view-toolbar">
-                <span className="sf2-icon-menu hidden-md-up d-md-none side-nav-toggle" title="Side Nav Menu" onClick={this.onMenuClick}></span>
+                <span className="hidden-md-up d-md-none side-nav-toggle" title="Side Nav Menu" onClick={this.onMenuClick}>
+                  <Icon symbol="menu" />
+                </span>
               </div>
               <div className="common-toolbar">
                 {isPro && (
-                  <Search isPublic={true} repoID={repoID} onSearchedClick={onSearchedClick} placeholder={gettext('Search files')}/>
+                  <Search isPublic={true} repoID={repoID} onSearchedClick={onSearchedClick} placeholder={gettext('Search files')} />
                 )}
               </div>
             </Fragment>
@@ -100,16 +103,20 @@ class MainPanel extends Component {
           {username && (
             <Fragment>
               <div className="cur-view-toolbar">
-                <span className="sf2-icon-menu hidden-md-up d-md-none side-nav-toggle" title="Side Nav Menu" onClick={this.onMenuClick}></span>
+                <span className="hidden-md-up d-md-none side-nav-toggle" title="Side Nav Menu" onClick={this.onMenuClick}>
+                  <Icon symbol="menu" />
+                </span>
                 {this.props.permission == 'rw' && (
                   Utils.isDesktop() ?
                     <button className="btn btn-secondary operation-item" title={gettext('Edit')} onClick={this.onEditClick}>{gettext('Edit')}</button> :
-                    <span className="sf3-font sf3-font-rename mobile-toolbar-icon" title={gettext('Edit')} onClick={this.onEditClick}></span>
+                    <span className="mobile-toolbar-icon" title={gettext('Edit')} onClick={this.onEditClick}>
+                      <Icon symbol="rename" />
+                    </span>
                 )}
               </div>
               <div className="common-toolbar">
                 {isPro && (
-                  <Search isPublic={true} repoID={repoID} onSearchedClick={onSearchedClick} placeholder={gettext('Search files')}/>
+                  <Search isPublic={true} repoID={repoID} onSearchedClick={onSearchedClick} placeholder={gettext('Search files')} />
                 )}
                 <Notification />
                 <Account />
@@ -129,7 +136,7 @@ class MainPanel extends Component {
                 isTOCShow={false}
                 markdownContent={this.props.content}
                 isFileLoading={this.props.isDataLoading}
-                lastModified = {this.props.lastModified}
+                lastModified={this.props.lastModified}
                 latestContributor={this.props.latestContributor}
                 onLinkClick={this.props.onLinkClick}
               />
@@ -141,7 +148,7 @@ class MainPanel extends Component {
                 repoID={repoID}
                 markdownContent={this.props.content}
                 isFileLoading={this.props.isDataLoading}
-                lastModified = {this.props.lastModified}
+                lastModified={this.props.lastModified}
                 latestContributor={this.props.latestContributor}
                 onLinkClick={this.props.onLinkClick}
               />

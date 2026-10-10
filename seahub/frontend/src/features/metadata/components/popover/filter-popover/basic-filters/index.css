@@ -1,0 +1,98 @@
+.filter-group-basic.filter-group {
+  margin-bottom: 40px;
+}
+
+.sf-metadata-basic-filters-select.sf-select {
+  width: fit-content;
+  max-width: 100%;
+  height: 24px;
+  background-image: none;
+  border: none;
+  padding: 0;
+  margin-right: 12px;
+}
+
+.sf-metadata-basic-filters-select.sf-select > .selected-option:hover {
+  background: var(--bs-icon-btn-hover-bg-color);
+}
+
+.sf-metadata-basic-filters-select.sf-select.focus {
+  border-color: unset;
+  box-shadow: none;
+}
+
+.sf-metadata-basic-filters-select.sf-select .selected-option {
+  width: 100%;
+  height: 100%;
+  padding: 0 4px;
+  background-color: transparent;
+  border-radius: 4px;
+}
+
+.sf-metadata-basic-filters-select.sf-select .selected-option:hover {
+  background: var(--bs-icon-btn-hover-bg-color);
+}
+
+.sf-metadata-basic-filters-select.highlighted .selected-option .selected-option-show,
+.sf-metadata-basic-filters-select.highlighted .selected-option .seafile-multicolor-icon-down {
+  color: #ed7109 !important;
+  font-weight: 500;
+}
+
+.sf-metadata-basic-filters-select.sf-select .selected-option .selected-option-show {
+  width: 100%;
+}
+
+.sf-metadata-basic-filters-select .selected-option-show,
+.sf-metadata-basic-filters-select .select-placeholder {
+  margin-right: 4px;
+}
+
+.sf-metadata-basic-filters-select .selected-option .custom-select-dropdown-icon {
+  margin-left: 0;
+}
+
+.select-basic-filter-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.select-basic-filter-option .select-basic-filter-option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-basic-filter-option .select-basic-filter-option-check-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sf-select-option.sf-select-option-active .seafile-multicolor-icon-check-mark {
+  fill: #fff;
+}
+
+.filter-group-basic .sf-metadata-filters-list {
+  height: 24px;
+  min-height: unset;
+  display: flex;
+  margin-top: 12px;
+}
+
+.sf-metadata-basic-filters-select .select-basic-filter-display-name:hover {
+  cursor: pointer;
+}
+
+.sf-metadata-basic-filter-tags-select .tag-options-container {
+  width: auto;
+  height: auto;
+  position: absolute;
+  top: 36px;
+  left: -340px;
+  z-index: 10001;
+}

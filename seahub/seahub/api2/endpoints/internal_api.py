@@ -2,7 +2,9 @@
 import logging
 import os
 import re
+import tempfile
 from io import BytesIO
+from urllib.parse import quote as urlquote
 import requests
 import json
 from rest_framework import status
@@ -21,6 +23,7 @@ from seahub.share.models import UploadLinkShare, FileShare, check_share_link_acc
 from seaserv import seafile_api
 
 from seahub.tags.models import FileUUIDMap
+from seahub.repo_metadata.utils import FACES_SAVE_PATH
 from seahub.utils.repo import parse_repo_perm
 from seahub.views.file import send_file_access_msg, FILE_TYPE_FOR_NEW_FILE_LINK
 from seahub.utils import normalize_file_path, get_file_type_and_ext
@@ -217,6 +220,57 @@ class InternalCheckFileOperationAccess(APIView):
 
         return Response({'user': rat.app_name})
 
+
+class InternalBatchFileDownloadTokensView(APIView):
+    authentication_classes = (SessionCRSFCheckFreeAuthentication, )
+    throttle_classes = (UserRateThrottle, )
+
+    def post(self, request, repo_id):
+        auth = request.META.get('HTTP_AUTHORIZATION', '').split()
+        if not is_valid_internal_jwt(auth):
+            return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+
+        paths = request.data.get('paths')
+        username = request.data.get('username')
+        if not isinstance(paths, list) or not paths:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'paths invalid.')
+        if not isinstance(username, str) or not username:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'username invalid.')
+
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            return api_error(status.HTTP_404_NOT_FOUND, 'Library %s not found.' % repo_id)
+
+        permission = seafile_api.check_permission_by_path(repo_id, '/', username)
+        if not permission:
+            return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+
+        files = []
+        for raw_path in paths:
+            if not isinstance(raw_path, str):
+                continue
+            path = normalize_file_path(raw_path)
+            file_id = seafile_api.get_file_id_by_path(repo_id, path)
+            if not file_id:
+                continue
+            token = seafile_api.get_fileserver_access_token(repo_id, file_id, 'download', username, use_onetime=True)
+            if not token:
+                continue
+            files.append({
+                'repo_id': repo_id,
+                'path': path,
+                'name': os.path.basename(path),
+                'download_token': token,
+                'url': '%s/library/%s/%s%s' % (
+                    SERVICE_URL.rstrip('/'),
+                    repo_id,
+                    urlquote(repo.name),
+                    urlquote(path, safe='/'),
+                ),
+            })
+
+        return Response({'files': files})
+
 class CheckThumbnailAccess(APIView):
     authentication_classes = (SessionCRSFCheckFreeAuthentication, )
 
@@ -231,7 +285,17 @@ class CheckThumbnailAccess(APIView):
         if not path:
             error_msg = 'path invalid'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
-        if check_folder_permission(request, repo_id, path) is None:
+        
+        path = normalize_file_path(path)
+        
+        file_id = seafile_api.get_file_id_by_path(repo_id, path)
+        if not file_id:
+            error_msg = 'Thumbnail file not found'
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+        
+        parent_dir = os.path.dirname(path)
+        
+        if check_folder_permission(request, repo_id, parent_dir) is None:
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
         return Response({'success': True})
@@ -244,11 +308,69 @@ class CheckThumbnailAccessByUserToken(APIView):
         if not path:
             error_msg = 'path invalid'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
-        if check_folder_permission(request, repo_id, path) is None:
+        
+        path = normalize_file_path(path)
+        
+        file_id = seafile_api.get_file_id_by_path(repo_id, path)
+        if not file_id:
+            error_msg = 'Thumbnail file not found'
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+        
+        parent_dir = os.path.dirname(path)
+        
+        if check_folder_permission(request, repo_id, parent_dir) is None:
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
         return Response({'success': True})
-    
+
+
+class SeafileSaveFaceView(APIView):
+    authentication_classes = ()
+    throttle_classes = (UserRateThrottle,)
+
+    def post(self, request, repo_id):
+        auth = request.headers.get('authorization', '').split()
+        if not is_valid_internal_jwt(auth):
+            error_msg = 'Permission denied.'
+            return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+
+        image = request.FILES.get('image', None)
+        if not image:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'image invalid')
+
+        filename = request.data.get('filename', '')
+        if not filename or filename != os.path.basename(filename):
+            return api_error(status.HTTP_400_BAD_REQUEST, 'filename invalid')
+
+        replace = request.data.get('replace', False)
+        if isinstance(replace, str):
+            replace = replace.lower() in ('1', 'true', 't')
+        else:
+            replace = bool(replace)
+
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            return api_error(status.HTTP_404_NOT_FOUND, 'Library %s not found.' % repo_id)
+
+        tmp_file_path = ''
+        try:
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                for chunk in image.chunks():
+                    tmp_file.write(chunk)
+                tmp_file_path = tmp_file.name
+
+            if replace:
+                seafile_api.del_file(repo_id, FACES_SAVE_PATH, json.dumps([filename]), 'system')
+            seafile_api.post_file(repo_id, tmp_file_path, FACES_SAVE_PATH, filename, 'system')
+        except Exception as e:
+            logger.error(e)
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, 'Internal Server Error')
+        finally:
+            if tmp_file_path and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+
+        return Response({'success': True})
+
 class CheckShareLinkThumbnailAccess(APIView):
     authentication_classes = (SessionCRSFCheckFreeAuthentication,)
     

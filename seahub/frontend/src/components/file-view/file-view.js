@@ -1,25 +1,28 @@
 import React, { Suspense } from 'react';
+import { I18nextProvider } from 'react-i18next';
 import PropTypes from 'prop-types';
 import watermark from 'watermark-dom';
-import { I18nextProvider } from 'react-i18next';
-import i18n from '../../_i18n/i18n-sdoc-editor';
-import { seafileAPI } from '../../utils/seafile-api';
-import { gettext, siteName } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
-import toaster from '../toast';
+import i18n from '@/_i18n/i18n-sdoc-editor';
+import { seafileAPI } from '@/api/seafile-api';
+import { MetadataMiddlewareProvider } from '@/features/metadata/hooks/metadata-middleware';
+import { MetadataStatusProvider } from '@/hooks';
+import { gettext, siteName } from '@/utils/constants';
+import LocalStorage from '@/utils/local-storage-utils';
+import { Utils } from '@/utils/utils';
+import WebSocketClient from '@/utils/websocket-service';
+import ShareDialog from '../dialog/share-dialog';
+import EmbeddedFileDetails from '../dirent-detail/embedded-file-details';
 import IconButton from '../icon-button';
+import Loading from '../loading';
+import ModalPortal from '../modal-portal';
+import toaster from '../toast';
 import FileInfo from './file-info';
 import FileToolbar from './file-toolbar';
-import CommentPanel from './comment-panel';
+import I18nCommentPanel from './i18n-comment-panel';
 import OnlyofficeFileToolbar from './onlyoffice-file-toolbar';
-import EmbeddedFileDetails from '../dirent-detail/embedded-file-details';
-import { MetadataMiddlewareProvider, MetadataStatusProvider } from '../../hooks';
-import Loading from '../loading';
-import WebSocketClient from '../../utils/websocket-service';
 import ResizeWidth from './resize-width';
-import LocalStorage from '../../utils/local-storage-utils';
 
-import '../../css/file-view.css';
+import '@/css/file-view.css';
 
 const propTypes = {
   onSave: PropTypes.func,
@@ -45,6 +48,7 @@ class FileView extends React.Component {
   constructor(props) {
     super(props);
     const storedIsHeaderShown = localStorage.getItem('sf_onlyoffile_file_view_header_shown');
+
     this.state = {
       isStarred: isStarred,
       isLocked: isLocked,
@@ -54,6 +58,8 @@ class FileView extends React.Component {
       isDetailsPanelOpen: false,
       isCommentUpdated: false,
       width: MIN_PANEL_WIDTH,
+      isShareEnabled: false,
+      isShareDialogOpen: false
     };
 
     this.socketManager = new WebSocketClient(this.onMessageCallback, repoID);
@@ -71,7 +77,35 @@ class FileView extends React.Component {
       Math.min(parseInt(panelWidth, 10) || MIN_PANEL_WIDTH, MAX_PANEL_WIDTH)
     );
     this.setState({ width });
+
+    this.checkShareEnabled();
   }
+
+  checkShareEnabled = () => {
+    let isShareEnabled = false;
+    if (repoEncrypted) {
+      isShareEnabled = true; // for internal link
+    } else if (filePerm == 'rw' || filePerm == 'r') {
+      isShareEnabled = true;
+    }
+
+    if (filePerm && filePerm.startsWith('custom-')) {
+      const permissionID = filePerm.split('-')[1];
+      seafileAPI.getCustomPermission(repoID, permissionID).then((res) => {
+        const customPermission = res.data.permission;
+        window.custom_permission = customPermission; // share dialog need a global custom_permission
+        const { download_external_link } = customPermission.permission;
+        isShareEnabled = download_external_link;
+        this.setState({ isShareEnabled });
+        return;
+      }).catch((error) => {
+        let errorMsg = Utils.getErrorMsg(error);
+        toaster.danger(errorMsg);
+      });
+    }
+
+    this.setState({ isShareEnabled });
+  };
 
   onMessageCallback = (data) => {
     const { type, content } = data;
@@ -85,6 +119,10 @@ class FileView extends React.Component {
         }
       }
     }
+  };
+
+  toggleShareDialog = () => {
+    this.setState({ isShareDialogOpen: !this.state.isShareDialogOpen });
   };
 
   toggleCommentPanel = () => {
@@ -156,10 +194,6 @@ class FileView extends React.Component {
     });
   };
 
-  setCommentPanelRef = (ref) => {
-    this.commentPanelRef = ref;
-  };
-
   panelWrapperStyle = () => {
     let style = {
       width: this.state.width,
@@ -202,7 +236,7 @@ class FileView extends React.Component {
 
   render() {
     const { isOnlyofficeFile = false } = this.props;
-    const { isDetailsPanelOpen, isHeaderShown } = this.state;
+    const { isDetailsPanelOpen, isHeaderShown, isShareEnabled } = this.state;
     const repoInfo = {
       permission: filePerm,
       encrypted: repoEncrypted,
@@ -210,7 +244,7 @@ class FileView extends React.Component {
     };
     const className = this.getHeaderClassName();
     return (
-      <I18nextProvider i18n={ i18n }>
+      <I18nextProvider i18n={i18n}>
         <Suspense fallback={<Loading />}>
           <div className={`h-100 d-flex flex-column ${className}`}>
             <div className={`file-view-header d-flex justify-content-between align-items-center d-print-none ${isOnlyofficeFile ? (isHeaderShown ? 'onlyoffice-file-view-header-shown' : 'onlyoffice-file-view-header-hidden') : ''}`}>
@@ -223,6 +257,8 @@ class FileView extends React.Component {
               {isOnlyofficeFile ?
                 <OnlyofficeFileToolbar
                   isCommentUpdated={this.state.isCommentUpdated}
+                  isShareEnabled={isShareEnabled}
+                  toggleShareDialog={this.toggleShareDialog}
                   toggleDetailsPanel={this.toggleDetailsPanel}
                   toggleHeader={this.toggleHeader}
                   toggleCommentPanel={this.toggleCommentPanel}
@@ -242,8 +278,23 @@ class FileView extends React.Component {
                   lineWrapping={this.props.lineWrapping}
                   updateLineWrapping={this.props.updateLineWrapping}
                   setDefaultPageFitScale={this.props.setDefaultPageFitScale}
+                  isShareEnabled={isShareEnabled}
+                  toggleShareDialog={this.toggleShareDialog}
                 />
               }
+              {this.state.isShareDialogOpen && (
+                <ModalPortal>
+                  <ShareDialog
+                    itemType='file'
+                    itemName={fileName}
+                    itemPath={filePath}
+                    userPerm={filePerm}
+                    repoID={repoID}
+                    repoEncrypted={repoEncrypted}
+                    toggleDialog={this.toggleShareDialog}
+                  />
+                </ModalPortal>
+              )}
             </div>
             <div className={`file-view-body flex-auto d-flex ${fileType == 'PDF' ? '' : 'o-hidden'} ${(isOnlyofficeFile && !isHeaderShown) ? 'position-relative' : ''}`}>
               {(isOnlyofficeFile && !isHeaderShown) &&
@@ -256,12 +307,14 @@ class FileView extends React.Component {
               }
               {this.props.content}
               {this.state.isCommentPanelOpen &&
-                <CommentPanel
-                  ref={this.setCommentPanelRef}
-                  toggleCommentPanel={this.toggleCommentPanel}
-                  participants={this.props.participants}
-                  onParticipantsChange={this.props.onParticipantsChange}
-                />
+                <div className='d-flex position-relative' style={this.panelWrapperStyle()}>
+                  <ResizeWidth minWidth={MIN_PANEL_WIDTH} maxWidth={MAX_PANEL_WIDTH} resizeWidth={this.resizeWidth} resizeWidthEnd={this.resizeWidthEnd} />
+                  <I18nCommentPanel
+                    toggleCommentPanel={this.toggleCommentPanel}
+                    participants={this.props.participants}
+                    onParticipantsChange={this.props.onParticipantsChange}
+                  />
+                </div>
               }
               {isDetailsPanelOpen && (
                 <MetadataStatusProvider repoID={repoID} repoInfo={repoInfo}>

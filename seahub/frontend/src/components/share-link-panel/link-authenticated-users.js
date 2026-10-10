@@ -1,14 +1,15 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import { gettext } from '../../utils/constants';
 import { Button } from 'reactstrap';
-import { shareLinkAPI } from '../../utils/share-link-api';
-import { Utils } from '../../utils/utils';
-import UserSelect from '../user-select';
-import toaster from '../toast';
+import PropTypes from 'prop-types';
+import { shareLinkAPI } from '@/api/share-link-api';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import BackIcon from '../../components/back-icon';
 import EmptyTip from '../empty-tip';
 import Loading from '../loading';
+import OpIcon from '../op-icon';
+import toaster from '../toast';
+import UserSelect from '../user-select';
 
 class UserItem extends React.Component {
 
@@ -40,7 +41,7 @@ class UserItem extends React.Component {
   };
 
   render() {
-    const { item } = this.props;
+    const { item, index } = this.props;
     const { isHighlighted } = this.state;
     return (
       <tr
@@ -57,16 +58,13 @@ class UserItem extends React.Component {
           </div>
         </td>
         <td>
-          <span
-            tabIndex="0"
-            role="button"
-            className={`sf2-icon-x3 op-icon ${this.state.isOperationShow ? '' : 'hide'}`}
-            onClick={this.deleteItem}
-            onKeyDown={Utils.onKeyDown}
-            title={gettext('Delete')}
-            aria-label={gettext('Delete')}
-          >
-          </span>
+          <OpIcon
+            id={`delete-${index}`}
+            symbol="close"
+            className={this.state.isOperationShow ? 'op-icon' : 'op-icon hide'}
+            op={this.deleteItem}
+            tooltip={gettext('Delete')}
+          />
         </td>
       </tr>
     );
@@ -74,6 +72,7 @@ class UserItem extends React.Component {
 }
 
 UserItem.propTypes = {
+  index: PropTypes.number.isRequired,
   repoID: PropTypes.string.isRequired,
   item: PropTypes.object.isRequired,
   deleteItem: PropTypes.func.isRequired,
@@ -174,20 +173,20 @@ class LinkAuthenticatedUsers extends React.Component {
     const thead = (
       <thead>
         <tr>
-          <th width="82%"></th>
-          <th width="18%"></th>
+          <th width="75%"></th>
+          <th width="25%"></th>
         </tr>
       </thead>
     );
     return (
       <div className="h-100 d-flex flex-column">
         <div className="d-flex align-items-center pb-2 border-bottom">
+          <BackIcon onClick={this.goBack} />
           <h6 className="font-weight-normal m-0">
-            <BackIcon onClick={this.goBack} />
             {gettext('Authenticated users')}
           </h6>
         </div>
-        <table className="table-thead-hidden w-xs-200">
+        <table className="table-thead-hidden">
           {thead}
           <tbody>
             <tr>
@@ -211,13 +210,14 @@ class LinkAuthenticatedUsers extends React.Component {
             : authUsers.length === 0
               ? <EmptyTip text={gettext('No items')} className="h-100 m-0" />
               : (
-                <table className="table-thead-hidden w-xs-200">
+                <table className="table-thead-hidden">
                   {thead}
                   <tbody>
                     {authUsers.map((item, index) => {
                       return (
                         <UserItem
                           key={index}
+                          index={index}
                           item={item}
                           repoID={this.props.repoID}
                           deleteItem={this.deleteItem}

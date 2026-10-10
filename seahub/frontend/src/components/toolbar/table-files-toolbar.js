@@ -1,19 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import ItemDropdownMenu from '../dropdown-menu/item-dropdown-menu';
-import { gettext } from '../../utils/constants';
-import { EVENT_BUS_TYPE, PRIVATE_COLUMN_KEY } from '../../metadata/constants';
-import TextTranslation from '../../utils/text-translation';
-import RowUtils from '../../metadata/views/table/utils/row-utils';
-import { checkIsDir } from '../../metadata/utils/row';
-import { Utils } from '../../utils/utils';
+import { EVENT_BUS_TYPE, PRIVATE_COLUMN_KEY } from '@/features/metadata/constants';
+import { getFileNameFromRecord, getParentDirFromRecord } from '@/features/metadata/utils/cell';
+import { openInNewTab, openParentFolder } from '@/features/metadata/utils/file';
+import { buildTableToolbarMenuOptions } from '@/features/metadata/utils/menu-builder';
+import { checkIsDir } from '@/features/metadata/utils/row';
+import { useMetadataStatus } from '@/hooks';
+import { gettext } from '@/utils/constants';
+import TextTranslation from '@/utils/text-translation';
+import { Utils } from '@/utils/utils';
 import OpIcon from '../../components/op-icon';
-import OpElement from '../../components/op-element';
-import { getFileNameFromRecord, getParentDirFromRecord } from '../../metadata/utils/cell';
-import { openInNewTab, openParentFolder } from '../../metadata/utils/file';
-import { buildTableToolbarMenuOptions } from '../../metadata/utils/menu-builder';
-import { useMetadataStatus } from '../../hooks';
+import { setPendingAttachments } from '../dir-chat/hooks/ai-chat-tools';
+import { AttachmentObject } from '../dir-chat/models';
+import CustomDropdown from '../dropdown';
+import EventBus, { eventBus as globalEventBus, EVENT_BUS_TYPE as DIR_EVENT_BUS_TYPE } from '../event-bus';
+import Icon from '../icon';
 import { getColumnByKey } from '../sf-table/utils/column';
+import RowUtils from '../sf-table/utils/row';
 
 const TableFilesToolbar = ({ repoID }) => {
   const [selectedRecordIds, setSelectedRecordIds] = useState([]);
@@ -24,6 +27,7 @@ const TableFilesToolbar = ({ repoID }) => {
   const { enableFaceRecognition, enableTags } = useMetadataStatus();
 
   const eventBus = window.sfMetadataContext && window.sfMetadataContext.eventBus;
+  const sfEventBus = EventBus.getInstance();
 
   const records = useMemo(() => selectedRecordIds.map(id => RowUtils.getRecordById(id, metadataRef.current)).filter(Boolean) || [], [selectedRecordIds]);
 
@@ -56,16 +60,16 @@ const TableFilesToolbar = ({ repoID }) => {
   const unSelect = useCallback(() => {
     setSelectedRecordIds([]);
     eventBus && eventBus.dispatch(EVENT_BUS_TYPE.UPDATE_SELECTED_RECORD_IDS, []);
-    eventBus.dispatch(EVENT_BUS_TYPE.SELECT_NONE);
-  }, [eventBus]);
+    sfEventBus.dispatch(EVENT_BUS_TYPE.SELECT_NONE);
+  }, [eventBus, sfEventBus]);
 
   const deleteRecords = useCallback(() => {
     eventBus && eventBus.dispatch(EVENT_BUS_TYPE.DELETE_RECORDS, selectedRecordIds, {
       success_callback: () => {
-        eventBus.dispatch(EVENT_BUS_TYPE.SELECT_NONE);
+        sfEventBus.dispatch(EVENT_BUS_TYPE.SELECT_NONE);
       }
     });
-  }, [eventBus, selectedRecordIds]);
+  }, [eventBus, sfEventBus, selectedRecordIds]);
 
   const toggleMoveDialog = useCallback(() => {
     eventBus && eventBus.dispatch(EVENT_BUS_TYPE.TOGGLE_MOVE_DIALOG, records);
@@ -78,10 +82,6 @@ const TableFilesToolbar = ({ repoID }) => {
   const downloadRecords = useCallback(() => {
     eventBus && eventBus.dispatch(EVENT_BUS_TYPE.DOWNLOAD_RECORDS, selectedRecordIds);
   }, [eventBus, selectedRecordIds]);
-
-  const getMenuList = useCallback(() => {
-    return toolbarMenuOptions;
-  }, [toolbarMenuOptions]);
 
   const onMenuItemClick = useCallback((operation) => {
     switch (operation) {
@@ -97,6 +97,29 @@ const TableFilesToolbar = ({ repoID }) => {
       }
       case TextTranslation.DOWNLOAD.key: {
         eventBus && eventBus.dispatch(EVENT_BUS_TYPE.DOWNLOAD_RECORDS, selectedRecordIds);
+        break;
+      }
+      case TextTranslation.CHAT_WITH_AI.key: {
+        const attachments = records
+          .filter((record) => !checkIsDir(record))
+          .map((record) => {
+            const fileName = getFileNameFromRecord(record);
+            const parentDir = getParentDirFromRecord(record);
+            return new AttachmentObject({
+              repo_id: repoID,
+              path: Utils.joinPath(parentDir, fileName),
+              name: fileName,
+            });
+          });
+
+        setPendingAttachments(attachments, !isMultiple);
+        globalEventBus.dispatch(DIR_EVENT_BUS_TYPE.SWITCH_TO_CHAT_VIEW);
+        if (attachments.length > 0) {
+          EventBus.getInstance().dispatch(DIR_EVENT_BUS_TYPE.CHAT_ATTACH_FILES, {
+            attachments,
+            reset: !isMultiple,
+          });
+        }
         break;
       }
       case TextTranslation.EXTRACT_FILE_DETAIL.key:
@@ -146,7 +169,30 @@ const TableFilesToolbar = ({ repoID }) => {
       default:
         break;
     }
-  }, [eventBus, records, selectedRecordIds, readOnly, repoID]);
+  }, [eventBus, records, selectedRecordIds, readOnly, repoID, isMultiple]);
+
+  const getMenuList = useCallback(() => {
+    return toolbarMenuOptions.map(item => {
+      if (item === 'Divider') return item;
+      if (item.subOpList) {
+        return {
+          ...item,
+          onClick: () => onMenuItemClick(item.key),
+          subOpList: item.subOpList.map((subItem) => {
+            if (subItem === 'Divider') return subItem;
+            return {
+              ...subItem,
+              onClick: () => onMenuItemClick(subItem.key)
+            };
+          })
+        };
+      }
+      return {
+        ...item,
+        onClick: () => onMenuItemClick(item.key)
+      };
+    });
+  }, [toolbarMenuOptions, onMenuItemClick]);
 
   useEffect(() => {
     const unsubscribeSelectedFileIds = eventBus && eventBus.subscribe(EVENT_BUS_TYPE.SELECT_RECORDS, (ids, metadataObj) => {
@@ -158,58 +204,67 @@ const TableFilesToolbar = ({ repoID }) => {
     return () => {
       unsubscribeSelectedFileIds && unsubscribeSelectedFileIds();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const length = selectedRecordIds.length;
 
   return (
     <div className="selected-dirents-toolbar">
-      <OpElement
-        className="cur-view-path-btn px-2"
-        title={gettext('Unselect')}
-        op={unSelect}
-      >
-        <span className="sf3-font-x-01 sf3-font mr-2"></span>
+      <span className="cur-view-path-btn px-2" onClick={unSelect}>
+        <span className="d-flex mr-2" aria-label={gettext('Unselect')} title={gettext('Unselect')}>
+          <Icon symbol="close" />
+        </span>
         <span>{length}{' '}{gettext('selected')}</span>
-      </OpElement>
+      </span>
 
       {!readOnly && (!isMultiple || areRecordsInSameFolder) && (
         <>
           <OpIcon
-            className="cur-view-path-btn sf3-font-move1 sf3-font"
-            title={gettext('Move')}
+            id="move-btn"
+            className="cur-view-path-btn"
+            symbol="move"
+            tooltip={gettext('Move')}
+            aria-label={gettext('Move')}
             op={toggleMoveDialog}
           />
           <OpIcon
-            className="cur-view-path-btn sf3-font-copy1 sf3-font"
-            title={gettext('Copy')}
+            id="copy-btn"
+            className="cur-view-path-btn"
+            symbol="copy"
+            tooltip={gettext('Copy')}
+            aria-label={gettext('Copy')}
             op={toggleCopyDialog}
           />
         </>
       )}
 
       <OpIcon
-        className="cur-view-path-btn sf3-font-download1 sf3-font"
-        title={gettext('Download')}
+        id="download-btn"
+        className="cur-view-path-btn"
+        symbol="download"
+        tooltip={gettext('Download')}
+        aria-label={gettext('Download')}
         op={downloadRecords}
       />
 
       {!readOnly && (
         <OpIcon
-          className="cur-view-path-btn sf3-font-delete1 sf3-font"
-          title={gettext('Delete')}
+          id="delete-btn"
+          className="cur-view-path-btn"
+          symbol="delete"
+          tooltip={gettext('Delete')}
+          aria-label={gettext('Delete')}
           op={deleteRecords}
         />
       )}
 
       {length > 0 && (
-        <ItemDropdownMenu
-          ref={menuRef}
-          item={{}}
-          toggleClass="cur-view-path-btn sf3-font-more sf3-font"
-          onMenuItemClick={onMenuItemClick}
-          getMenuList={getMenuList}
+        <CustomDropdown
+          target="table-files-toolbar-menu"
+          forwardedRef={menuRef}
+          items={getMenuList()}
+          triggerClassName="cur-view-path-btn"
         />
       )}
     </div>

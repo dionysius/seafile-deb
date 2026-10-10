@@ -1,5 +1,6 @@
 # Copyright (c) 2012-2016 Seafile Ltd.
 import os
+import json
 import logging
 import datetime
 from django.db import models
@@ -309,7 +310,7 @@ def update_last_login(sender, user, **kwargs):
 user_logged_in.connect(update_last_login)
 
 class OrgLastActivityTime(models.Model):
-    org_id = models.IntegerField(unique=True, db_index=True)
+    org_id = models.IntegerField(unique=True)
     timestamp = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -403,7 +404,7 @@ class RepoSecretKey(models.Model):
 class UserMonitoredRepos(models.Model):
     """
     """
-    email = models.EmailField(db_index=True)
+    email = models.EmailField()
     repo_id = models.CharField(max_length=36, db_index=True)
     timestamp = models.DateTimeField(default=timezone.now)
 
@@ -624,7 +625,7 @@ class FileTrash(models.Model):
     obj_id = models.CharField(max_length=40)
     obj_name = models.CharField(max_length=255)
     delete_time = models.DateTimeField()
-    repo_id = models.CharField(max_length=36, db_index=True)
+    repo_id = models.CharField(max_length=36)
     commit_id = models.CharField(max_length=40)
     path = models.TextField()
     size = models.BigIntegerField()
@@ -635,7 +636,33 @@ class FileTrash(models.Model):
         db_table = 'FileTrash'
         ordering = ["-delete_time"]
         
+STATUS_ARCHIVED = 'archived'
+STATUS_IN_ARCHIVING = 'in_archiving'
+STATUS_IN_UNARCHIVING = 'in_unarchiving'
+class RepoArchiveStatusManager(models.Manager):     
+    def get_repos_archive_status(self, repo_ids):
+        """Get archive_status for multiple repos."""
+        if not repo_ids:
+            return {}
         
+        qs = self.filter(repo_id__in=repo_ids)
+        return {obj.repo_id: obj.status for obj in qs}
+
+    def get_archive_status(self, repo_id):
+        """Get archive_status for a single repo."""
+        try:
+            obj = self.get(repo_id=repo_id)
+            return obj.status
+        except self.model.DoesNotExist:
+            return None
+
+class RepoArchiveStatus(models.Model):
+    repo_id = models.CharField(max_length=36, db_index=True)
+    status = models.CharField(max_length=32, null=True, blank=True)
+    objects = RepoArchiveStatusManager()
+
+    class Meta:
+        db_table = 'repo_archive_status'
 
 
 ###### signal handler ###############
@@ -658,3 +685,57 @@ def add_group_invite_log(sender, org_id, group_id, users, operator, operation, *
             operation=operation
         ))
     GroupMemberAudit.objects.bulk_create(group_member_audit_list)
+
+
+
+class Webhooks(models.Model):
+    repo_id = models.CharField(max_length=36, db_index=True, null=False)
+    url = models.CharField(max_length=2000, null=False)
+    settings = models.TextField()
+    creator = models.CharField(max_length=255, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_valid = models.IntegerField(default=True)
+
+    class Meta:
+        db_table = 'webhooks'
+
+    @property
+    def hook_settings(self):
+        if not self.settings:
+            return None
+        try:
+            return json.loads(self.settings)
+        except:
+            pass
+        return None
+
+    def to_dict(self):
+        result = {
+            'id': self.pk,
+            'repo_id': self.repo_id,
+            'url': self.url,
+            'creator': self.creator,
+            'created_at': self.created_at,
+            'is_valid': self.is_valid
+        }
+        try:
+            if self.settings:
+                result['settings'] = json.loads(self.settings)
+        except:
+            pass
+        return result
+
+
+class WebhookJobs(models.Model):
+    webhook_id = models.IntegerField(db_index=True, null=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    trigger_at = models.DateTimeField()
+    status = models.IntegerField(db_index=True)
+    url = models.CharField(max_length=2000, null=False)
+    request_headers = models.TextField()
+    request_body = models.TextField()
+    response_status = models.IntegerField()
+    response_body = models.TextField()
+
+    class Meta:
+        db_table = 'webhook_jobs'

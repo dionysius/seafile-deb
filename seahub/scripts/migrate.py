@@ -63,7 +63,7 @@ class Task(object):
         self.obj_id = obj_id
 
 class ObjMigrateWorker(Thread):
-    def __init__(self, orig_store, dest_store, dtype, repo_id = None, decrypt = False):
+    def __init__(self, orig_store, dest_store, dtype, repo_id = None, decrypt = False, repo_objs = None, virt_repo_ids = None):
         Thread.__init__(self)
         self.lock = threading.Lock()
         self.dtype = dtype
@@ -78,6 +78,10 @@ class ObjMigrateWorker(Thread):
         self.fd = None
         self.exception = None
         self.decrypt = decrypt
+        # set repo_objs when list src objects by commit.
+        self.repo_objs = repo_objs
+        # virt_repo_ids is used to migrate virtual repo's commit.
+        self.virt_repo_ids = virt_repo_ids
     
     def run(self):
         try:
@@ -134,6 +138,7 @@ class ObjMigrateWorker(Thread):
         logging.info('Start to migrate [%s] object' % self.dtype)
         self.thread_pool.start()
         self.migrate()
+        self.migrate_virt_repos()
         self.thread_pool.join()
         self.exception = self.thread_pool.exception
         if self.object_list_file_path:
@@ -186,7 +191,10 @@ class ObjMigrateWorker(Thread):
 
     def migrate(self):
         try:
-            obj_list = self.orig_store.list_objs(self.repo_id)
+            if self.repo_objs is None:
+                obj_list = self.orig_store.list_objs(self.repo_id)
+            else:
+                obj_list = self.repo_objs.list_objs(self.dtype, self.repo_id)
         except Exception as e:
             logging.warning('[%s] Failed to list all objects: %s' % (self.dtype, e))
             raise
@@ -203,6 +211,33 @@ class ObjMigrateWorker(Thread):
                 objs = []
 
         self.put_task(objs)
+
+    def migrate_virt_repos(self):
+        if self.dtype != "commits":
+            return
+
+        for virt_repo_id in self.virt_repo_ids:
+            try:
+                if self.repo_objs is None:
+                    obj_list = self.orig_store.list_objs(virt_repo_id)
+                else:
+                    obj_list = self.repo_objs.list_objs(self.dtype, virt_repo_id)
+            except Exception as e:
+                logging.warning('[%s] Failed to list all objects: %s' % (self.dtype, e))
+                raise
+
+            objs = []
+            for obj in obj_list:
+                if self.invalid_obj(obj):
+                    continue
+                repo_id = obj[0]
+                obj_id = obj[1]
+                objs.append(repo_id+"/"+obj_id)
+                if len(objs) >= 1000000:
+                    self.put_task(objs)
+                    objs = []
+
+            self.put_task(objs)
 
     def invalid_obj(self, obj):
         if len(obj) < 2:

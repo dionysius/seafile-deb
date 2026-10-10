@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# (c) 2009-2023 Martin Wendt and contributors; see WsgiDAV https://github.com/m ar10/wsgidav
+# (c) 2009-2024 Martin Wendt and contributors; see WsgiDAV https://github.com/m ar10/wsgidav
 # Original PyFileServer (c) 2005 Ho Chun Wei.
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/mit-license.php
@@ -13,7 +12,6 @@ import logging
 import mimetypes
 import os
 import re
-import socket
 import stat
 import sys
 import time
@@ -25,6 +23,7 @@ from pprint import pformat
 from typing import Iterable, Optional, Tuple
 from urllib.parse import quote
 
+from wsgidav import __version__
 from wsgidav.dav_error import (
     HTTP_BAD_REQUEST,
     HTTP_CREATED,
@@ -45,11 +44,18 @@ __docformat__ = "reStructuredText"
 BASE_LOGGER_NAME = "wsgidav"
 _logger = logging.getLogger(BASE_LOGGER_NAME)
 
-PYTHON_VERSION = "{}.{}.{}".format(
-    sys.version_info[0], sys.version_info[1], sys.version_info[2]
-)
+#: Currently used Python version as string
+PYTHON_VERSION = ".".join([str(s) for s in sys.version_info[:3]])
 
 filesystemencoding = sys.getfilesystemencoding()
+
+#: Project name and version presented to the clients
+#: This is reset to ``"WsgiDAV"`` if ``suppress_version_info`` is set in the
+#: configuration.
+public_wsgidav_info = f"WsgiDAV/{__version__}"
+#: This is reset to ``"Python/3"`` if ``suppress_version_info`` is set in the
+#: configuration.
+public_python_info = f"Python/{PYTHON_VERSION}"
 
 
 class NO_DEFAULT:
@@ -382,7 +388,7 @@ def init_logging(config):
     The base logger is filtered by the `verbose` configuration option.
     Log entries will have a time stamp and thread id.
 
-    **Note:** init_logging() is automatically calle if an application adds
+    **Note:** init_logging() is automatically called if an application adds
     ``"logging": { "enable": true }`` to the configuration.
 
     Module loggers
@@ -554,7 +560,7 @@ def dynamic_import_class(name):
     try:
         module = importlib.import_module(module_name)
     except Exception as e:
-        _logger.error("Dynamic import of {!r} failed: {}".format(name, e))
+        _logger.error(f"Dynamic import of {name!r} failed: {e}")
         raise
     the_class = getattr(module, class_name)
     return the_class
@@ -735,9 +741,7 @@ def to_unicode_safe(s):
     try:
         u = to_str(s, "utf8")
     except ValueError:
-        _logger.error(
-            "to_unicode_safe({!r}) *** UTF-8 failed. Trying ISO-8859-1".format(s)
-        )
+        _logger.error(f"to_unicode_safe({s!r}) *** UTF-8 failed. Trying ISO-8859-1")
         u = to_str(s, "ISO-8859-1")
     return u
 
@@ -764,13 +768,13 @@ def safe_re_encode(s, encoding_to, *, errors="backslashreplace"):
 def string_repr(s):
     """Return a string as hex dump."""
     if is_bytes(s):
-        res = "{!r}: ".format(s)
+        res = f"{s!r}: "
         for b in s:
             if type(b) is str:  # Py2
                 b = ord(b)
             res += "%02x " % b
         return res
-    return "{}".format(s)
+    return f"{s}"
 
 
 def get_file_extension(path):
@@ -810,11 +814,11 @@ def byte_number_string(
         # locale.setlocale(locale.LC_ALL, "")
         # # TODO: make precision configurable
         # snum = locale.format("%d", number, thousandsSep)
-        snum = "{:,d}".format(number)
+        snum = f"{number:,d}"
     else:
         snum = str(number)
 
-    return "{}{}{}".format(snum, magsuffix, bytesuffix)
+    return f"{snum}{magsuffix}{bytesuffix}"
 
 
 def fix_path(path, root, *, expand_vars=True, must_exist=True, allow_none=True):
@@ -920,9 +924,7 @@ def read_and_discard_input(environ):
                 n = 1
             body = wsgi_input.read(n)
             _logger.debug(
-                "Reading {} bytes from potentially unread httpserver.LimitedLengthFile: {!r}...".format(
-                    n, body[:50]
-                )
+                f"Reading {n} bytes from potentially unread httpserver.LimitedLengthFile: {body[:50]!r}..."
             )
 
     elif hasattr(wsgi_input, "_sock") and hasattr(wsgi_input._sock, "settimeout"):
@@ -940,17 +942,15 @@ def read_and_discard_input(environ):
                     n = 1
                 body = wsgi_input.read(n)
                 _logger.debug(
-                    "Reading {} bytes from potentially unread POST body: {!r}...".format(
-                        n, body[:50]
-                    )
+                    f"Reading {n} bytes from potentially unread POST body: {body[:50]!r}..."
                 )
-            except socket.error as se:
+            except OSError as se:
                 # se(10035, 'The socket operation could not complete without blocking')
-                _logger.error("-> read {} bytes failed: {}".format(n, se))
+                _logger.error(f"-> read {n} bytes failed: {se}")
             # Restore socket settings
             sock.settimeout(timeout)
         except Exception:
-            _logger.error("--> wsgi_input.read(): {}".format(sys.exc_info()))
+            _logger.error(f"--> wsgi_input.read(): {sys.exc_info()}")
 
 
 def fail(
@@ -972,7 +972,7 @@ def fail(
             err_condition=err_condition,
             add_headers=add_headers,
         )
-    _logger.debug("Raising DAVError {}".format(e.get_user_info()))
+    _logger.debug(f"Raising DAVError {e.get_user_info()}")
     raise e
 
 
@@ -1164,7 +1164,7 @@ def parse_xml_body(environ, *, allow_empty=False):
             if content_length < 0:
                 raise DAVError(HTTP_BAD_REQUEST, "Negative content-length.")
         except ValueError:
-            raise DAVError(HTTP_BAD_REQUEST, "content-length is not numeric.")
+            raise DAVError(HTTP_BAD_REQUEST, "content-length is not numeric.") from None
 
         if content_length == 0:
             requestbody = ""
@@ -1181,7 +1181,9 @@ def parse_xml_body(environ, *, allow_empty=False):
     try:
         rootEL = etree.fromstring(requestbody)
     except Exception as e:
-        raise DAVError(HTTP_BAD_REQUEST, "Invalid XML format.", src_exception=e)
+        raise DAVError(
+            HTTP_BAD_REQUEST, "Invalid XML format.", src_exception=e
+        ) from None
 
     # If dumps of the body are desired, then this is the place to do it pretty:
     if environ.get("wsgidav.dump_request_body"):
@@ -1327,7 +1329,7 @@ def add_property_response(multistatus_elem, href, prop_list):
         ns, _ = split_namespace(name)
         if ns != "DAV:" and ns not in nsDict and ns != "":
             nsDict[ns] = True
-            nsMap["NS{}".format(nsCount)] = ns
+            nsMap[f"NS{nsCount}"] = ns
             nsCount += 1
 
         propDict.setdefault(status, []).append((name, value))
@@ -1357,7 +1359,7 @@ def add_property_response(multistatus_elem, href, prop_list):
                 #                etree.SubElement(propEL, name).text = value
                 etree.SubElement(propEL, name).text = to_unicode_safe(value)
         # <status>
-        etree.SubElement(propstatEL, "{DAV:}status").text = "HTTP/1.1 {}".format(status)
+        etree.SubElement(propstatEL, "{DAV:}status").text = f"HTTP/1.1 {status}"
 
 
 # ========================================================================
@@ -1442,17 +1444,11 @@ def get_file_etag(file_path):
 
     fstat = os.stat(unicode_file_path)
     if sys.platform == "win32":
-        etag = "{}-{}-{}".format(
-            md5(file_path).hexdigest(),
-            fstat[stat.ST_MTIME],
-            fstat[stat.ST_SIZE],
+        etag = (
+            f"{md5(file_path).hexdigest()}-{fstat[stat.ST_MTIME]}-{fstat[stat.ST_SIZE]}"
         )
     else:
-        etag = "{}-{}-{}".format(
-            fstat[stat.ST_INO],
-            fstat[stat.ST_MTIME],
-            fstat[stat.ST_SIZE],
-        )
+        etag = f"{fstat[stat.ST_INO]}-{fstat[stat.ST_MTIME]}-{fstat[stat.ST_SIZE]}"
     return etag
 
 
@@ -1713,14 +1709,12 @@ def parse_if_header_dict(environ):
 
     environ["wsgidav.conditions.if"] = ifDict
     environ["wsgidav.ifLockTokenList"] = ifLockList
-    _logger.debug("parse_if_header_dict\n{}".format(pformat(ifDict)))
+    _logger.debug(f"parse_if_header_dict\n{pformat(ifDict)}")
     return
 
 
 def test_if_header_dict(dav_res, if_dict, fullurl, locktoken_list, entity_tag):
-    _logger.debug(
-        "test_if_header_dict({}, {}, {})".format(fullurl, locktoken_list, entity_tag)
-    )
+    _logger.debug(f"test_if_header_dict({fullurl}, {locktoken_list}, {entity_tag})")
 
     if fullurl in if_dict:
         listTest = if_dict[fullurl]
@@ -1779,7 +1773,7 @@ def guess_mime_type(url):
     if not mimetype:
         ext = os.path.splitext(url)[1]
         mimetype = _MIME_TYPES.get(ext)
-        _logger.debug("mimetype({}): {}".format(url, mimetype))
+        _logger.debug(f"mimetype({url}): {mimetype}")
     if not mimetype:
         mimetype = "application/octet-stream"
     return mimetype

@@ -74,7 +74,7 @@ export const getGroupsRows = (
       });
       groupContainer.first_row_id = first_row_id;
       groupContainer.count = groupCount;
-      groupContainer.height = (isExpanded ? subgroupsHeight : 0) + GROUP_HEADER_HEIGHT;
+      groupContainer.height = (isExpanded ? subgroupsHeight + GROUP_VIEW_OFFSET : 0) + GROUP_HEADER_HEIGHT;
       groupRows.push(groupContainer);
       groupRows.push(...flattenSubgroups);
     } else if (Array.isArray(row_ids) && row_ids.length > 0) {
@@ -82,7 +82,7 @@ export const getGroupsRows = (
       const lastRowIndex = rowsLength - 1;
       const isRowVisible = isParentGroupVisible && isExpanded;
       const isBtnInsertRowVisible = isRowVisible && includeInsertRow;
-      const rowsHeight = isRowVisible ? rowsLength * rowHeight + 1 : 0;
+      const rowsHeight = isRowVisible ? rowsLength * rowHeight : 0;
       const btnInsertRowHeight = isBtnInsertRowVisible ? INSERT_ROW_HEIGHT : 0;
       let rows = row_ids.map((rowId, index) => {
         return {
@@ -91,7 +91,7 @@ export const getGroupsRows = (
           rowIdx: index,
           isLastRow: index === lastRowIndex,
           visible: isRowVisible,
-          height: index === lastRowIndex ? rowHeight + 1 : rowHeight,
+          height: index === lastRowIndex ? rowHeight : rowHeight,
           level: currentLevel,
           rowsLength,
           left,
@@ -146,6 +146,9 @@ export const setupGroupsRows = (groupRows, maxLevel) => {
       const { groupPath: nextGroupPath, level: nextGroupLevel } = nextFlattenGroup;
       if (nextGroupPath[nextGroupPath.length - 1] > 0) {
         top += GROUP_VIEW_OFFSET;
+      }
+      if (nextGroupLevel < pervVisibleGroupLevel) {
+        top += (pervVisibleGroupLevel - nextGroupLevel) * GROUP_VIEW_OFFSET;
       }
       if (nextGroupLevel > pervVisibleGroupLevel) {
         top += (nextGroupLevel - pervVisibleGroupLevel) * GROUP_VIEW_OFFSET;

@@ -1,0 +1,7 @@
+.metadata-tree-view-tag .tree-node-icon {
+  width: 14px;
+  height: 26px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -1,12 +1,13 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import { Button, Modal, ModalBody, ModalFooter } from 'reactstrap';
 import dayjs from 'dayjs';
-import { gettext, siteRoot, LARGE_DIALOG_STYLE } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext, siteRoot, LARGE_DIALOG_STYLE } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../icon';
 import toaster from '../toast';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
 
 const propTypes = {
   repoID: PropTypes.string.isRequired,
@@ -175,10 +176,10 @@ class TaggedFile extends React.Component {
         }
         <td>
           {!shareLinkToken &&
-            <a href="#" role="button" aria-label={gettext('Delete')} title={gettext('Delete')} className={`action-icon sf2-icon-x3${this.state.active ? '' : ' invisible'}`} onClick={this.deleteFile}></a>
+            <a href="#" role="button" aria-label={gettext('Delete')} title={gettext('Delete')} className={`action-icon${this.state.active ? '' : ' invisible'}`} onClick={this.deleteFile}><Icon symbol="close" /></a>
           }
           {(shareLinkToken && enableFileDownload) &&
-            <a className={`action-icon sf2-icon-download${this.state.active ? '' : ' invisible'}`} href={`${href}&dl=1`} title={gettext('Download')} aria-label={gettext('Download')}></a>
+            <a className={`action-icon${this.state.active ? '' : ' invisible'}`} href={`${href}&dl=1`} title={gettext('Download')} aria-label={gettext('Download')}><Icon symbol="download" /></a>
           }
         </td>
       </tr>

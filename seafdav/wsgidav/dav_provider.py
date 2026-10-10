@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# (c) 2009-2023 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
+# (c) 2009-2024 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
 # Original PyFileServer (c) 2005 Ho Chun Wei.
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/mit-license.php
@@ -84,7 +83,6 @@ import sys
 import time
 import traceback
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import Optional
 from urllib.parse import quote, unquote
 
@@ -220,7 +218,7 @@ class _DAVResource(ABC):
             return None
         raise NotImplementedError
 
-    def get_creation_date(self) -> Optional[datetime]:
+    def get_creation_date(self) -> Optional[float]:
         """Records the time and date the resource was created.
 
         The creationdate property should be defined on all DAV compliant
@@ -269,7 +267,7 @@ class _DAVResource(ABC):
         elif os.extsep in self.name:
             ext = self.name.split(os.extsep)[-1].upper()
             if len(ext) < 5:
-                return {"type": "{}-File".format(ext)}
+                return {"type": f"{ext}-File"}
         return {"type": "File"}
 
     def get_etag(self):
@@ -312,6 +310,9 @@ class _DAVResource(ABC):
         This method SHOULD be implemented, especially by non-collections.
         """
         return None
+
+    def is_link(self):
+        return False
 
     def set_last_modified(self, dest_path, time_stamp, *, dry_run):
         """Set last modified time for destPath to timeStamp on epoch-format"""
@@ -388,7 +389,7 @@ class _DAVResource(ABC):
         return quote(self.provider.share_path + self.get_preferred_path())
 
     #    def getRefKey(self):
-    #        """Return an unambigous identifier string for a resource.
+    #        """Return an unambiguous identifier string for a resource.
     #
     #        Since it is always unique for one resource, <refKey> is used as key for
     #        the lock- and property storage dictionaries.
@@ -818,16 +819,14 @@ class _DAVResource(ABC):
                     )
                 except Exception:
                     _logger.warning(
-                        "Provider does not support set_last_modified on {}.".format(
-                            self.path
-                        )
+                        f"Provider does not support set_last_modified on {self.path}."
                     )
 
             # Unsupported or not allowed
             raise DAVError(HTTP_FORBIDDEN)
 
         # Handle MS Windows Win32LastModifiedTime, if enabled.
-        # Note that the WebDAV client in Win7 and earler has issues and can't be used
+        # Note that the WebDAV client in Win7 and earlier has issues and can't be used
         # with this so we ignore older clients. Others pre-Win10 should be tested.
         if name.startswith("{urn:schemas-microsoft-com:}"):
             agent = self.environ.get("HTTP_USER_AGENT", "None")
@@ -1097,7 +1096,7 @@ class _DAVResource(ABC):
           - Live properties should be moved too (e.g. creationdate)
           - Non-collections must be moved, not copied
           - For collections, this function behaves like in copy-mode:
-            detination collection must be created and properties are copied.
+            destination collection must be created and properties are copied.
             Members are NOT created.
             The source collection MUST NOT be removed.
 

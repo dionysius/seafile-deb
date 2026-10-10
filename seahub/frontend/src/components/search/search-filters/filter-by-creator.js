@@ -1,15 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import isHotkey from 'is-hotkey';
-import { gettext } from '../../../utils/constants';
-import { Utils } from '../../../utils/utils';
-import UserItem from './user-item';
-import { seafileAPI } from '../../../utils/seafile-api';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { DROPDOWN_MENU_OFFSET_DEFAULT } from '@/components/dropdown/utils';
+import { SEARCH_FILTERS_KEY } from '@/constants';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../../icon';
 import ModalPortal from '../../modal-portal';
 import toaster from '../../toast';
-import { SEARCH_FILTERS_KEY } from '../../../constants';
+import UserItem from './user-item';
 
 import './filter-by-creator.css';
 
@@ -86,7 +88,7 @@ const FilterByCreator = ({ creatorList, onChange }) => {
     };
 
     getUsers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchValue]);
 
   return (
@@ -104,10 +106,10 @@ const FilterByCreator = ({ creatorList, onChange }) => {
           aria-expanded={isOpen}
         >
           <span className="filter-label" title={gettext('Creator')}>{gettext('Creator')}</span>
-          <i className="sf3-font sf3-font-down sf3-font pl-1"></i>
+          <Icon symbol="down" className="w-3 h-3 ml-1" />
         </DropdownToggle>
         <ModalPortal>
-          <DropdownMenu className="search-filter-menu filter-by-creator-menu">
+          <DropdownMenu className="search-filter-menu filter-by-creator-menu" modifiers={[DROPDOWN_MENU_OFFSET_DEFAULT]}>
             <div className="selected-user-item-container">
               {selectedOptions.map((option) => (
                 <UserItem
@@ -143,7 +145,7 @@ const FilterByCreator = ({ creatorList, onChange }) => {
                 toggle={false}
               >
                 {isOpen && <UserItem user={option} />}
-                {selectedOptions.map(item => item.email).includes(option.email) && <i className="dropdown-item-tick sf2-icon-tick"></i>}
+                {selectedOptions.map(item => item.email).includes(option.email) && <span className="dropdown-item-tick"><Icon symbol="check" /></span>}
               </DropdownItem>
             ))}
           </DropdownMenu>

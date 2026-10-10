@@ -1,8 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, Modal, Input, ModalBody, ModalFooter, Label, Form, FormGroup } from 'reactstrap';
-import { gettext } from '../../utils/constants';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
 
 const propTypes = {
   toggle: PropTypes.func.isRequired,
@@ -77,6 +77,7 @@ class OrgAdminInviteUserDialog extends React.Component {
           {this.state.errMessage && <Label className="err-message">{this.state.errMessage}</Label>}
         </ModalBody>
         <ModalFooter>
+          <Button color="secondary" onClick={this.toggle}>{gettext('Cancel')}</Button>
           <Button color="primary" disabled={this.state.isAddingUser} onClick={this.handleSubmit} className={this.state.isAddingUser ? 'btn-loading' : ''}>{gettext('Submit')}</Button>
         </ModalFooter>
       </Modal>

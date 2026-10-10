@@ -1,17 +1,18 @@
 import React, { Component, Fragment } from 'react';
-import PropTypes from 'prop-types';
-import dayjs from 'dayjs';
 import classnames from 'classnames';
+import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { orgAdminAPI } from '../../../utils/org-admin-api';
-import { orgID, gettext } from '../../../utils/constants';
-import toaster from '../../../components/toast';
-import { Utils } from '../../../utils/utils';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
-import SysAdminUnlinkDevice from '../../../components/dialog/sysadmin-dialog/sysadmin-unlink-device-dialog';
-import { formatWithTimezone } from '../../../utils/time';
+import PropTypes from 'prop-types';
+import { orgAdminAPI } from '@/api/org-admin-api';
+import SysAdminUnlinkDevice from '@/components/dialog/sysadmin-dialog/sysadmin-unlink-device-dialog';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import OpIcon from '@/components/op-icon';
+import Paginator from '@/components/paginator';
+import toaster from '@/components/toast';
+import { orgID, gettext } from '@/utils/constants';
+import { formatWithTimezone } from '@/utils/time';
+import { Utils } from '@/utils/utils';
 
 dayjs.extend(relativeTime);
 
@@ -37,7 +38,7 @@ class Content extends Component {
       return <p className="error text-center">{errorMsg}</p>;
     } else {
       const emptyTip = (
-        <EmptyTip text={gettext('No connected devices')}/>
+        <EmptyTip text={gettext('No connected devices')} />
       );
       const table = (
         <Fragment>
@@ -160,12 +161,12 @@ class Item extends Component {
             <span title={formatWithTimezone(item.last_accessed)}>{dayjs(item.last_accessed).fromNow()}</span>
           </td>
           <td>
-            <i
-              className={`sf3-font-delete1 sf3-font op-icon ${isOpIconShown ? '' : 'invisible'}`}
+            <OpIcon
+              className={`op-icon ${isOpIconShown ? '' : 'invisible'}`}
+              symbol="delete"
               title={gettext('Unlink')}
-              onClick={this.handleUnlink}
-            >
-            </i>
+              op={this.handleUnlink}
+            />
           </td>
         </tr>
         {isUnlinkDeviceDialogOpen &&

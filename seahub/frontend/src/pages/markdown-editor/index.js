@@ -4,20 +4,20 @@ import {
   EventBus,
   MarkdownEditor as SeafileMarkdownEditor,
 } from '@seafile/seafile-editor';
-import { Utils } from '../../utils/utils';
-import { seafileAPI } from '../../utils/seafile-api';
-import { gettext, mediaUrl } from '../../utils/constants';
-import toaster from '../../components/toast';
-import ShareDialog from '../../components/dialog/share-dialog';
-import InsertFileDialog from '../../components/dialog/insert-file-dialog';
-import HeaderToolbar from './header-toolbar';
-import editorApi from './editor-api';
+import CryptoJS from 'crypto-js';
+import URL from 'url-parse';
+import { seafileAPI } from '@/api/seafile-api';
+import InsertFileDialog from '@/components/dialog/insert-file-dialog';
+import ShareDialog from '@/components/dialog/share-dialog';
+import toaster from '@/components/toast';
+import { gettext, mediaUrl } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import WebSocketClient from '@/utils/websocket-service';
 import DetailListView from './detail-list-view';
+import editorApi from './editor-api';
+import HeaderToolbar from './header-toolbar';
 
 import './css/markdown-editor.css';
-
-const CryptoJS = require('crypto-js');
-const URL = require('url-parse');
 
 const { repoID, filePath, fileName, isLocked, lockedByMe, filePerm } = window.app.pageOptions;
 const { siteRoot, serviceUrl } = window.app.config;
@@ -57,6 +57,7 @@ class MarkdownEditor extends React.Component {
       isLocked: isLocked,
       lockedByMe: lockedByMe,
       participants: [],
+      isCommentUpdated: false,
     };
 
     this.timer = null;
@@ -64,6 +65,7 @@ class MarkdownEditor extends React.Component {
     this.editorRef = React.createRef();
     this.isParticipant = false;
     this.editorSelection = null;
+    this.socketManager = new WebSocketClient(this.onMessageCallback, repoID);
   }
 
   toggleLockFile = () => {
@@ -96,6 +98,15 @@ class MarkdownEditor extends React.Component {
     });
   }
 
+  onMessageCallback = (data) => {
+    const { type, content } = data;
+    if (type === 'comment-update') {
+      const { repo_id, file_uuid } = content;
+      if (repoID === repo_id && window.app.pageOptions.fileUuid === file_uuid) {
+        this.setState({ isCommentUpdated: true });
+      }
+    }
+  };
 
   receivePresenceData(data) {
     let collabUsers = [];
@@ -405,6 +416,8 @@ class MarkdownEditor extends React.Component {
           isLocked={this.state.isLocked}
           lockedByMe={this.state.lockedByMe}
           toggleLockFile={this.toggleLockFile}
+          participants={this.state.participants}
+          isCommentUpdated={this.state.isCommentUpdated}
         />
         <div className={`sf-md-viewer-content ${isLocked ? 'locked' : ''}`}>
           <SeafileMarkdownEditor
@@ -424,23 +437,23 @@ class MarkdownEditor extends React.Component {
         {this.state.showMarkdownEditorDialog && (
           <>
             {this.state.showInsertFileDialog &&
-              <InsertFileDialog
-                repoID={repoID}
-                filePath={filePath}
-                toggleCancel={this.toggleCancel}
-                getInsertLink={this.getInsertLink}
-              />
+            <InsertFileDialog
+              repoID={repoID}
+              filePath={filePath}
+              toggleCancel={this.toggleCancel}
+              getInsertLink={this.getInsertLink}
+            />
             }
             {this.state.showShareLinkDialog &&
-              <ShareDialog
-                itemType="file"
-                itemName={this.state.fileInfo.name}
-                itemPath={filePath}
-                repoID={repoID}
-                toggleDialog={this.toggleCancel}
-                isGroupOwnedRepo={false}
-                repoEncrypted={false}
-              />
+            <ShareDialog
+              itemType="file"
+              itemName={this.state.fileInfo.name}
+              itemPath={filePath}
+              repoID={repoID}
+              toggleDialog={this.toggleCancel}
+              isGroupOwnedRepo={false}
+              repoEncrypted={false}
+            />
             }
           </>
         )}

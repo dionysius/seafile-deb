@@ -1,11 +1,12 @@
 from django.urls import re_path
-from .apis import SeadocAccessToken, SeadocUploadLink, SeadocDownloadLink, SeadocImageDownloadLink, SeadocOriginFileContent, SeadocUploadFile, \
+from .apis import SeadocAccessToken, SeadocUploadLink, SeadocDownloadLink, SeadocContent, SeadocImageDownloadLink, SeadocOriginFileContent, SeadocUploadFile, \
     SeadocUploadImage, SeadocDownloadImage, SeadocAsyncCopyImages, SeadocQueryCopyMoveProgressView, SeadocCopyHistoryFile, SeadocHistory, \
     SeadocCommentsView, SeadocCommentView, SeadocStartRevise, SeadocPublishRevision, SeadocRevisionsCount, SeadocRevisions, \
     SeadocCommentRepliesView, SeadocCommentReplyView, SeadocFileView, SeadocFileUUIDView, SeadocDirView, SdocRevisionBaseVersionContent, SeadocRevisionView, \
     SdocRepoTagsView, SdocRepoTagView, SdocRepoFileTagsView, SdocRepoFileTagView, SeadocNotificationsView, SeadocNotificationView, \
     SeadocFilesInfoView, DeleteSeadocOtherRevision, SeadocPublishedRevisionContent, SdocParticipantsView, SdocParticipantView, SdocRelatedUsers, SeadocEditorCallBack, \
-    SeadocDailyHistoryDetail, SeadocSearchFilenameView, SeadocExportView, SdocImportView, SeadocUploadVideo, SeadocDownloadVideo, SeadocAccessTokenByFileUuid, SeadocSearchMetadataRecords
+    SeadocDailyHistoryDetail, SeadocSearchFilenameView, SeadocExportView, SdocImportView, SeadocUploadVideo, SeadocDownloadVideo, SeadocAccessTokenByFileUuid, SeadocSearchMetadataRecords, \
+    SdocRevisionContent, SdocSmartLinkContent
 
 # api/v2.1/seadoc/
 urlpatterns = [
@@ -14,6 +15,7 @@ urlpatterns = [
     re_path(r'^upload-file/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocUploadFile.as_view(), name='seadoc_upload_file'),
     re_path(r'^upload-link/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocUploadLink.as_view(), name='seadoc_upload_link'),
     re_path(r'^download-link/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocDownloadLink.as_view(), name='seadoc_download_link'),
+    re_path(r'^content/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocContent.as_view(), name='seadoc_content'),
     re_path(r'^image-download-link/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocImageDownloadLink.as_view(), name='seadoc_image_download_link'),
     re_path(r'^upload-image/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocUploadImage.as_view(), name='seadoc_upload_image'),
     re_path(r'^upload-video/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocUploadVideo.as_view(), name='seadoc_upload_video'),
@@ -38,8 +40,10 @@ urlpatterns = [
     re_path(r'^revisions/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocRevisions.as_view(), name='seadoc_revisions'),
     re_path(r'^revision/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocRevisionView.as_view(), name='seadoc_revision'),
     re_path(r'^revision/base-version-content/(?P<file_uuid>[-0-9a-f]{36})/$', SdocRevisionBaseVersionContent.as_view(), name='sdoc_revision_base_version_content'),
+    re_path(r'^revision/content/(?P<repo_id>[-0-9a-f]{36})/(?P<revision_id>\d+)/$', SdocRevisionContent.as_view(), name='sdoc_revision_content'),
     re_path(r'^revision/origin-file-content/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocOriginFileContent.as_view(), name='sdoc_revision_origin_file_content'),
     re_path(r'^revision/published-content/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocPublishedRevisionContent.as_view(), name='sdoc_published_revision_content'),
+    re_path(r'^smart-link/content/(?P<file_uuid>[-0-9a-f]{36})/$', SdocSmartLinkContent.as_view(), name='sdoc_smart_link_content'),
     re_path(r'^delete-revision/(?P<file_uuid>[-0-9a-f]{36})/(?P<revision_id>\d+)/$', DeleteSeadocOtherRevision.as_view(), name='sdoc_delete_other_revision'),
     re_path(r'^file/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocFileView.as_view(), name='seadoc_file_view'),
     re_path(r'^file-uuid/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocFileUUIDView.as_view(), name='seadoc_file_uuid_view'),
@@ -54,5 +58,5 @@ urlpatterns = [
     re_path(r'^search-filename/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocSearchFilenameView.as_view(), name='seadoc_search_filename'),
     re_path(r'^export/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocExportView.as_view(), name='seadoc_export'),
     re_path(r'^import/(?P<repo_id>[-0-9a-f]{36})/$', SdocImportView.as_view(), name='seadoc_import'),
-    re_path(r'^search-metadata-records/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocSearchMetadataRecords.as_view(), name='seadoc_search_meatadata_records'),
+    re_path(r'^search-metadata-records/(?P<file_uuid>[-0-9a-f]{36})/$', SeadocSearchMetadataRecords.as_view(), name='seadoc_search_metadata_records'),
 ]

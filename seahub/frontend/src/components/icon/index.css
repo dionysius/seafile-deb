@@ -1,0 +1,24 @@
+.seafile-multicolor-icon {
+  width: 1em;
+  height: 1em;
+  color: var(--bs-icon-color);
+  fill: currentColor;
+  overflow: hidden;
+}
+
+.input-icon-addon .seafile-multicolor-icon-search {
+  width: 16px;
+  height: 16px;
+  color: #868e96 !important;
+}
+
+.seafile-multicolor-icon-monitor {
+  font-size: 14px;
+  fill: #444;
+  color: #bdbdbd;
+}
+
+.sf-metadata-icon,
+.sf-table-icon {
+  vertical-align: -0.15em;
+}

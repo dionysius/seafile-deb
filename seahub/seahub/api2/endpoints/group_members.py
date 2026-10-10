@@ -74,6 +74,7 @@ class GroupMembers(APIView):
             return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
 
         group_members = []
+        # true or false, if only return admin members of group. default false return all members
         is_admin = request.GET.get('is_admin', 'false')
         for m in members:
             # only return group admins

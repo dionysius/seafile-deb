@@ -1,27 +1,34 @@
 import React, { PureComponent } from 'react';
-import PropTypes from 'prop-types';
-import deepCopy from 'deep-copy';
+import { Button } from 'reactstrap';
+import { EventBus, EXTERNAL_EVENT } from '@seafile/seafile-sdoc-editor';
 import classNames from 'classnames';
-import { wikiId, wikiPermission, gettext } from '../../utils/constants';
-import toaster from '../../components/toast';
-import Loading from '../../components/loading';
+import deepCopy from 'deep-copy';
+import PropTypes from 'prop-types';
+import { userAPI } from '@/api/user-api';
+import wikiAPI from '@/api/wiki-api';
+import ImportWikiPageDialog from '@/components/dialog/import-wiki-page-dialog';
+import Icon from '@/components/icon';
+import Loading from '@/components/loading';
+import PublishedWikiEntrance from '@/components/published-wiki-entrance';
+import Wiki2Search from '@/components/search/wiki2-search';
+import toaster from '@/components/toast';
+import Tooltip from '@/components/tooltip';
+import { wikiId, wikiPermission, gettext, isPro, canPublishWiki } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import CommonUndoTool from './common-undo-tool';
+import { DEFAULT_PAGE_NAME } from './constant';
+import Page from './models/page';
+import PublishWikiPopover from './publish-wiki-popover';
+import { isObjectNotEmpty, isPageInSubtree } from './utils';
+import WikiExternalOperations from './wiki-external-operations';
 import WikiNav from './wiki-nav/index';
 import PageUtils from './wiki-nav/page-utils';
-import Page from './models/page';
-import { isObjectNotEmpty, isPageInSubtree } from './utils';
-import wikiAPI from '../../utils/wiki-api';
-import { Utils } from '../../utils/utils';
-import WikiExternalOperations from './wiki-external-operations';
+import WikiSettingsDialog from './wiki-settings';
 import WikiTrashDialog from './wiki-trash-dialog';
-import { DEFAULT_PAGE_NAME } from './constant';
-import Wiki2Search from '../../components/search/wiki2-search';
-import CommonUndoTool from '../../components/common/common-undo-tool';
-import PublishedWikiExtrance from '../../components/published-wiki-entrance';
-import { userAPI } from '../../utils/user-api';
-import ImportWikiPageDialog from '../../components/dialog/import-wiki-page-dialog';
+
 import './side-panel.css';
 
-const { repoName, publishUrl } = window.wiki.config;
+const { repoName, publishUrl, isAdmin } = window.wiki.config;
 
 const propTypes = {
   isSidePanelOpen: PropTypes.bool.isRequired,
@@ -31,7 +38,7 @@ const propTypes = {
   getWikiConfig: PropTypes.func.isRequired,
   setCurrentPage: PropTypes.func.isRequired,
   getCurrentPageId: PropTypes.func.isRequired,
-  onUpdatePage: PropTypes.func.isRequired,
+  onUpdatePageName: PropTypes.func.isRequired,
   style: PropTypes.object.isRequired,
 };
 
@@ -41,8 +48,30 @@ class SidePanel extends PureComponent {
     super(props);
     this.state = {
       isShowTrashDialog: false,
-      customUrl: publishUrl
+      customUrl: publishUrl,
+      enableServerRender: false,
+      canManagePublish: false,
+      isShowPublishPopover: false,
+      isShowSettingDialog: false,
     };
+  }
+
+  componentDidMount() {
+    const eventBus = EventBus.getInstance();
+    this.unsubscribeLibraryToggle = eventBus.subscribe(EXTERNAL_EVENT.ADD_WIKI_LIBRARY_TOGGLE, this.toggleSettingDialog);
+    if (isAdmin && canPublishWiki) {
+      wikiAPI.getPublishWikiLink(wikiId).then((res) => {
+        const { enable_server_render } = res.data;
+        this.setState({
+          canManagePublish: true,
+          enableServerRender: !!enable_server_render,
+        });
+      }).catch(() => {});
+    }
+  }
+
+  componentWillUnmount() {
+    this.unsubscribeLibraryToggle();
   }
 
   onDeletePage = (pageId) => {
@@ -198,36 +227,57 @@ class SidePanel extends PureComponent {
     this.setState({ isShowTrashDialog: !this.state.isShowTrashDialog });
   };
 
+  toggleSettingDialog = () => {
+    this.setState({ isShowSettingDialog: !this.state.isShowSettingDialog });
+  };
+
   toggleImportPageDialog = () => {
     this.setState({ isShowImportPageDialog: !this.state.isShowImportPageDialog });
   };
 
-  renderWikiNav = () => {
-    const { config, onUpdatePage } = this.props;
-    const { pages, navigation } = config;
-    return (
-      <div className="wiki2-pages-container">
-        {isObjectNotEmpty(config) &&
-          <WikiNav
-            navigation={navigation}
-            pages={pages}
-            onDeletePage={this.onDeletePage}
-            onUpdatePage={onUpdatePage}
-            setCurrentPage={this.props.setCurrentPage}
-            onMovePage={this.movePage}
-            updateWikiConfig={this.props.updateWikiConfig}
-            onAddNewPage={this.onAddNewPage}
-            duplicatePage={this.duplicatePage}
-            importPage={this.importPage}
-            getCurrentPageId={this.props.getCurrentPageId}
-            addPageInside={this.addPageInside}
-            toggleTrashDialog={this.toggleTrashDialog}
-            addSiblingPage={this.addSiblingPage}
-            handleAddNewPage={this.handleAddNewPage}
-          />
-        }
-      </div>
-    );
+  togglePublishPopover = () => {
+    this.setState((prevState) => ({
+      isShowPublishPopover: !prevState.isShowPublishPopover,
+    }));
+  };
+
+  hidePublishPopover = (event) => {
+    const target = event && event.target;
+    if (target && typeof target.closest === 'function' && target.closest('#wiki2-publish')) {
+      return;
+    }
+    this.setState({ isShowPublishPopover: false });
+  };
+
+  publishWiki = (url, enableServerRender = false) => {
+    const urlIndex = url.indexOf('/publish/');
+    const publishUrl = url.substring(urlIndex + '/publish/'.length);
+    wikiAPI.publishWiki(wikiId, publishUrl, enableServerRender).then((res) => {
+      const { publish_url, enable_server_render } = res.data;
+      this.setState({
+        customUrl: publish_url,
+        enableServerRender: !!enable_server_render,
+        isShowPublishPopover: false,
+      });
+      toaster.success(gettext('Wiki published'));
+    }).catch((error) => {
+      const errorMsg = Utils.getErrorMsg(error);
+      toaster.danger(errorMsg);
+    });
+  };
+
+  unpublishWiki = () => {
+    wikiAPI.deletePublishWikiLink(wikiId).then(() => {
+      this.setState({
+        customUrl: '',
+        enableServerRender: false,
+        isShowPublishPopover: false,
+      });
+      toaster.success(gettext('Wiki unpublished'));
+    }).catch((error) => {
+      const errorMsg = Utils.getErrorMsg(error);
+      toaster.danger(errorMsg);
+    });
   };
 
   // default page name
@@ -261,17 +311,20 @@ class SidePanel extends PureComponent {
     wikiAPI.createWiki2Page(wikiId, pageName, currentPageId, insert_position).then(res => {
       this.isAddingPage = false;
       const { page_id, obj_name, doc_uuid, parent_dir, page_name } = res.data.file_info;
-      this.addPageInside({
-        parentPageId: currentPageId,
-        page_id: page_id,
-        name: page_name,
-        icon: '',
-        path: parent_dir === '/' ? `/${obj_name}` : `${parent_dir}/${obj_name}`,
-        docUuid: doc_uuid,
-        successCallback: () => {},
-        errorCallback: () => {},
-        jumpToNewPage,
-      });
+
+      const name = page_name;
+      const icon = '';
+      const path = parent_dir === '/' ? `/${obj_name}` : `${parent_dir}/${obj_name}`;
+      const docUuid = doc_uuid;
+      const parentPageId = currentPageId;
+      const successCallback = () => {};
+      const errorCallback = () => {};
+      const newPage = new Page({ id: page_id, name, icon, path, docUuid });
+      this.addPage(newPage, parentPageId, successCallback, errorCallback, jumpToNewPage);
+
+      const wikiRepoId = res.data.file_info.repo_id;
+      const eventBus = EventBus.getInstance();
+      eventBus.dispatch(EXTERNAL_EVENT.WIKI_PAGE_ID_CREATED, { pageId: page_id, pageName: page_name, wikiRepoId: wikiRepoId });
     }).catch((error) => {
       let errMessage = Utils.getErrorMsg(error);
       toaster.danger(errMessage);
@@ -279,22 +332,88 @@ class SidePanel extends PureComponent {
     });
   };
 
+  renderWikiNav = () => {
+    const { config, onUpdatePageName } = this.props;
+    const { pages, navigation } = config;
+    return (
+      <div className="wiki2-pages-container">
+        {isObjectNotEmpty(config) &&
+          <WikiNav
+            navigation={navigation}
+            pages={pages}
+            onDeletePage={this.onDeletePage}
+            onUpdatePageName={onUpdatePageName}
+            setCurrentPage={this.props.setCurrentPage}
+            onMovePage={this.movePage}
+            updateWikiConfig={this.props.updateWikiConfig}
+            onAddNewPage={this.onAddNewPage}
+            duplicatePage={this.duplicatePage}
+            importPage={this.importPage}
+            getCurrentPageId={this.props.getCurrentPageId}
+            addPageInside={this.addPageInside}
+            toggleTrashDialog={this.toggleTrashDialog}
+            toggleSettingDialog={this.toggleSettingDialog}
+            addSiblingPage={this.addSiblingPage}
+            handleAddNewPage={this.handleAddNewPage}
+          />
+        }
+      </div>
+    );
+  };
+
   render() {
     const { isLoading, config, style } = this.props;
+    const { canManagePublish } = this.state;
     return (
       <div className={classNames('wiki2-side-panel', { 'left-zero': this.props.isSidePanelOpen })} style={style}>
         <div className="wiki2-side-panel-top">
           <h1 className="h4 text-truncate ml-0 mb-0" title={repoName}>{repoName}</h1>
           {(wikiPermission === 'rw' && this.state.customUrl) &&
-            <PublishedWikiExtrance wikiID={wikiId} customURLPart={this.state.customUrl} />
+            <PublishedWikiEntrance
+              wikiID={wikiId}
+              customURLPart={this.state.customUrl}
+              placement="right"
+            />
           }
         </div>
+        {isPro &&
         <Wiki2Search
           wikiId={wikiId}
           config={config}
           getCurrentPageId={this.props.getCurrentPageId}
           setCurrentPage={this.props.setCurrentPage}
-        />
+        />}
+        {Utils.isDesktop() && canManagePublish &&
+          <>
+            <Button
+              id="wiki2-publish"
+              className="wiki2-publish border-0 p-0 font-weight-normal"
+              onClick={this.togglePublishPopover}
+              aria-haspopup="dialog"
+              aria-expanded={this.state.isShowPublishPopover}
+            >
+              <span className="w-6 h-6 d-flex align-items-center justify-content-center">
+                <Icon symbol="open-in-new-tab" />
+              </span>
+              <span>{gettext('Publish')}</span>
+            </Button>
+            {!this.state.isShowPublishPopover &&
+              <Tooltip target="wiki2-publish" placement="right">
+                {gettext('Manage Published Pages')}
+              </Tooltip>
+            }
+            {this.state.isShowPublishPopover &&
+              <PublishWikiPopover
+                target="wiki2-publish"
+                hidePopover={this.hidePublishPopover}
+                onPublish={this.publishWiki}
+                onUnpublish={this.unpublishWiki}
+                customUrlString={this.state.customUrl}
+                enableServerRender={this.state.enableServerRender}
+              />
+            }
+          </>
+        }
         <div className="wiki2-side-nav">
           {isLoading ? <Loading/> : this.renderWikiNav()}
         </div>
@@ -309,6 +428,9 @@ class SidePanel extends PureComponent {
           <ImportWikiPageDialog
             toggleDialog={this.toggleImportPageDialog}
           />
+        )}
+        {this.state.isShowSettingDialog && (
+          <WikiSettingsDialog toggleDialog={this.toggleSettingDialog} />
         )}
         {wikiPermission === 'rw' &&
           <WikiExternalOperations onAddWikiPage={this.onAddWikiPage.bind(false)} />

@@ -24,7 +24,7 @@ from seahub.repo_metadata.constants import METADATA_RECORD_UPDATE_LIMIT
 from seahub.repo_metadata.metadata_server_api import list_metadata_view_records, MetadataServerAPI
 from seahub.repo_metadata.models import RepoMetadata, RepoMetadataViews
 from seahub.repo_metadata.utils import get_update_record, get_unmodifiable_columns, can_read_metadata, \
-    remove_tags_table, init_tags, get_table_by_name
+    remove_tags_table, init_tags, get_table_by_name, filter_face_recognition_views
 from seahub.seadoc.models import SeadocHistoryName, SeadocCommentReply
 from seahub.utils.file_op import if_locked_by_online_office
 from seahub.seadoc.utils import get_seadoc_file_uuid
@@ -48,11 +48,12 @@ from seahub.tags.models import FileUUIDMap
 
 from seahub.utils import normalize_dir_path, check_filename_with_rename, gen_file_upload_url, is_valid_dirent_name, \
     normalize_file_path, render_error, gen_file_get_url, is_pro_version, gen_inner_file_upload_url, \
-    get_file_type_and_ext, SEADOC
+    get_file_type_and_ext, SEADOC, HAS_FILE_SEARCH, HAS_FILE_SEASEARCH
 from seahub.utils.file_op import check_file_lock
 
 from seahub.utils.timeutils import timestamp_to_isoformat_timestr
 from seahub.views.file import can_preview_file, can_edit_file
+from seahub.search.utils import search_files, ai_search_files
 
 logger = logging.getLogger(__name__)
 json_content_type = 'application/json; charset=utf-8'
@@ -379,14 +380,14 @@ class ViaRepoDirView(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
-        dir_id = seafile_api.get_dir_id_by_path(repo_id, path)
-        if not dir_id:
-            error_msg = 'Folder %s not found.' % path
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
         repo = seafile_api.get_repo(repo_id)
         if not repo:
             error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        dir_id = seafile_api.get_dir_id_by_path(repo_id, path)
+        if not dir_id:
+            error_msg = 'Folder %s not found.' % path
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
 
         # permission check
@@ -477,6 +478,11 @@ class ViaRepoDownloadLinkView(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         repo_id = request.repo_api_token_obj.repo_id
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         path = normalize_file_path(path)
         filename = os.path.basename(path)
         file_id = seafile_api.get_file_id_by_path(repo_id, path)
@@ -511,6 +517,109 @@ class RepoInfoView(APIView):
         return Response(data)
 
 
+class ViaRepoSearchFilesView(APIView):
+    authentication_classes = (RepoAPITokenAuthentication, )
+    throttle_classes = (UserRateThrottle,)
+    SEARCH_DOCUMENT_EXTENSIONS = 'md,sdoc,docx,pdf,pptx'
+
+    def get(self, request):
+        repo_id = request.repo_api_token_obj.repo_id
+        keyword = request.GET.get('q', None)
+        if not keyword:
+            error_msg = 'q invalid.'
+            return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
+
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        permission = check_folder_permission_by_repo_api(request, repo_id, '/')
+        if not permission:
+            error_msg = 'Permission denied.'
+            return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+
+        suffixes = [i_ext.strip() for i_ext in self.SEARCH_DOCUMENT_EXTENSIONS.split(',') if i_ext.strip()]
+        suffix_set = set(suffixes)
+
+        if is_pro_version():
+            if HAS_FILE_SEARCH:
+                repo_id_map = {repo_id: repo}
+                obj_desc = {
+                    'obj_type': 'file',
+                    'suffixes': suffixes,
+                    'time_range': (None, None),
+                    'size_range': (None, None),
+                }
+
+                try:
+                    pro_file_list = []
+                    results, _ = search_files(
+                        repo_id_map, None, keyword, obj_desc, 0, 100, None, False
+                    )
+                    for result in results:
+                        if result.get('is_dir'):
+                            continue
+                        pro_file_list.append({
+                            'path': result['fullpath'],
+                            'size': result['size'],
+                            'mtime': timestamp_to_isoformat_timestr(result['last_modified']),
+                            'type': 'file',
+                        })
+                    return Response({'data': pro_file_list})
+                except Exception as e:
+                    logger.error(e)
+
+            elif HAS_FILE_SEASEARCH:
+                searched_repos = [(repo.id, None, None)]
+                try:
+                    pro_file_list = []
+                    results, _ = ai_search_files(keyword, searched_repos, 100, suffixes, obj_type='file')
+                    for result in results:
+                        if result.get('is_dir'):
+                            continue
+
+                        fullpath = result['fullpath']
+
+                        mtime = result.get('last_modified')
+                        size = result.get('size')
+                        if mtime is None or size is None:
+                            dirent = seafile_api.get_dirent_by_path(repo_id, fullpath)
+                            if not dirent:
+                                continue
+                            mtime = dirent.mtime
+                            size = dirent.size
+
+                        pro_file_list.append({
+                            'path': fullpath,
+                            'size': size,
+                            'mtime': timestamp_to_isoformat_timestr(mtime),
+                            'type': 'file',
+                        })
+
+                    return Response({'data': pro_file_list})
+                except Exception as e:
+                    logger.error(e)
+
+        file_list = []
+        searched_files = seafile_api.search_files(repo_id, keyword)
+        for searched_file in searched_files:
+            if searched_file.is_dir:
+                continue
+            ext = os.path.splitext(searched_file.path)[1].lower().lstrip('.')
+            if ext not in suffix_set:
+                continue
+
+            file_list.append({
+                'path': searched_file.path,
+                'size': searched_file.size,
+                'mtime': timestamp_to_isoformat_timestr(searched_file.mtime),
+                'type': 'file',
+            })
+
+        return Response({'data': file_list})
+
+
 class ViaRepoBatchMove(APIView):
     authentication_classes = (RepoAPITokenAuthentication, )
     throttle_classes = (UserRateThrottle,)
@@ -530,6 +639,11 @@ class ViaRepoBatchMove(APIView):
         }
         """
         repo_id = request.repo_api_token_obj.repo_id
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         permission = check_folder_permission_by_repo_api(request, repo_id, None)
         if permission != PERMISSION_READ_WRITE:
             error_msg = 'Permission denied.'
@@ -552,10 +666,6 @@ class ViaRepoBatchMove(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
-        if not seafile_api.get_repo(repo_id):
-            error_msg = 'Library %s not found.' % repo_id
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
         if not seafile_api.get_dir_id_by_path(repo_id, src_parent_dir):
             error_msg = 'Folder %s not found.' % src_parent_dir
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
@@ -600,6 +710,11 @@ class ViaRepoBatchCopy(APIView):
         }
         """
         repo_id = request.repo_api_token_obj.repo_id
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         permission = check_folder_permission_by_repo_api(request, repo_id, None)
         if permission != PERMISSION_READ_WRITE:
             error_msg = 'Permission denied.'
@@ -621,10 +736,6 @@ class ViaRepoBatchCopy(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
-        if not seafile_api.get_repo(repo_id):
-            error_msg = 'Library %s not found.' % repo_id
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
         if not seafile_api.get_dir_id_by_path(repo_id, src_parent_dir):
             error_msg = 'Folder %s not found.' % src_parent_dir
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
@@ -666,6 +777,11 @@ class ViaRepoBatchDelete(APIView):
         }
         """
         repo_id = request.repo_api_token_obj.repo_id
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         permission = check_folder_permission_by_repo_api(request, repo_id, None)
         if permission != PERMISSION_READ_WRITE:
             error_msg = 'Permission denied.'
@@ -682,11 +798,6 @@ class ViaRepoBatchDelete(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
-        repo = seafile_api.get_repo(repo_id)
-        if not repo:
-            error_msg = 'Library %s not found.' % repo_id
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
         if not seafile_api.get_dir_id_by_path(repo_id, parent_dir):
             error_msg = 'Folder %s not found.' % parent_dir
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
@@ -787,6 +898,11 @@ class ViaRepoTokenFile(APIView):
         4. revert: user with 'rw' permission for current file's parent dir;
         """
         repo_id = request.repo_api_token_obj.repo_id
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         permission = check_folder_permission_by_repo_api(request, repo_id, None)
         if permission != 'rw':
             error_msg = 'Permission denied.'
@@ -811,11 +927,6 @@ class ViaRepoTokenFile(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
-        repo = seafile_api.get_repo(repo_id)
-        if not repo:
-            error_msg = 'Library %s not found.' % repo_id
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
         username = ''
         parent_dir = os.path.dirname(path)
         if operation == 'create':
@@ -1085,6 +1196,11 @@ class ViaRepoTokenFile(APIView):
         """ Currently only support lock, unlock file. """
 
         repo_id = request.repo_api_token_obj.repo_id
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         permission = check_folder_permission_by_repo_api(request, repo_id, None)
         if permission != 'rw':
             error_msg = 'Permission denied.'
@@ -1112,11 +1228,6 @@ class ViaRepoTokenFile(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
-        repo = seafile_api.get_repo(repo_id)
-        if not repo:
-            error_msg = 'Library %s not found.' % repo_id
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
         file_id = seafile_api.get_file_id_by_path(repo_id, path)
         if not file_id:
             error_msg = 'File %s not found.' % path
@@ -1317,6 +1428,11 @@ class ViaRepoShareLink(APIView):
             error_msg = 'path invalid.'
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         permission = check_folder_permission_by_repo_api(request, repo_id, None)
         if permission != 'rw':
             error_msg = 'Permission denied.'
@@ -1330,11 +1446,6 @@ class ViaRepoShareLink(APIView):
             return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
-        repo = seafile_api.get_repo(repo_id)
-        if not repo:
-            error_msg = 'Library %s not found.' % repo_id
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
         dirent = None
         if path != '/':
             dirent = seafile_api.get_dirent_by_path(repo_id, path)
@@ -1478,6 +1589,11 @@ class ViaRepoMetadataRecords(APIView):
             error_msg = 'Number of records exceeds the limit of 1000.'
             return api_error(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, error_msg)
 
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
         permission = check_folder_permission_by_repo_api(request, repo_id, None)
         if permission != 'rw':
             error_msg = 'Permission denied.'
@@ -1486,11 +1602,6 @@ class ViaRepoMetadataRecords(APIView):
         metadata = RepoMetadata.objects.filter(repo_id=repo_id).first()
         if not metadata or not metadata.enabled:
             error_msg = f'The metadata module is disabled for repo {repo_id}.'
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
-
-        repo = seafile_api.get_repo(repo_id)
-        if not repo:
-            error_msg = 'Library %s not found.' % repo_id
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
 
         metadata_server_api = MetadataServerAPI(repo_id, username)
@@ -1581,6 +1692,8 @@ class ViaRepoMetadataViews(APIView):
             error_msg = 'Internal Server Error'
             return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
 
+        metadata_views = filter_face_recognition_views(metadata_views)
+
         return Response(metadata_views)
 
     def post(self, request):
@@ -1620,6 +1733,10 @@ class ViaRepoMetadataViews(APIView):
         if permission != 'rw':
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+
+        if view_type == 'face_recognition':
+            error_msg = 'The face recognition view is no longer available.'
+            return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         try:
             new_view = RepoMetadataViews.objects.add_view(repo_id, view_name, view_type, view_data, folder_id)
@@ -1673,6 +1790,8 @@ class ViaRepoMetadataViews(APIView):
 
         try:
             result = RepoMetadataViews.objects.update_view(repo_id, view_id, view_data)
+            if result is None:
+                return api_error(status.HTTP_400_BAD_REQUEST, 'update view failed')
         except Exception as e:
             logger.exception(e)
             error_msg = 'Internal Server Error'
@@ -1883,6 +2002,10 @@ class ViaRepoMetadataViewsDetailView(APIView):
             logger.exception(e)
             error_msg = 'Internal Server Error'
             return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
+
+        if not view:
+            error_msg = 'Metadata view %s not found.' % view_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
 
         return Response({'view': view})
 
@@ -2166,11 +2289,7 @@ class ViaRepoMetadataTagsStatusManage(APIView):
 
     def put(self, request):
         repo_id = request.repo_api_token_obj.repo_id
-        lang = request.data.get('lang')
         username = request.repo_api_token_obj.generated_by
-        if not lang:
-            error_msg = 'lang invalid.'
-            return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         # resource check
         repo = seafile_api.get_repo(repo_id)
@@ -2192,7 +2311,6 @@ class ViaRepoMetadataTagsStatusManage(APIView):
 
         try:
             metadata.tags_enabled = True
-            metadata.tags_lang = lang
             metadata.save()
         except Exception as e:
             logger.exception(e)
@@ -2235,7 +2353,6 @@ class ViaRepoMetadataTagsStatusManage(APIView):
 
         try:
             record.tags_enabled = False
-            record.tags_lang = None
             record.save()
         except Exception as e:
             logger.error(e)
@@ -2830,7 +2947,9 @@ class ViaRepoRecentlyChangedFiles(APIView):
         metadata_server_api = MetadataServerAPI(repo_id, username)
         from seafevents.repo_metadata.constants import METADATA_TABLE
 
-        sql = f'SELECT * FROM `{METADATA_TABLE.name}` WHERE `_file_mtime`>"{since}" AND `_is_dir`=false ORDER BY `_file_mtime` LIMIT {start}, {limit}'
+        sql = f"""SELECT `_id`, `_ctime`, `_creator`, `_last_modifier`, `_mtime`, `_file_creator`, `_file_ctime`, `_file_modifier`, 
+        `_file_mtime`, `_parent_dir`, `_name`, `_size`, `_description`
+        FROM `{METADATA_TABLE.name}` WHERE `_mtime`>"{since}" AND `_is_dir`=false ORDER BY `_mtime` LIMIT {start}, {limit}"""
 
         try:
             query_result = metadata_server_api.query_rows(sql)

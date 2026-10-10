@@ -1,13 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import { addClassName, removeClassName } from '@/utils/dom';
 import Loading from '../../../loading';
-import { RecordMetrics } from '../../utils/record-metrics';
-import { TreeMetrics } from '../../utils/tree-metrics';
-import { gettext } from '../../../../utils/constants';
 import { CANVAS_RIGHT_INTERVAL } from '../../constants/grid';
 import { GRID_FOOTER as Z_INDEX_GRID_FOOTER } from '../../constants/z-index';
-import { addClassName, removeClassName } from '../../../../utils/dom';
-import { getRecordsFromSelectedRange } from '../../utils/selected-cell-utils';
+import { RecordMetrics } from '../../utils/record-metrics';
+import { getRecordsFromSelectedRange } from '../../utils/selection';
+import { TreeMetrics } from '../../utils/tree-metrics';
 
 import './index.css';
 
@@ -43,8 +43,12 @@ class RecordsFooter extends React.Component {
     }
   };
 
-  onLoadAll = () => {
-    if (this.props.isLoadingMoreRecords) {
+  onLoadMore = () => {
+    if (this.props.isLoadingMore) {
+      return;
+    }
+    if (this.props.loadMore) {
+      this.props.loadMore();
       return;
     }
     const loadNumber = this.props.recordsCount < 50000 ? 50000 : 100000;
@@ -87,8 +91,8 @@ class RecordsFooter extends React.Component {
   };
 
   getSummaryItems = () => {
-    const { columns, sequenceColumnWidth, hasMoreRecords, isLoadingMoreRecords } = this.props;
-    const displayColumns = isLoadingMoreRecords || hasMoreRecords ? columns.slice(1, columns.length) : columns;
+    const { columns, sequenceColumnWidth, hasMoreRecords, isLoadingMore } = this.props;
+    const displayColumns = isLoadingMore || hasMoreRecords ? columns.slice(1, columns.length) : columns;
     let totalWidth = sequenceColumnWidth;
     let summaryItems = Array.isArray(displayColumns) && displayColumns.map((column, columnIndex) => {
       let summaryItem;
@@ -129,18 +133,18 @@ class RecordsFooter extends React.Component {
   };
 
   render() {
-    const { hasMoreRecords, isLoadingMoreRecords, columns, sequenceColumnWidth, groupOffsetLeft } = this.props;
+    const { hasMoreRecords, isLoadingMore, columns, sequenceColumnWidth, groupOffsetLeft } = this.props;
     let { summaryItems, totalWidth } = this.getSummaryItems();
-    const recordWidth = (isLoadingMoreRecords || hasMoreRecords ? sequenceColumnWidth + columns[0].width : sequenceColumnWidth) + groupOffsetLeft;
+    const recordWidth = (isLoadingMore || hasMoreRecords ? sequenceColumnWidth + columns[0].width : sequenceColumnWidth) + groupOffsetLeft;
 
     return (
       <div className="sf-table-footer" style={{ zIndex: Z_INDEX_GRID_FOOTER }} ref={ref => this.ref = ref}>
         <div className="rows-record d-flex text-nowrap" style={{ width: recordWidth }}>
           <span>{this.getRecord()}</span>
-          {(!isLoadingMoreRecords && hasMoreRecords && this.props.loadAll) &&
-            <span className="load-all ml-4" onClick={this.onLoadAll}>{gettext('Load all')}</span>
+          {(!isLoadingMore && hasMoreRecords && (this.props.loadMore || this.props.loadAll)) &&
+            <span className="load-all ml-4" onClick={this.onLoadMore}>{this.props.loadMore ? gettext('Load more') : gettext('Load all')}</span>
           }
-          {isLoadingMoreRecords &&
+          {isLoadingMore &&
             <span className="loading-message ml-4">
               <span className="mr-2">{gettext('Loading')}</span>
               <Loading className="sf-metadata-loading-tip center" />
@@ -161,7 +165,7 @@ class RecordsFooter extends React.Component {
 
 RecordsFooter.propTypes = {
   hasMoreRecords: PropTypes.bool,
-  isLoadingMoreRecords: PropTypes.bool,
+  isLoadingMore: PropTypes.bool,
   isGroupView: PropTypes.bool,
   hasSelectedRecord: PropTypes.bool,
   recordsCount: PropTypes.number,
@@ -178,6 +182,7 @@ RecordsFooter.propTypes = {
   recordGetterByIndex: PropTypes.func,
   getRecordsSummaries: PropTypes.func,
   loadAll: PropTypes.func,
+  loadMore: PropTypes.func,
 };
 
 export default RecordsFooter;

@@ -1,8 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { SeafileCommentEditor, commentProcessor } from '@seafile/comment-editor';
-import { Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import CustomDropdown from '../../dropdown';
 import CommentDeletePopover from './comment-delete-popover';
 
 const { username } = window.app.pageOptions;
@@ -20,7 +20,6 @@ class ReplyItem extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      dropdownOpen: false,
       html: '',
       newReply: this.props.item.reply,
       editable: false,
@@ -35,12 +34,6 @@ class ReplyItem extends React.Component {
   componentWillReceiveProps(nextProps) {
     this.convertComment(nextProps.item.reply);
   }
-
-  toggleDropDownMenu = () => {
-    this.setState({
-      dropdownOpen: !this.state.dropdownOpen,
-    });
-  };
 
   convertComment = (mdFile) => {
     commentProcessor.process(mdFile).then((result) => {
@@ -79,6 +72,13 @@ class ReplyItem extends React.Component {
     }
   };
 
+  getMenuItems = () => {
+    return [
+      { key: 'delete', label: gettext('Delete'), onClick: this.toggleShowDeletePopover },
+      { key: 'edit', label: gettext('Edit'), onClick: this.toggleEditComment },
+    ];
+  };
+
   toggleShowDeletePopover = () => {
     this.setState({
       isShowDeletePopover: !this.state.isShowDeletePopover
@@ -92,7 +92,7 @@ class ReplyItem extends React.Component {
       return (
         <li className="seafile-comment-item" id={item.id}>
           <div className="seafile-comment-info mt-1">
-            <img className="avatar" src={item.avatar_url} alt=""/>
+            <img className="avatar" src={item.avatar_url} alt="" />
             <div className="comment-author-info">
               <div className="comment-author-name ellipsis">{item.user_name}</div>
               <div className="comment-author-time">{this.props.time}</div>
@@ -115,48 +115,18 @@ class ReplyItem extends React.Component {
     }
     return (
       <li className={'seafile-comment-item'} id={item.id}>
-        <div className="seafile-comment-info mt-1">
-          <img className="avatar" src={item.avatar_url} alt=""/>
+        <div className="seafile-comment-info">
+          <img className="avatar" src={item.avatar_url} alt="" />
           <div className="comment-author-info">
             <div className="comment-author-name ellipsis">{item.user_name}</div>
             <div className="comment-author-time">{this.props.time}</div>
           </div>
           {(item.user_email === username) &&
-          <Dropdown
-            isOpen={this.state.dropdownOpen}
-            size="sm"
-            className="seafile-comment-dropdown"
-            toggle={this.toggleDropDownMenu}
-            id={replyOpToolsId}
-          >
-            <DropdownToggle
-              tag="i"
-              role="button"
-              tabIndex="0"
-              className="seafile-comment-dropdown-btn sf-dropdown-toggle sf3-font-more sf3-font"
-              title={gettext('More operations')}
-              aria-label={gettext('More operations')}
-              data-toggle="dropdown"
-              aria-expanded={this.state.dropdownOpen}
-              aria-haspopup={true}
+            <CustomDropdown
+              target={replyOpToolsId}
+              items={this.getMenuItems()}
+              triggerClassName="op-icon"
             />
-            <DropdownMenu>
-              <DropdownItem
-                onClick={this.toggleShowDeletePopover}
-                className="delete-comment"
-                id={item.id}
-              >
-                {gettext('Delete')}
-              </DropdownItem>
-              <DropdownItem
-                onClick={this.toggleEditComment}
-                className="edit-comment"
-                id={item.id}
-              >
-                {gettext('Edit')}
-              </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
           }
         </div>
         <div

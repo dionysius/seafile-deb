@@ -1,10 +1,13 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { KeyCodes } from '@/constants';
+import { gettext } from '@/utils/constants';
+import SearchEmptyTip from '../../../components/search-empty-tip';
 import ClickOutside from '../../click-outside';
+import Icon from '../../icon';
 import SearchInput from '../../search-input';
 import Option from './option';
-import { KeyCodes } from '../../../constants';
 
 import './index.css';
 
@@ -56,8 +59,10 @@ class SelectOptionGroup extends Component {
   onHotKey = (event) => {
     const keyCode = event.keyCode;
     if (keyCode === KeyCodes.UpArrow) {
+      event.preventDefault();
       this.onPressUp();
     } else if (keyCode === KeyCodes.DownArrow) {
+      event.preventDefault();
       this.onPressDown();
     } else if (keyCode === KeyCodes.Enter) {
       let option = this.filterOptions && this.filterOptions[this.state.activeIndex];
@@ -127,18 +132,22 @@ class SelectOptionGroup extends Component {
     }
   };
 
+  clearSearch = () => {
+    this.setState({ searchVal: '', activeIndex: -1, });
+  };
+
   renderOptGroup = (searchVal) => {
     let { noOptionsPlaceholder, onSelectOption, value } = this.props;
     this.filterOptions = this.props.getFilterOptions(searchVal);
     if (this.filterOptions.length === 0) {
       return (
-        <div className="none-search-result">{noOptionsPlaceholder}</div>
+        <SearchEmptyTip text={noOptionsPlaceholder || gettext('No results')} />
       );
     }
     return this.filterOptions.map((opt, i) => {
       let key = opt.value.column ? opt.value.column.key : i;
       let isActive = this.state.activeIndex === i;
-      const isSelected = value && opt.value === value.value;
+      const isSelected = value && (opt.value === value.value || JSON.stringify(opt.value) === JSON.stringify(value.value));
       return (
         <Option
           key={key}
@@ -151,7 +160,7 @@ class SelectOptionGroup extends Component {
           disableHover={this.state.disableHover}
         >
           {opt.label}
-          {isSelected && <i className="sf2-icon-tick"></i>}
+          {isSelected && <Icon symbol="check" className="flex-shrink-0" />}
         </Option>
       );
     });
@@ -175,12 +184,13 @@ class SelectOptionGroup extends Component {
         opacity: 0,
       };
     }
+    style.top = style.top + 4;
     return (
       <ClickOutside onClickOutside={this.props.onClickOutside}>
         <div
-          className={classnames('seafile-option-group', className ? 'seafile-option-group-' + className : '', {
+          className={classnames('sf-option-group', className ? 'sf-option-group-' + className : '', {
             'pt-0': isShowSelected,
-            'create-new-seafile-option-group': addOptionAble,
+            'create-new-sf-option-group': addOptionAble,
           })}
           ref={(ref) => this.optionGroupRef = ref}
           style={style}
@@ -190,16 +200,18 @@ class SelectOptionGroup extends Component {
             <div className="editor-list-delete mb-2" onClick={(e) => e.stopPropagation()}>{value.label || ''}</div>
           }
           {searchable && (
-            <div className="seafile-option-group-search">
+            <div className="sf-option-group-search">
               <SearchInput
                 className="option-search-control"
                 placeholder={searchPlaceholder}
                 onChange={this.onChangeSearch}
+                clearValue={this.clearSearch}
                 autoFocus={true}
+                isClearable={true}
               />
             </div>
           )}
-          <div className="seafile-option-group-content" ref={(ref) => this.optionGroupContentRef = ref}>
+          <div className="sf-option-group-content" ref={(ref) => this.optionGroupContentRef = ref}>
             {this.renderOptGroup(searchVal)}
           </div>
           {addOptionAble && AddOption}

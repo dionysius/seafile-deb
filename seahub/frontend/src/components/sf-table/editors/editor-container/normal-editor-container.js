@@ -1,17 +1,17 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { EVENT_BUS_TYPE } from '@/features/metadata/constants';
+import { getEventClassName } from '@/utils/dom';
+import { isCtrlKeyHeldDown, isKeyPrintable } from '@/utils/keyboard-utils';
+import { Utils } from '@/utils/utils';
 import ClickOutside from '../../../click-outside';
-import Editor from './editor';
+import EventBus from '../../../event-bus';
 import { EDITOR_CONTAINER as Z_INDEX_EDITOR_CONTAINER } from '../../constants/z-index';
-import { Utils } from '../../../../utils/utils';
-import { getEventClassName } from '../../../../utils/dom';
-import { checkCellValueChanged } from '../../utils/cell-comparer';
 import { getCellValueByColumn } from '../../utils/cell';
-import { isCtrlKeyHeldDown, isKeyPrintable } from '../../../../utils/keyboard-utils';
-import EventBus from '../../../common/event-bus';
-import { EVENT_BUS_TYPE } from '../../constants/event-bus-type';
 import { checkIsPrivateColumn } from '../../utils/column';
+import { checkCellValueChanged } from '../../utils/selection';
+import Editor from './editor';
 
 class NormalEditorContainer extends React.Component {
 
@@ -104,7 +104,7 @@ class NormalEditorContainer extends React.Component {
     };
 
     return (
-      <Editor column={column} editorProps={editorProps} />
+      <Editor ref={this.setEditorRef} {...editorProps} />
     );
   };
 
@@ -322,8 +322,10 @@ class NormalEditorContainer extends React.Component {
   };
 
   render() {
-    const { width, height, left, top } = this.props;
-    const style = { position: 'absolute', height, width, left, top, zIndex: Z_INDEX_EDITOR_CONTAINER };
+    const { width, height, left, top, editorPosition } = this.props;
+    const finalLeft = editorPosition?.left !== undefined ? editorPosition.left : left;
+    const finalTop = editorPosition?.top !== undefined ? editorPosition.top : top;
+    const style = { position: 'absolute', height, width, left: finalLeft, top: finalTop, zIndex: Z_INDEX_EDITOR_CONTAINER };
     return (
       <ClickOutside onClickOutside={this.onClickOutside}>
         <div

@@ -56,6 +56,7 @@ from seahub.utils import get_file_type_and_ext, normalize_file_path, \
 from seahub.tags.models import FileUUIDMap
 from seahub.utils.error_msg import file_type_error_msg
 from seahub.utils.repo import parse_repo_perm, get_related_users_by_repo
+from seahub.share.utils import is_repo_admin
 from seahub.seadoc.models import SeadocHistoryName, SeadocRevision, SeadocCommentReply, SeadocNotification
 from seahub.avatar.templatetags.avatar_tags import api_avatar_url
 from seahub.base.templatetags.seahub_tags import email2nickname, \
@@ -69,6 +70,7 @@ from seahub.base.accounts import User
 from seahub.repo_tags.models import RepoTags
 from seahub.file_tags.models import FileTags
 from seahub.wiki2.models import Wiki2Publish
+from seahub.api2.endpoints.utils import sdoc_export_to_md
 if HAS_FILE_SEARCH or HAS_FILE_SEASEARCH:
     from seahub.search.utils import search_files, ai_search_files, format_repos
 
@@ -304,6 +306,42 @@ class SeadocDownloadLink(APIView):
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
 
         return Response({'download_link': download_link})
+
+
+class SeadocContent(APIView):
+
+    authentication_classes = ()
+    throttle_classes = (UserRateThrottle,)
+
+    def get(self, request, file_uuid):
+        auth = request.headers.get('authorization', '').split()
+        if not is_valid_seadoc_access_token(auth, file_uuid):
+            return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+
+        uuid_map = FileUUIDMap.objects.get_fileuuidmap_by_uuid(file_uuid)
+        if not uuid_map:
+            return api_error(status.HTTP_404_NOT_FOUND, 'seadoc uuid %s not found.' % file_uuid)
+
+        filetype, fileext = get_file_type_and_ext(uuid_map.filename)
+        if filetype != SEADOC:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'seadoc file type %s invalid.' % filetype)
+
+        # Fetch from the internal fileserver so callers never receive a download URL.
+        download_link = get_seadoc_download_link(uuid_map, is_inner=True)
+        if not download_link:
+            return api_error(status.HTTP_404_NOT_FOUND, 'seadoc file %s not found.' % uuid_map.filename)
+
+        try:
+            resp = requests.get(download_link, timeout=30)
+        except requests.RequestException as e:
+            logger.error('get seadoc content failed %s: %s', file_uuid, e)
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, 'Internal Server Error')
+
+        if not resp.ok:
+            logger.error('get seadoc content failed %s: %s', file_uuid, resp.text)
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, 'Internal Server Error')
+
+        return HttpResponse(resp.content, content_type='application/json')
 
 
 class SeadocImageDownloadLink(APIView):
@@ -1248,7 +1286,8 @@ class SeadocCommentView(APIView):
         """Delete a comment
         """
         auth = request.headers.get('authorization', '').split()
-        if not is_valid_seadoc_access_token(auth, file_uuid):
+        is_valid, payload = is_valid_seadoc_access_token(auth, file_uuid, return_payload=True)
+        if not is_valid:
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
 
@@ -1260,6 +1299,13 @@ class SeadocCommentView(APIView):
         if str(file_comment.uuid.uuid) != file_uuid:
             return api_error(status.HTTP_404_NOT_FOUND, 'comment not found: %s' % comment_id)
 
+        # permission check
+        username = payload.get('username', '')
+        if username != file_comment.author:
+            uuid_map = FileUUIDMap.objects.get_fileuuidmap_by_uuid(file_uuid)
+            if not uuid_map or not is_repo_admin(username, uuid_map.repo_id):
+                return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+
         file_comment.delete()
         SeadocCommentReply.objects.filter(comment_id=comment_id).delete()
         return Response({'success': True})
@@ -1268,7 +1314,8 @@ class SeadocCommentView(APIView):
         """Update a comment
         """
         auth = request.headers.get('authorization', '').split()
-        if not is_valid_seadoc_access_token(auth, file_uuid):
+        is_valid, payload = is_valid_seadoc_access_token(auth, file_uuid, return_payload=True)
+        if not is_valid:
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
 
@@ -1288,6 +1335,17 @@ class SeadocCommentView(APIView):
             return api_error(status.HTTP_404_NOT_FOUND, error_msg)
         if str(file_comment.uuid.uuid) != file_uuid:
             return api_error(status.HTTP_404_NOT_FOUND, 'comment not found: %s' % comment_id)
+
+        # permission check
+        username = payload.get('username', '')
+        # editing comment content requires being the author
+        if (detail is not None or comment is not None) and username != file_comment.author:
+            return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+        # setting resolved allowed for author or repo admin
+        if resolved is not None and username != file_comment.author:
+            uuid_map = FileUUIDMap.objects.get_fileuuidmap_by_uuid(file_uuid)
+            if not uuid_map or not is_repo_admin(username, uuid_map.repo_id):
+                return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
 
         if resolved is not None:
             # do not refresh updated_at
@@ -1462,7 +1520,8 @@ class SeadocCommentReplyView(APIView):
         """Delete a comment reply
         """
         auth = request.headers.get('authorization', '').split()
-        if not is_valid_seadoc_access_token(auth, file_uuid):
+        is_valid, payload = is_valid_seadoc_access_token(auth, file_uuid, return_payload=True)
+        if not is_valid:
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
 
@@ -1476,6 +1535,14 @@ class SeadocCommentReplyView(APIView):
             id=reply_id, doc_uuid=file_uuid, comment_id=comment_id).first()
         if not reply:
             return api_error(status.HTTP_404_NOT_FOUND, 'reply not found.')
+
+        # permission check
+        username = payload.get('username', '')
+        if username != reply.author:
+            uuid_map = FileUUIDMap.objects.get_fileuuidmap_by_uuid(file_uuid)
+            if not uuid_map or not is_repo_admin(username, uuid_map.repo_id):
+                return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+
         reply.delete()
         return Response({'success': True})
 
@@ -1483,7 +1550,8 @@ class SeadocCommentReplyView(APIView):
         """Update a comment reply
         """
         auth = request.headers.get('authorization', '').split()
-        if not is_valid_seadoc_access_token(auth, file_uuid):
+        is_valid, payload = is_valid_seadoc_access_token(auth, file_uuid, return_payload=True)
+        if not is_valid:
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
 
@@ -1502,6 +1570,11 @@ class SeadocCommentReplyView(APIView):
             id=reply_id, doc_uuid=file_uuid, comment_id=comment_id).first()
         if not reply:
             return api_error(status.HTTP_404_NOT_FOUND, 'reply not found.')
+
+        # permission check
+        username = payload.get('username', '')
+        if username != reply.author:
+            return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
 
         # save
         reply.reply = str(reply_content)
@@ -2647,8 +2720,9 @@ class SdocRevisionBaseVersionContent(APIView):
         resp = requests.get(download_url)
         if not resp.ok:
             logger.error(resp.text)
-            error_msg = 'Internal Server Error'
-            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
+            error_msg = 'file not found'
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+        
         return Response({
             'content': resp.content
         })
@@ -3348,3 +3422,101 @@ def batch_upload_sdoc_images(doc_uuid, repo_id, username, image_dir):
         resp = requests.post(upload_link, files=files, data=data)
         if not resp.ok:
             logger.warning('upload sdoc image: %s failed: %s', filename, resp.text)
+
+
+class SdocRevisionContent(APIView):
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (UserRateThrottle, )
+
+    def get(self, request, repo_id, revision_id):
+        if not repo_id:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'repo_id invalid.')
+
+        if not revision_id:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'revision_id invalid.')
+
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        permission = check_folder_permission(request, repo_id, '/')
+        if not permission:
+            return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+
+        revision = SeadocRevision.objects.get_by_revision_id(repo_id, revision_id)
+        if not revision:
+            error_msg = 'Revision %s not found.' % revision_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        revision_file_uuid = revision.doc_uuid
+        revision_file_name = revision_file_uuid + '.sdoc'
+        revision_file_path = posixpath.join(SDOC_REVISIONS_DIR, revision_file_name)
+        revision_file_id = seafile_api.get_file_id_by_path(repo_id, revision_file_path)
+        if not revision_file_id:
+            error_msg = 'Revision file %s not found.' % revision_file_path
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        username = request.user.username
+        token = seafile_api.get_fileserver_access_token(repo_id, revision_file_id, 'download', username)
+        if not token:
+            error_msg = 'Revision file %s not found.' % revision_file_uuid
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        download_url = gen_inner_file_get_url(token, revision_file_name)
+        resp = sdoc_export_to_md(revision_file_path, revision_file_uuid, download_url, 'sdoc', 'md')
+        if not resp.ok:
+            logger.error(resp.text)
+            error_msg = 'Internal Server Error'
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
+
+        response = HttpResponse(content_type='text/markdown; charset=utf-8')
+        md_filename = quote(f'{revision_file_uuid}.md')
+        response['Content-Disposition'] = f'attachment; filename={md_filename}'
+        response.write(resp.content)
+        return response
+
+
+class SdocSmartLinkContent(APIView):
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (UserRateThrottle, )
+
+    def get(self, request, file_uuid):
+        if not file_uuid:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'file_uuid invalid.')
+
+        uuid_map = FileUUIDMap.objects.get_fileuuidmap_by_uuid(file_uuid)
+        if not uuid_map:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'token invalid.')
+
+        repo_id = uuid_map.repo_id
+        parent_path = uuid_map.parent_path
+        filename = uuid_map.filename
+        file_path = posixpath.join(parent_path, filename)
+
+        if not check_folder_permission(request, repo_id, parent_path):
+            return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+
+        file_id = seafile_api.get_file_id_by_path(repo_id, file_path)
+        if not file_id:
+            error_msg = 'File %s not found.' % file_path
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        token = seafile_api.get_fileserver_access_token(repo_id, file_id, 'download', request.user.username)
+        if not token:
+            error_msg = 'File %s not found.' % file_path
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        download_url = gen_inner_file_get_url(token, filename)
+        resp = sdoc_export_to_md(file_path, file_uuid, download_url, 'sdoc', 'md')
+        if not resp.ok:
+            logger.error(resp.text)
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, 'Internal Server Error')
+
+        response = HttpResponse(content_type='text/markdown; charset=utf-8')
+        md_filename = quote(f'{os.path.splitext(filename)[0]}.md')
+        response['Content-Disposition'] = f'attachment; filename={md_filename}'
+        response.write(resp.content)
+        return response

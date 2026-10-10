@@ -1,0 +1,12 @@
+.webhook-content-container {
+  height: 535px;
+}
+
+.webhook-content-body {
+  padding: 0 16px;
+  overflow: auto;
+}
+
+.webhooks-caption {
+  caption-side: top;
+}

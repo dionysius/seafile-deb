@@ -1,10 +1,17 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
 import TableMain from './table-main';
 
 import './index.css';
 import './tree.css';
+
+const isExternalFileDrag = (event) => {
+  const dataTransfer = event?.dataTransfer;
+  if (!dataTransfer) return false;
+  if (dataTransfer.files && dataTransfer.files.length > 0) return true;
+  return Array.from(dataTransfer.types || []).includes('Files');
+};
 
 const SFTable = ({
   table,
@@ -20,13 +27,18 @@ const SFTable = ({
   treeNodeKeyRecordIdMap,
   keyTreeNodeFoldedMap,
   noRecordsTipsText,
-  isLoadingMoreRecords = false,
+  isLoadingMore = false,
+  isLoading = false,
   hasMoreRecords = false,
   showGridFooter = true,
+  enableScrollToLoad = true,
   onGridKeyDown,
   onGridKeyUp,
   loadMore,
   loadAll,
+  updateFileTags,
+  gridUtils,
+  allowExternalFileDrop = false,
   ...customProps
 }) => {
   const containerRef = useRef(null);
@@ -78,8 +90,26 @@ const SFTable = ({
     window.addEventListener('beforeunload', beforeUnloadHandler, false);
   });
 
+  const onDragOver = useCallback((event) => {
+    if (allowExternalFileDrop || !isExternalFileDrag(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    event.dataTransfer.dropEffect = 'none';
+  }, [allowExternalFileDrop]);
+
+  const onDrop = useCallback((event) => {
+    if (allowExternalFileDrop || !isExternalFileDrag(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }, [allowExternalFileDrop]);
+
   return (
-    <div className={classnames('sf-table-wrapper', { 'no-sequence-column': !showSequenceColumn })} ref={containerRef}>
+    <div
+      className={classnames('sf-table-wrapper', { 'no-sequence-column': !showSequenceColumn })}
+      ref={containerRef}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <TableMain
         {...customProps}
         table={table}
@@ -94,9 +124,11 @@ const SFTable = ({
         isGroupView={isGroupView}
         noRecordsTipsText={noRecordsTipsText}
         hasMoreRecords={hasMoreRecords}
-        isLoadingMoreRecords={isLoadingMoreRecords}
+        isLoadingMore={isLoadingMore}
+        isLoading={isLoading}
         showGridFooter={showGridFooter}
         showRecordAsTree={showRecordAsTree}
+        enableScrollToLoad={enableScrollToLoad}
         loadMore={loadMore}
         loadAll={loadAll}
         getTableContentRect={getTableContentRect}
@@ -105,6 +137,8 @@ const SFTable = ({
         getTreeNodeByIndex={getTreeNodeByIndex}
         recordGetterById={recordGetterById}
         recordGetterByIndex={recordGetterByIndex}
+        updateFileTags={updateFileTags}
+        gridUtils={gridUtils}
       />
     </div>
   );
@@ -135,12 +169,14 @@ SFTable.propTypes = {
   isGroupView: PropTypes.bool,
   noRecordsTipsText: PropTypes.string,
   hasMoreRecords: PropTypes.bool,
-  isLoadingMoreRecords: PropTypes.bool,
+  isLoadingMore: PropTypes.bool,
+  isLoading: PropTypes.bool,
   showGridFooter: PropTypes.bool,
-  canModifyRecords: PropTypes.bool,
+  enableScrollToLoad: PropTypes.bool,
   supportCopy: PropTypes.bool,
   supportCut: PropTypes.bool,
   supportPaste: PropTypes.bool,
+  supportMultiCopyPaste: PropTypes.bool,
   supportDragFill: PropTypes.bool,
   showRecordAsTree: PropTypes.bool,
   /**
@@ -152,7 +188,9 @@ SFTable.propTypes = {
    */
   recordsTree: PropTypes.array,
   keyTreeNodeFoldedMap: PropTypes.object,
-  checkCanModifyRecord: PropTypes.func,
+  canModify: PropTypes.func,
+  canModifyRow: PropTypes.func,
+  canModifyColumn: PropTypes.func,
   checkCellValueChanged: PropTypes.func, // for complex cell value compare
   onGridKeyDown: PropTypes.func,
   onGridKeyUp: PropTypes.func,
@@ -161,6 +199,36 @@ SFTable.propTypes = {
   moveRecords: PropTypes.func,
   renderCustomDraggedRows: PropTypes.func,
   updateSelectedRecordIds: PropTypes.func,
+  onRecordSelected: PropTypes.func,
+  onTableDragStart: PropTypes.func,
+  updateFileTags: PropTypes.func,
+  gridUtils: PropTypes.object,
+  // Props passed via customProps to TableMain
+  repoID: PropTypes.string,
+  modifyColumnWidth: PropTypes.func,
+  modifyColumnOrder: PropTypes.func,
+  modifyRecord: PropTypes.func,
+  modifyRecords: PropTypes.func,
+  deleteRecords: PropTypes.func,
+  handleSelectCellsDelete: PropTypes.func,
+  createContextMenuOptions: PropTypes.func,
+  recordGetterById: PropTypes.func,
+  recordGetterByIndex: PropTypes.func,
+  paste: PropTypes.func,
+  columnDropdownMenu: PropTypes.elementType,
+  view: PropTypes.object,
+  modifyColumnData: PropTypes.func,
+  insertColumn: PropTypes.func,
+  renameColumn: PropTypes.func,
+  deleteColumn: PropTypes.func,
+  generateFileTags: PropTypes.func,
+  updateRecordDetails: PropTypes.func,
+  updateFaceRecognition: PropTypes.func,
+  updateRecordDescription: PropTypes.func,
+  onOCR: PropTypes.func,
+  tagsData: PropTypes.object,
+  onShowRowDetails: PropTypes.func,
+  allowExternalFileDrop: PropTypes.bool,
 };
 
 export default SFTable;

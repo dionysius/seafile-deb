@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
+import { Popover, PopoverBody, Button } from 'reactstrap';
 import PropTypes from 'prop-types';
 import { QRCodeSVG } from 'qrcode.react';
-import { Popover, PopoverBody, Button } from 'reactstrap';
+import { gettext } from '@/utils/constants';
 import toaster from './toast';
-import { gettext } from '../utils/constants';
 
-const QRCodePopover = ({ container, target, value }) => {
+const QRCodePopover = ({ container, target, value, placement = 'left' }) => {
   const qrCodeRef = React.useRef(null);
 
   const downloadQRCode = useCallback(() => {
@@ -97,7 +97,7 @@ const QRCodePopover = ({ container, target, value }) => {
 
   return (
     <Popover
-      placement="bottom"
+      placement={placement}
       isOpen={true}
       fade={true}
       container={container}
@@ -133,9 +133,10 @@ const QRCodePopover = ({ container, target, value }) => {
 };
 
 QRCodePopover.propTypes = {
-  target: PropTypes.object,
+  target: PropTypes.string,
   value: PropTypes.string.isRequired,
-  container: PropTypes.object
+  container: PropTypes.object,
+  placement: PropTypes.string
 };
 
 export default QRCodePopover;

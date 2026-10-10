@@ -1,0 +1,27 @@
+.sf-metadata-tags-property-detail-editor {
+  padding: 0 6px;
+  min-height: 34px;
+  width: 100%;
+  height: auto;
+}
+
+.sf-metadata-tags-property-detail-editor:empty {
+  line-height: 34px;
+}
+
+.sf-metadata-tags-property-detail-editor .sf-metadata-delete-select-tags {
+  border-bottom: none;
+  background-color: inherit;
+  border-radius: initial;
+  padding: 2px 0;
+  overflow-y: auto;
+}
+
+.sf-metadata-tags-property-detail-editor .sf-metadata-delete-select-tags .sf-metadata-delete-select-tag {
+  margin: 5px 4px 5px 0;
+}
+
+.sf-metadata-property-editor-popover .sf-metadata-tags-editor.tags-tree-container {
+  right: 0;
+  left: auto;
+}

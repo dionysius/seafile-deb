@@ -1,4 +1,4 @@
-import { gettext } from './utils/constants';
+import { gettext } from '@/utils/constants';
 
 gettext('You have not shared any folders');
 gettext('You don\'t have any share links');
@@ -42,3 +42,15 @@ gettext('A folder named {upload_folder_link} is uploaded to {uploaded_link}.');
 gettext('A folder named {upload_folder_link} is uploaded.');
 gettext('A file named {upload_file_link} is uploaded to {uploaded_link}.');
 gettext('A file named {upload_file_link} is uploaded.');
+gettext('Open in new tab');
+gettext('Grid view');
+gettext('Copy path');
+gettext('New');
+gettext('Open with OnlyOffice');
+gettext('Open with client');
+gettext('Add page below');
+gettext('How can I help you?');
+gettext('Extended properties are being built.');
+gettext('Delete property');
+gettext('Sort ascending');
+gettext('Pages');

@@ -1,29 +1,28 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { HorizontalScrollbar } from '../../scrollbar';
-import RecordsHeader from '../records-header';
-import Body from './body';
-import TreeBody from './tree-body';
-import GroupBody from './group-body';
-import RecordsFooter from '../records-footer';
-import ContextMenu from '../../context-menu';
-import RecordDragLayer from './record-drag-layer';
-import { RecordMetrics } from '../../utils/record-metrics';
-import { TreeMetrics } from '../../utils/tree-metrics';
-import { recalculate } from '../../utils/column';
-import { getVisibleBoundaries } from '../../utils/viewport';
-import { getColOverScanEndIdx, getColOverScanStartIdx } from '../../utils/grid';
-import { isShiftKeyDown } from '../../../../utils/keyboard-utils';
-import { isMobile } from '../../../../utils/utils';
-import { addClassName, removeClassName, getEventClassName } from '../../../../utils/dom';
-import { isWindowsBrowser, isWebkitBrowser } from '../../utils';
-import EventBus from '../../../common/event-bus';
-import { EVENT_BUS_TYPE } from '../../constants/event-bus-type';
+import PropTypes from 'prop-types';
+import { EVENT_BUS_TYPE } from '@/features/metadata/constants';
+import { addClassName, removeClassName, getEventClassName } from '@/utils/dom';
+import { isShiftKeyDown } from '@/utils/keyboard-utils';
+import { isNumber } from '@/utils/number';
+import { isMobile } from '@/utils/utils';
+import EventBus from '../../../event-bus';
 import { CANVAS_RIGHT_INTERVAL } from '../../constants/grid';
 import { GROUP_ROW_TYPE } from '../../constants/group';
-import { isNumber } from '../../../../utils/number';
+import ContextMenu from '../../context-menu';
+import { isWindowsBrowser, isWebkitBrowser } from '../../utils';
+import { recalculate } from '../../utils/column';
+import { getColOverScanEndIdx, getColOverScanStartIdx } from '../../utils/grid';
+import { RecordMetrics } from '../../utils/record-metrics';
+import { getVisibleBoundaries } from '../../utils/records-body';
 import { getTreeNodeKey } from '../../utils/tree';
+import { TreeMetrics } from '../../utils/tree-metrics';
+import RecordsFooter from '../records-footer';
+import RecordsHeader from '../records-header';
+import Body from './body';
+import GroupBody from './group-body';
+import RecordDragLayer from './record-drag-layer';
+import TreeBody from './tree-body';
 
 class Records extends Component {
 
@@ -59,9 +58,6 @@ class Records extends Component {
   }
 
   componentDidMount() {
-    document.addEventListener('copy', this.onCopyCells);
-    document.addEventListener('paste', this.onPasteCells);
-    document.addEventListener('cut', this.onCutCells);
     if (window.isMobile) {
       window.addEventListener('touchstart', this.onTouchStart);
       window.addEventListener('touchend', this.onTouchEnd);
@@ -94,9 +90,6 @@ class Records extends Component {
   }
 
   componentWillUnmount() {
-    document.removeEventListener('copy', this.onCopyCells);
-    document.removeEventListener('paste', this.onPasteCells);
-    document.removeEventListener('cut', this.onCutCells);
     if (window.isMobile) {
       window.removeEventListener('touchstart', this.onTouchStart);
       window.removeEventListener('touchend', this.onTouchEnd);
@@ -162,6 +155,7 @@ class Records extends Component {
   };
 
   onContentScroll = (e) => {
+    if (!this.bodyRef) return;
     const { scrollLeft } = e.target;
     const scrollTop = this.bodyRef.getScrollTop();
     const deltaX = this.scrollLeft - scrollLeft;
@@ -332,6 +326,8 @@ class Records extends Component {
     const classNames = getEventClassName(e);
     if (classNames.includes('sf-table-result-content')) {
       this.eventBus.dispatch(EVENT_BUS_TYPE.CLOSE_EDITOR);
+      this.props.updateSelectedRecordIds && this.props.updateSelectedRecordIds([]);
+      this.props.onClickTableBlankSpace && this.props.onClickTableBlankSpace();
     }
   };
 
@@ -343,6 +339,9 @@ class Records extends Component {
       });
     }
     this.onDeselectAllRecords();
+    if (this.props.onCellClick) {
+      this.props.onCellClick(cell);
+    }
   };
 
   onCellRangeSelectionUpdated = (selectedRange) => {
@@ -351,21 +350,38 @@ class Records extends Component {
   };
 
   onCopyCells = (e) => {
-    if (this.props.supportCopy) {
+    if (this.props.supportCopy && this.shouldHandleClipboardEvent(e)) {
       this.eventBus.dispatch(EVENT_BUS_TYPE.COPY_CELLS, e);
     }
   };
 
   onPasteCells = (e) => {
-    if (this.props.supportPaste) {
+    if (this.props.supportPaste && this.shouldHandleClipboardEvent(e)) {
       this.eventBus.dispatch(EVENT_BUS_TYPE.PASTE_CELLS, e);
     }
   };
 
   onCutCells = (e) => {
-    if (this.props.supportCut) {
+    if (this.props.supportCut && this.shouldHandleClipboardEvent(e)) {
       this.eventBus.dispatch(EVENT_BUS_TYPE.CUT_CELLS, e);
     }
+  };
+
+  shouldHandleClipboardEvent = (e) => {
+    const { resultContainerRef } = this;
+    if (!resultContainerRef) return false;
+
+    const eventTarget = e.target;
+    if (eventTarget && resultContainerRef.contains(eventTarget)) {
+      return true;
+    }
+
+    const activeElement = document.activeElement;
+    if (activeElement && resultContainerRef.contains(activeElement)) {
+      return true;
+    }
+
+    return activeElement && activeElement.getAttribute('data-test') === 'active-editor';
   };
 
   onTouchStart = (e) => {
@@ -407,11 +423,12 @@ class Records extends Component {
         topLeft: this.initPosition,
         bottomRight: this.initPosition
       },
+      selectedPosition: this.initPosition
     });
 
     // clear selected records
     this.onDeselectAllRecords();
-    this.props.updateSelectedRecordIds([]);
+    this.props.onClickTableBlankSpace && this.props.onClickTableBlankSpace();
   };
 
   selectCell = (cellPosition) => {
@@ -570,9 +587,12 @@ class Records extends Component {
     }
     let updatedRecordMetrics = { ...recordMetrics };
     RecordMetrics.selectRecord(recordId, updatedRecordMetrics);
-    this.setState({
-      recordMetrics: updatedRecordMetrics,
-    });
+
+    if (this.props.updateSelectedRecordIds) {
+      this.props.updateSelectedRecordIds(RecordMetrics.getSelectedIds(updatedRecordMetrics));
+    }
+
+    this.setState({ recordMetrics: updatedRecordMetrics });
   };
 
   selectRecordsById = (recordIds) => {
@@ -583,9 +603,12 @@ class Records extends Component {
     }
     let updatedRecordMetrics = { ...recordMetrics };
     RecordMetrics.selectRecordsById(recordIds, updatedRecordMetrics);
-    this.setState({
-      recordMetrics: updatedRecordMetrics,
-    });
+
+    if (this.props.updateSelectedRecordIds) {
+      this.props.updateSelectedRecordIds(RecordMetrics.getSelectedIds(updatedRecordMetrics));
+    }
+
+    this.setState({ recordMetrics: updatedRecordMetrics });
   };
 
   deselectRecordById = (recordId) => {
@@ -595,9 +618,10 @@ class Records extends Component {
     }
     let updatedRecordMetrics = { ...recordMetrics };
     RecordMetrics.deselectRecord(recordId, updatedRecordMetrics);
-    this.setState({
-      recordMetrics: updatedRecordMetrics,
-    });
+    if (this.props.updateSelectedRecordIds) {
+      this.props.updateSelectedRecordIds(RecordMetrics.getSelectedIds(updatedRecordMetrics));
+    }
+    this.setState({ recordMetrics: updatedRecordMetrics });
   };
 
   selectTreeNodesByKeys = (nodesKeys) => {
@@ -668,6 +692,9 @@ class Records extends Component {
       selectedRowIds = recordIds;
     }
     RecordMetrics.selectRecordsById(selectedRowIds, updatedRecordMetrics);
+    if (this.props.updateSelectedRecordIds) {
+      this.props.updateSelectedRecordIds(RecordMetrics.getSelectedIds(updatedRecordMetrics));
+    }
     this.setState({ recordMetrics: updatedRecordMetrics });
   };
 
@@ -678,6 +705,9 @@ class Records extends Component {
     }
     let updatedTreeMetrics = { ...treeMetrics };
     TreeMetrics.deselectAllTreeNodes(updatedTreeMetrics);
+    if (this.props.updateSelectedRecordIds) {
+      this.props.updateSelectedRecordIds(TreeMetrics.getSelectedIds(updatedTreeMetrics));
+    }
     this.setState({
       treeMetrics: updatedTreeMetrics,
       lastRowIdxUiSelected: { groupRecordIndex: -1, recordIndex: -1 },
@@ -696,6 +726,9 @@ class Records extends Component {
     }
     let updatedRecordMetrics = { ...recordMetrics };
     RecordMetrics.deselectAllRecords(updatedRecordMetrics);
+    if (this.props.updateSelectedRecordIds) {
+      this.props.updateSelectedRecordIds(RecordMetrics.getSelectedIds(updatedRecordMetrics));
+    }
     this.setState({
       recordMetrics: updatedRecordMetrics,
       lastRowIdxUiSelected: { groupRecordIndex: -1, recordIndex: -1 },
@@ -762,16 +795,17 @@ class Records extends Component {
   };
 
   onCellContextMenu = (cell) => {
-    const { isGroupView, recordGetterByIndex, showRecordAsTree } = this.props;
+    const { isGroupView, recordGetterByIndex, showRecordAsTree, updateSelectedRecordIds } = this.props;
     const { recordMetrics, treeMetrics } = this.state;
     const { rowIdx: recordIndex, idx, groupRecordIndex } = cell;
+    const isOutSelectedRange = this.isOutSelectedRange({ recordIndex, idx });
 
     if (showRecordAsTree) {
       const node = this.props.getTreeNodeByIndex(recordIndex);
       const nodeKey = getTreeNodeKey(node);
       if (!nodeKey) return;
 
-      if (!TreeMetrics.checkIsTreeNodeSelected(nodeKey, treeMetrics)) {
+      if (isOutSelectedRange && !TreeMetrics.checkIsTreeNodeSelected(nodeKey, treeMetrics)) {
         this.setState({ treeMetrics: this.createTreeMetrics() });
       }
     } else {
@@ -779,13 +813,18 @@ class Records extends Component {
       if (!record) return;
 
       const recordId = record._id;
-      if (!RecordMetrics.isRecordSelected(recordId, recordMetrics)) {
-        this.setState({ recordMetrics: this.createRowMetrics() });
+      if (isOutSelectedRange && !RecordMetrics.isRecordSelected(recordId, recordMetrics)) {
+        let updatedRecordMetrics = this.createRowMetrics();
+        if (updateSelectedRecordIds) {
+          updateSelectedRecordIds([recordId]);
+          RecordMetrics.selectRecordsById([recordId], updatedRecordMetrics);
+        }
+        this.setState({ recordMetrics: updatedRecordMetrics });
       }
     }
 
     // select cell when click out of selectRange
-    if (this.isOutSelectedRange({ recordIndex, idx })) {
+    if (isOutSelectedRange) {
       this.eventBus.dispatch(EVENT_BUS_TYPE.SELECT_CELL, cell, false);
     }
   };
@@ -800,7 +839,7 @@ class Records extends Component {
     return this.resultContainerRef.getBoundingClientRect();
   };
 
-  getRecordsSummaries = () => {};
+  getRecordsSummaries = () => { };
 
   checkIsSelectAll = () => {
     const {
@@ -839,6 +878,10 @@ class Records extends Component {
   };
 
   handleDragRecordStart = (event, { draggingRecordId, draggingTreeNodeKey }) => {
+    // Call optional external drag start callback (for setting external drag data like TreeView format)
+    if (this.props.onTableDragStart) {
+      this.props.onTableDragStart(event, { draggingRecordId, draggingTreeNodeKey });
+    }
     this.setState({
       draggingRecordSource: {
         event,
@@ -887,19 +930,22 @@ class Records extends Component {
   };
 
   renderRecordsBody = ({ containerWidth, recordDraggable }) => {
-    const { recordMetrics, columnMetrics, colOverScanStartIdx, colOverScanEndIdx, draggingRecordSource } = this.state;
+    const { recordMetrics, columnMetrics, colOverScanStartIdx, colOverScanEndIdx, draggingRecordSource, selectedPosition, selectedRange } = this.state;
     const { columns, allColumns, totalWidth, lastFrozenColumnKey, frozenColumnsWidth } = columnMetrics;
     const recordDragDropEvents = this.getRecordDragDropEvents();
+    const contextMenu = this.props.createContextMenuOptions ? (
+      <ContextMenu
+        {...this.props}
+        recordMetrics={recordMetrics}
+        selectedPosition={selectedPosition}
+        selectedRange={selectedRange}
+      />
+    ) : null;
     const commonProps = {
       ...this.props,
       columns, allColumns, totalWidth, lastFrozenColumnKey, frozenColumnsWidth,
       recordMetrics, colOverScanStartIdx, colOverScanEndIdx, recordDraggable, recordDragDropEvents, draggingRecordSource,
-      contextMenu: (
-        <ContextMenu
-          {...this.props}
-          recordMetrics={recordMetrics}
-        />
-      ),
+      contextMenu,
       hasSelectedRecord: this.checkHasSelectedRecord(),
       getColumnVisibleEnd: this.getColumnVisibleEnd,
       getScrollLeft: this.getScrollLeft,
@@ -913,6 +959,7 @@ class Records extends Component {
       hasSelectedCell: this.hasSelectedCell,
       onCellContextMenu: this.onCellContextMenu,
       getTableCanvasContainerRect: this.getTableCanvasContainerRect,
+      scrollToLoadMore: this.props.scrollToLoadMore,
     };
     if (this.props.showRecordAsTree) {
       return (
@@ -951,7 +998,7 @@ class Records extends Component {
       recordsCount, showSequenceColumn, sequenceColumnWidth, isGroupView, groupOffsetLeft,
     } = this.props;
     const { recordMetrics, columnMetrics, selectedRange, colOverScanStartIdx, colOverScanEndIdx } = this.state;
-    const { columns, totalWidth, lastFrozenColumnKey } = columnMetrics;
+    const { columns, lastFrozenColumnKey } = columnMetrics;
     const containerWidth = this.getContainerWidth();
     const hasSelectedRecord = this.checkHasSelectedRecord();
     const isSelectedAll = this.checkIsSelectAll();
@@ -964,13 +1011,14 @@ class Records extends Component {
           ref={this.setResultContainerRef}
           onScroll={this.onContentScroll}
           onClick={this.onClickContainer}
+          onCopy={this.onCopyCells}
+          onPaste={this.onPasteCells}
+          onCut={this.onCutCells}
         >
           <div className="sf-table-result-content" style={{ width: containerWidth }}>
             <RecordsHeader
               onRef={(ref) => this.headerFrozenRef = ref}
               containerWidth={containerWidth}
-              ColumnDropdownMenu={this.props.ColumnDropdownMenu}
-              NewColumnComponent={this.props.NewColumnComponent}
               headerSettings={this.props.headerSettings}
               columnMetrics={columnMetrics}
               colOverScanStartIdx={colOverScanStartIdx}
@@ -988,19 +1036,19 @@ class Records extends Component {
               modifyColumnOrder={this.props.modifyColumnOrder}
               modifyColumnWidth={this.props.modifyColumnWidth}
               insertColumn={this.props.insertColumn}
+              // Metadata dropdown props
+              canModifyColumn={this.props.canModifyColumn}
+              columnDropdownMenu={this.props.columnDropdownMenu}
+              view={this.props.view}
+              renameColumn={this.props.renameColumn}
+              modifyColumnData={this.props.modifyColumnData}
+              deleteColumn={this.props.deleteColumn}
+              {...this.props}
             />
             {this.renderRecordsBody({ containerWidth, recordDraggable })}
           </div>
         </div>
         {this.createRecordsDragLayer()}
-        {this.isWindows && this.isWebkit && (
-          <HorizontalScrollbar
-            ref={this.setHorizontalScrollbarRef}
-            innerWidth={totalWidth + CANVAS_RIGHT_INTERVAL}
-            onScrollbarScroll={this.onHorizontalScrollbarScroll}
-            onScrollbarMouseUp={this.onHorizontalScrollbarMouseUp}
-          />
-        )}
         {this.props.showGridFooter &&
           <RecordsFooter
             ref={ref => this.recordsFooterRef = ref}
@@ -1015,10 +1063,11 @@ class Records extends Component {
             selectedRange={selectedRange}
             isGroupView={isGroupView}
             hasSelectedRecord={hasSelectedRecord}
-            isLoadingMoreRecords={this.props.isLoadingMoreRecords}
+            isLoadingMore={this.props.isLoadingMore}
             recordGetterById={this.props.recordGetterById}
             recordGetterByIndex={this.props.recordGetterByIndex}
             getRecordsSummaries={this.getRecordsSummaries}
+            loadMore={this.props.loadMore}
             loadAll={this.props.loadAll}
           />
         }
@@ -1032,13 +1081,13 @@ Records.propTypes = {
   tableColumns: PropTypes.array,
   columns: PropTypes.array,
   columnEditable: PropTypes.bool,
-  ColumnDropdownMenu: PropTypes.object,
+  columnDropdownMenu: PropTypes.object,
   NewColumnComponent: PropTypes.object,
   headerSettings: PropTypes.object,
   showSequenceColumn: PropTypes.bool,
   sequenceColumnWidth: PropTypes.number,
   hasMoreRecords: PropTypes.bool,
-  isLoadingMoreRecords: PropTypes.bool,
+  isLoadingMore: PropTypes.bool,
   isGroupView: PropTypes.bool,
   showRecordAsTree: PropTypes.bool,
   groupOffsetLeft: PropTypes.number,
@@ -1052,6 +1101,7 @@ Records.propTypes = {
   supportCopy: PropTypes.bool,
   supportCut: PropTypes.bool,
   supportPaste: PropTypes.bool,
+  supportMultiCopyPaste: PropTypes.bool,
   gridScroll: PropTypes.object,
   getTableContentRect: PropTypes.func,
   storeGridScroll: PropTypes.func,
@@ -1059,6 +1109,7 @@ Records.propTypes = {
   updateRecord: PropTypes.func,
   recordGetterById: PropTypes.func,
   recordGetterByIndex: PropTypes.func,
+  loadMore: PropTypes.func,
   loadAll: PropTypes.func,
   insertColumn: PropTypes.func,
   modifyColumnWidth: PropTypes.func,
@@ -1067,6 +1118,10 @@ Records.propTypes = {
   getCopiedRecordsAndColumnsFromRange: PropTypes.func,
   moveRecords: PropTypes.func,
   updateSelectedRecordIds: PropTypes.func,
+  onRecordSelected: PropTypes.func,
+  onTableDragStart: PropTypes.func,
+  canModify: PropTypes.func,
+  modifyRecord: PropTypes.func,
 };
 
 export default Records;

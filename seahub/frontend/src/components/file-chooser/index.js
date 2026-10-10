@@ -1,18 +1,18 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Input } from 'reactstrap';
-import toaster from '../toast';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { MODE_TYPE_MAP } from '@/constants';
+import RepoInfo from '@/models/repo-info';
+import { gettext, isPro } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import IconBtn from '../icon-btn';
 import Loading from '../loading';
-import OpIcon from '../op-icon';
+import toaster from '../toast';
 import RepoListWrapper from './repo-list-wrapper';
 import SearchedListView from './searched-list-view';
-import RepoInfo from '../../models/repo-info';
-import { seafileAPI } from '../../utils/seafile-api';
-import { gettext, isPro } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
-import { MODE_TYPE_MAP } from '../../constants';
 
-import '../../css/file-chooser.css';
+import './index.css';
 
 const propTypes = {
   isShowFile: PropTypes.bool,
@@ -449,18 +449,27 @@ class FileChooser extends React.Component {
       <>
         {(isPro && mode !== 'recently_used') && (
           <div className="file-chooser-search-input py-4">
-            <Input className="search-input" placeholder={gettext('Search')} type='text' value={searchInfo} onChange={this.onSearchInfoChanged}></Input>
+            <Input
+              className="search-input"
+              placeholder={gettext('Search')}
+              type='text'
+              value={searchInfo}
+              onChange={this.onSearchInfoChanged}
+              name="file-chooser-search-input"
+            />
             {searchInfo.length !== 0 && (
-              <OpIcon
-                className="search-control attr-action-icon sf3-font sf3-font-x-01"
-                op={this.onCloseSearching}
-                title={gettext('Clear')}
+              <IconBtn
+                symbol="close"
+                size={24}
+                title={gettext('Close')}
+                className=" search-control attr-action-icon op-icon op-icon-bg-light ml-1"
+                onClick={this.onCloseSearching}
               />
             )}
           </div>
         )}
         {isSearching ? (
-          <div className="file-chooser-search-container">
+          <div className="file-chooser-search-container p-0">
             {this.renderSearchedView()}
           </div>
         ) : (

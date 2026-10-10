@@ -1,32 +1,39 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
+import { DropdownItem } from 'reactstrap';
+import { Link, navigate } from '@gatsbyjs/reach-router';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from 'reactstrap';
-import { Link, navigate } from '@gatsbyjs/reach-router';
-import { Utils } from '../../utils/utils';
-import { gettext, siteRoot, isPro, username, folderPermEnabled, isSystemStaff, enableResetEncryptedRepoPassword, isEmailConfigured } from '../../utils/constants';
-import ModalPortal from '../../components/modal-portal';
-import ShareDialog from '../../components/dialog/share-dialog';
-import LibSubFolderPermissionDialog from '../../components/dialog/lib-sub-folder-permission-dialog';
-import DeleteRepoDialog from '../../components/dialog/delete-repo-dialog';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { userAPI } from '@/api/user-api';
+import { LIST_MODE } from '@/constants/view-mode';
+import { gettext, siteRoot, isPro, username, folderPermEnabled, isSystemStaff, enableResetEncryptedRepoPassword, isEmailConfigured, enableStorageClasses } from '@/utils/constants';
+import { formatWithTimezone } from '@/utils/time';
+import { Utils } from '@/utils/utils';
 import ChangeRepoPasswordDialog from '../../components/dialog/change-repo-password-dialog';
+import DeleteRepoDialog from '../../components/dialog/delete-repo-dialog';
+import LibSubFolderPermissionDialog from '../../components/dialog/lib-sub-folder-permission-dialog';
 import ResetEncryptedRepoPasswordDialog from '../../components/dialog/reset-encrypted-repo-password-dialog';
+import ShareDialog from '../../components/dialog/share-dialog';
 import MobileItemMenu from '../../components/mobile-item-menu';
-import Rename from '../rename';
-import { seafileAPI } from '../../utils/seafile-api';
-import { userAPI } from '../../utils/user-api';
-import toaster from '../toast';
-import RepoAPITokenDialog from '../dialog/repo-api-token-dialog';
-import RepoShareAdminDialog from '../dialog/repo-share-admin-dialog';
-import { LIST_MODE } from '../dir-view-mode/constants';
-import TransferDialog from '../dialog/transfer-dialog';
+import ModalPortal from '../../components/modal-portal';
 import OpIcon from '../../components/op-icon';
-import { formatWithTimezone } from '../../utils/time';
+import Tooltip from '../../components/tooltip';
+import ArchiveIcon from '../archive-icon';
+import RepoAPITokenDialog from '../dialog/repo-api-token-dialog';
+import RepoArchiveDialog from '../dialog/repo-archive-dialog';
+import RepoShareAdminDialog from '../dialog/repo-share-admin-dialog';
+import RepoWebhookDialog from '../dialog/repo-webhook-dialog';
+import TransferDialog from '../dialog/transfer-dialog';
+import CustomDropdown from '../dropdown';
+import Icon from '../icon';
+import Rename from '../rename';
+import toaster from '../toast';
 
 dayjs.extend(relativeTime);
 
 const propTypes = {
+  idx: PropTypes.number,
   currentViewMode: PropTypes.string,
   currentGroup: PropTypes.object,
   libraryType: PropTypes.string,
@@ -38,7 +45,9 @@ const propTypes = {
   onItemRename: PropTypes.func,
   onItemDelete: PropTypes.func,
   onContextMenu: PropTypes.func.isRequired,
-  onTransferRepo: PropTypes.func
+  onTransferRepo: PropTypes.func,
+  onToggleStarRepo: PropTypes.func.isRequired,
+  updateRepoStatus: PropTypes.func,
 };
 
 class SharedRepoListItem extends React.Component {
@@ -48,11 +57,8 @@ class SharedRepoListItem extends React.Component {
     this.state = {
       highlight: false,
       isOperationShow: false,
-      isItemMenuShow: false,
-      isAdvancedMenuShown: false,
       isShowSharedDialog: false,
       isRenaming: false,
-      isStarred: this.props.repo.starred,
       isFolderPermissionDialogOpen: false,
       isDeleteDialogShow: false,
       isAPITokenDialogShow: false,
@@ -63,6 +69,7 @@ class SharedRepoListItem extends React.Component {
       isResetPasswordDialogShow: false,
     };
     this.isDepartmentOwnerGroupMember = false;
+    this.keepFrozenOnClose = false;
   }
 
   onMouseEnter = () => {
@@ -92,56 +99,12 @@ class SharedRepoListItem extends React.Component {
     }
   };
 
-  clickOperationMenuToggle = (e) => {
-    this.toggleOperationMenu(e);
-  };
-
-  onDropdownToggleKeyDown = (e) => {
-    if (e.key == 'Enter' || e.key == 'Space') {
-      this.clickOperationMenuToggle(e);
-    }
-  };
-
-  toggleOperationMenu = (e) => {
-    let dataset = e.target ? e.target.dataset : null;
-    if (dataset && dataset.toggle && dataset.toggle === 'Rename') {
-      this.setState({ isItemMenuShow: !this.state.isItemMenuShow });
-      return;
-    }
-
-    this.setState(
-      { isItemMenuShow: !this.state.isItemMenuShow },
-      () => {
-        if (this.state.isItemMenuShow) {
-          this.props.onFreezedItem();
-        } else {
-          this.props.onUnfreezedItem();
-          this.setState({
-            highlight: false,
-            isOperationShow: false,
-          });
-        }
-      }
-    );
-  };
-
-  toggleAdvancedMenuShown = (e) => {
-    this.setState({ isAdvancedMenuShown: true });
-  };
-
-  toggleAdvancedMenu = (e) => {
-    e.stopPropagation();
-    this.setState({ isAdvancedMenuShown: !this.state.isAdvancedMenuShown }, () => {
-      this.toggleOperationMenu(e);
+  onUnfreezedItem = () => {
+    this.setState({
+      highlight: false,
+      isOperationShow: false,
     });
-  };
-
-  onDropDownMouseMove = (e) => {
-    if (this.state.isAdvancedMenuShown && e.target && e.target.className === 'dropdown-item') {
-      this.setState({
-        isAdvancedMenuShown: false
-      });
-    }
+    this.props.onUnfreezedItem();
   };
 
   getRepoComputeParams = () => {
@@ -153,17 +116,17 @@ class SharedRepoListItem extends React.Component {
     return { iconUrl, iconTitle, libPath };
   };
 
-  onMenuItemKeyDown = (e) => {
-    if (e.key == 'Enter' || e.key == 'Space') {
-      this.onMenuItemClick(e);
-    }
-  };
-
-  onMenuItemClick = (e) => {
-    let operation = e.target.dataset.toggle || e.target.dataset.operation;
+  onMenuItemClick = (operation) => {
     switch (operation) {
       case 'Rename':
+        this.keepFrozenOnClose = true;
         this.onItemRenameToggle();
+        break;
+      case 'Delete':
+        this.onItemDeleteToggle();
+        break;
+      case 'Star':
+        this.onToggleStarRepo();
         break;
       case 'Transfer':
         this.onTransferToggle();
@@ -180,6 +143,9 @@ class SharedRepoListItem extends React.Component {
       case 'API Token':
         this.onAPITokenToggle();
         break;
+      case 'Webhooks':
+        this.onWebhookToggle();
+        break;
       case 'Share Admin':
         this.toggleRepoShareAdminDialog();
         break;
@@ -189,8 +155,24 @@ class SharedRepoListItem extends React.Component {
       case 'Reset Password':
         this.onResetPasswordToggle();
         break;
+      case 'Archive':
+        this.onArchiveToggle();
+        break;
       // no default
     }
+  };
+
+  handleMenuClose = () => {
+    if (this.keepFrozenOnClose) {
+      this.keepFrozenOnClose = false;
+      return;
+    }
+
+    this.props.onUnfreezedItem();
+    this.setState({
+      highlight: false,
+      isOperationShow: false,
+    });
   };
 
   onItemRenameToggle = () => {
@@ -219,6 +201,17 @@ class SharedRepoListItem extends React.Component {
         toaster.danger(gettext('Failed. Please check the network.'), { duration: 3 });
       }
     });
+  };
+
+  onArchiveToggle = () => {
+    this.setState({ isArchiveDialogOpen: !this.state.isArchiveDialogOpen });
+  };
+
+  onArchiveRepo = (repo) => {
+    const newStatus = !repo.archive_status ? 'archived' : null;
+    if (this.props.updateRepoStatus) {
+      this.props.updateRepoStatus(repo, newStatus);
+    }
   };
 
   onRenameConfirm = (name) => {
@@ -298,11 +291,18 @@ class SharedRepoListItem extends React.Component {
     this.setState({ isResetPasswordDialogShow: !this.state.isResetPasswordDialogShow });
   };
 
+  onWebhookToggle = () => {
+    this.setState({ isWebhookDialogShow: !this.state.isWebhookDialogShow });
+  };
+
   translateMenuItem = (menuItem) => {
     let translateResult = '';
     switch (menuItem) {
       case 'Rename':
         translateResult = gettext('Rename');
+        break;
+      case 'Star':
+        translateResult = this.props.repo.starred ? gettext('Unstar') : gettext('Star');
         break;
       case 'Transfer':
         translateResult = gettext('Transfer');
@@ -315,6 +315,9 @@ class SharedRepoListItem extends React.Component {
         break;
       case 'Share':
         translateResult = gettext('Share');
+        break;
+      case 'Delete':
+        translateResult = gettext('Delete');
         break;
       case 'Share Admin':
         translateResult = gettext('Share Admin');
@@ -334,11 +337,17 @@ class SharedRepoListItem extends React.Component {
       case 'API Token':
         translateResult = 'API Token'; // translation is not needed here
         break;
+      case 'Webhooks':
+        translateResult = 'Webhooks';
+        break;
       case 'Advanced':
         translateResult = gettext('Advanced');
         break;
       case 'SeaTable integration':
         translateResult = gettext('SeaTable integration');
+        break;
+      case 'Archive':
+        translateResult = this.props.repo && this.props.repo.archive_status === 'archived' ? gettext('Unarchive') : gettext('Archive');
         break;
       default:
         break;
@@ -347,9 +356,46 @@ class SharedRepoListItem extends React.Component {
   };
 
   getAdvancedOperations = () => {
+    const { repo } = this.props;
     const operations = [];
     operations.push('API Token');
+
+    // Archive/Unarchive operation - show for both personal and department repos when storage classes is enabled
+    if (enableStorageClasses && isPro) {
+      const archiveStatus = repo.archive_status;
+      if (!archiveStatus || archiveStatus === 'archived') {
+        operations.push('Archive');
+      }
+    }
+
+    operations.push('Webhooks');
     return operations;
+  };
+
+  buildMenuItems = (operations, advancedOperations = []) => {
+    return operations.map((item) => {
+      if (item === 'Divider') {
+        return item;
+      }
+
+      if (item === 'Advanced') {
+        return {
+          key: 'Advanced',
+          label: this.translateMenuItem(item),
+          children: advancedOperations.map((advancedItem) => ({
+            key: advancedItem,
+            label: this.translateMenuItem(advancedItem),
+            onClick: () => this.onMenuItemClick(advancedItem),
+          })),
+        };
+      }
+
+      return {
+        key: item,
+        label: this.translateMenuItem(item),
+        onClick: () => this.onMenuItemClick(item),
+      };
+    });
   };
 
   generatorOperations = () => {
@@ -365,7 +411,7 @@ class SharedRepoListItem extends React.Component {
         if (isStaff) {
           if (repo.owner_email == currentGroup.id + '@seafile_group') {
             this.isDepartmentOwnerGroupMember = true;
-            operations = ['Rename', 'Transfer'];
+            operations = ['Rename', 'Star', 'Transfer'];
             if (folderPermEnabled) {
               operations.push('Folder Permission');
             }
@@ -412,10 +458,12 @@ class SharedRepoListItem extends React.Component {
       }
     } else {
       operations = this.generatorOperations().filter(item => item != 'Divider');
-      if (this.isDepartmentOwnerGroupMember) {
-        operations.unshift('Unshare');
-        operations.unshift('Share');
-      }
+    }
+    if (this.isDepartmentOwnerGroupMember) {
+      operations.unshift('Delete');
+      operations.unshift('Share');
+    } else {
+      operations.push('Star');
     }
 
     if (!operations.length) {
@@ -426,14 +474,28 @@ class SharedRepoListItem extends React.Component {
       <MobileItemMenu isOpen={this.state.isItemMenuShow} toggle={this.toggleOperationMenu}>
         {operations.map((item, index) => {
           return (
-            <DropdownItem key={index} data-toggle={item} onClick={this.onMenuItemClick}>{this.translateMenuItem(item)}</DropdownItem>
+            <DropdownItem key={index} data-toggle={item} onClick={() => { this.onMenuItemClick(item); }} className="mobile-menu-item">{this.translateMenuItem(item)}</DropdownItem>
           );
         })}
       </MobileItemMenu>
     );
   };
 
+  renderCustomTrigger = (isOpen) => {
+    return (
+      <>
+        <Icon symbol="more-level" />
+        {!isOpen && (
+          <Tooltip target="more-operations-btn">
+            {gettext('More operations')}
+          </Tooltip>
+        )}
+      </>
+    );
+  };
+
   generatorPCMenu = () => {
+    const { idx } = this.props;
     let operations = [];
     if (this.props.libraryType && this.props.libraryType === 'public') {
       let isRepoOwner = this.props.repo.owner_email === username;
@@ -445,22 +507,28 @@ class SharedRepoListItem extends React.Component {
     }
     const shareOperation = (
       <OpIcon
-        className="op-icon sf3-font-share sf3-font"
-        title={gettext('Share')}
+        id={`share-icon-${idx}`}
+        className="op-icon"
+        symbol="share"
+        tooltip={gettext('Share')}
         op={this.onItemShare}
       />
     );
     const unshareOperation = (
       <OpIcon
-        className="op-icon sf2-icon-x3"
-        title={gettext('Unshare')}
+        id={`unshare-icon-${idx}`}
+        className="op-icon"
+        symbol="close"
+        tooltip={gettext('Unshare')}
         op={this.onItemUnshare}
       />
     );
     const deleteOperation = (
       <OpIcon
-        className="op-icon sf3-font-delete1 sf3-font"
-        title={gettext('Delete')}
+        id={`delete-icon-${idx}`}
+        className="op-icon"
+        symbol="delete"
+        tooltip={gettext('Delete')}
         role="button" aria-label={gettext('Delete')}
         op={this.onItemDeleteToggle}
       />
@@ -468,68 +536,37 @@ class SharedRepoListItem extends React.Component {
 
     if (this.isDepartmentOwnerGroupMember) {
       const advancedOperations = this.getAdvancedOperations();
+      const menuItems = this.buildMenuItems(operations, advancedOperations);
+      const target = `shared-repo-more-level-icon-${idx}`;
       return (
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center lh-1">
           {shareOperation}
           {deleteOperation}
-          <Dropdown isOpen={this.state.isItemMenuShow} toggle={this.toggleOperationMenu}>
-            <DropdownToggle
-              tag="i"
-              role="button"
-              tabIndex="0"
-              className="op-icon sf3-font-more sf3-font"
-              title={gettext('More operations')}
-              aria-label={gettext('More operations')}
-              data-toggle="dropdown"
-              aria-expanded={this.state.isItemMenuShow}
-              aria-haspopup={true}
-              style={{ 'minWidth': '0' }}
-              onClick={this.clickOperationMenuToggle}
-              onKeyDown={this.onDropdownToggleKeyDown}
-            />
-            <DropdownMenu onMouseMove={this.onDropDownMouseMove}>
-              {operations.map((item, index) => {
-                if (item == 'Divider') {
-                  return <DropdownItem key={index} divider />;
-                } else if (item == 'Advanced') {
-                  return (
-                    <Dropdown
-                      key={index}
-                      direction="right"
-                      className="w-100"
-                      isOpen={this.state.isAdvancedMenuShown}
-                      toggle={this.toggleAdvancedMenu}
-                      onMouseMove={(e) => {e.stopPropagation();}}
-                    >
-                      <DropdownToggle
-                        tag="span"
-                        role="button"
-                        tabIndex="0"
-                        className="dropdown-item font-weight-normal rounded-0 d-flex justify-content-between align-items-center pr-2"
-                        onMouseEnter={this.toggleAdvancedMenuShown}
-                        onKeyDown={this.toggleAdvancedMenuShown}
-                      >
-                        {this.translateMenuItem(item)}
-                        <i className="sf3-font-down sf3-font rotate-270"></i>
-                      </DropdownToggle>
-                      <DropdownMenu>
-                        {advancedOperations.map((item, index) => {
-                          return (<DropdownItem key={index} data-toggle={item} onClick={this.onMenuItemClick} onKeyDown={this.onMenuItemKeyDown}>{this.translateMenuItem(item)}</DropdownItem>);
-                        })}
-                      </DropdownMenu>
-                    </Dropdown>
-                  );
-                } else {
-                  return (<DropdownItem key={index} data-toggle={item} onClick={this.onMenuItemClick} onKeyDown={this.onMenuItemKeyDown}>{this.translateMenuItem(item)}</DropdownItem>);
-                }
-              })}
-            </DropdownMenu>
-          </Dropdown>
+          <CustomDropdown
+            target={target}
+            items={menuItems}
+            triggerClassName="op-icon"
+            freezeItem={this.props.onFreezedItem}
+            unfreezeItem={this.handleMenuClose}
+          />
         </div>
       );
     } else {
+      const { repo } = this.props;
+      const starItem = repo.starred
+        ? {
+          key: 'Unstar',
+          label: gettext('Unstar'),
+          onClick: this.onToggleStarRepo
+        }
+        : {
+          key: 'Star',
+          label: gettext('Star'),
+          onClick: this.onToggleStarRepo
+        };
+      const menuItems = [starItem];
       return (
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center lh-1">
           {operations.map(item => {
             switch (item) {
               case 'Share':
@@ -540,16 +577,36 @@ class SharedRepoListItem extends React.Component {
                 return null;
             }
           })}
+          <CustomDropdown
+            items={menuItems}
+            target="more-operations-btn"
+            placement="down"
+            trigger={this.renderCustomTrigger}
+            triggerClassName="op-icon"
+            menuProps={{ container: 'body' }}
+            freezeItem={this.props.onFreezedItem}
+            unfreezeItem={this.onUnfreezedItem}
+          />
         </div>
       );
     }
   };
 
+  // only for clicking the star icon in mobile
+  onClickStarInMobile = (e) => {
+    e.stopPropagation();
+    this.onToggleStarRepo();
+  };
+
   onToggleStarRepo = () => {
-    const { repo_name: repoName } = this.props.repo;
-    if (this.state.isStarred) {
-      seafileAPI.unstarItem(this.props.repo.repo_id, '/').then(() => {
-        this.setState({ isStarred: !this.state.isStarred });
+    const { repo } = this.props;
+    const { repo_name: repoName } = repo;
+    const onSuccess = () => {
+      this.props.onToggleStarRepo(repo);
+    };
+    if (repo.starred) {
+      seafileAPI.unstarItem(repo.repo_id, '/').then(() => {
+        onSuccess();
         const msg = gettext('Successfully unstarred {library_name_placeholder}.')
           .replace('{library_name_placeholder}', repoName);
         toaster.success(msg);
@@ -558,8 +615,8 @@ class SharedRepoListItem extends React.Component {
         toaster.danger(errMessage);
       });
     } else {
-      seafileAPI.starItem(this.props.repo.repo_id, '/').then(() => {
-        this.setState({ isStarred: !this.state.isStarred });
+      seafileAPI.starItem(repo.repo_id, '/').then(() => {
+        onSuccess();
         const msg = gettext('Successfully starred {library_name_placeholder}.')
           .replace('{library_name_placeholder}', repoName);
         toaster.success(msg);
@@ -575,62 +632,81 @@ class SharedRepoListItem extends React.Component {
   };
 
   renderPCUI = () => {
-    const { isStarred } = this.state;
     let { iconUrl, iconTitle, libPath } = this.getRepoComputeParams();
-    const { repo, currentViewMode } = this.props;
+    const { idx, repo, currentViewMode } = this.props;
     return currentViewMode == LIST_MODE ? (
-      <tr
-        className={this.state.highlight ? 'tr-highlight' : ''}
+      <div
+        className={`repo-list-item ${this.state.highlight ? 'hover' : ''}`}
         onMouseEnter={this.onMouseEnter}
         onMouseOver={this.onMouseOver}
         onMouseLeave={this.onMouseLeave}
         onFocus={this.onMouseEnter}
         onContextMenu={this.handleContextMenu}
       >
-        <td className="text-center">
-          <OpIcon
-            className={`${this.state.isStarred ? 'sf3-font-star' : 'sf3-font-star-empty'} sf3-font`}
-            title={this.state.isStarred ? gettext('Unstar') : gettext('Star')}
-            op={this.onToggleStarRepo}
-          />
-        </td>
-        <td><img src={iconUrl} title={iconTitle} alt={iconTitle} width="24" /></td>
-        <td>
+        <div className="repo-item-icon">
+          <img src={iconUrl} title={iconTitle} alt={iconTitle} width="20" />
+        </div>
+        <div className="repo-item-name">
           {this.state.isRenaming ?
-            <Rename name={repo.repo_name} onRenameConfirm={this.onRenameConfirm} onRenameCancel={this.onRenameCancel}/> :
+            <Rename name={repo.repo_name} onRenameConfirm={this.onRenameConfirm} onRenameCancel={this.onRenameCancel} /> :
             <Link to={libPath}>{repo.repo_name}</Link>
           }
-        </td>
-        <td>{this.state.isOperationShow && this.generatorPCMenu()}</td>
-        <td>{repo.size}</td>
-        <td title={formatWithTimezone(repo.last_modified)}>{dayjs(repo.last_modified).fromNow()}</td>
-        <td title={repo.owner_contact_email}>{repo.owner_name}</td>
-      </tr>
+          <ArchiveIcon currentRepoInfo={repo} />
+          {repo.starred && (
+            <OpIcon
+              id={`star-icon-${idx}`}
+              className="star-icon"
+              symbol="starred"
+              tooltip={gettext('Unstar')}
+              op={this.onToggleStarRepo}
+            />
+          )}
+        </div>
+        <div className="repo-item-actions">
+          {this.state.isOperationShow && this.generatorPCMenu()}
+        </div>
+        <div className="repo-item-size">
+          {repo.size}
+        </div>
+        <div className="repo-item-time" title={formatWithTimezone(repo.last_modified)}>
+          {dayjs(repo.last_modified).fromNow()}
+        </div>
+        <div className="repo-item-owner" title={repo.owner_contact_email}>
+          {repo.owner_name}
+        </div>
+      </div>
     ) : (
       <div
-        className="library-grid-item px-3 d-flex justify-content-between align-items-center"
+        className={`library-grid-item ${this.state.highlight ? 'hover' : ''}`}
         onMouseEnter={this.onMouseEnter}
         onMouseLeave={this.onMouseLeave}
         onFocus={this.onMouseEnter}
         onContextMenu={this.handleContextMenu}
       >
-        <div className="d-flex align-items-center text-truncate">
-          <img src={iconUrl} title={iconTitle} alt={iconTitle} width="36" className="mr-2" />
-          {this.state.isRenaming ?
-            <Rename name={repo.repo_name} onRenameConfirm={this.onRenameConfirm} onRenameCancel={this.onRenameCancel} /> :
-            <Fragment>
-              <Link to={libPath} className="library-name text-truncate" title={repo.repo_name}>{repo.repo_name}</Link>
-              {isStarred &&
-              <OpIcon
-                className='op-icon library-grid-item-icon sf3-font-star sf3-font'
-                title={gettext('Unstar')}
-                op={this.onToggleStarRepo}
-              />
-              }
-            </Fragment>
-          }
+        <div className="d-flex align-items-center library-info">
+          <img src={iconUrl} title={iconTitle} alt={iconTitle} width="40" className="mr-3" />
+          <div className="d-flex flex-column justify-content-center library-name-container">
+            {this.state.isRenaming ?
+              <Rename name={repo.repo_name} onRenameConfirm={this.onRenameConfirm} onRenameCancel={this.onRenameCancel} /> :
+              <>
+                <div className='d-flex align-items-center'>
+                  <Link to={libPath} className="library-name text-truncate" title={repo.repo_name}>{repo.repo_name}</Link>
+                  {repo.starred && (
+                    <OpIcon
+                      id={`star-icon-${idx}`}
+                      className="star-icon ml-2 flex-shrink-0"
+                      symbol="starred"
+                      tooltip={gettext('Unstar')}
+                      op={this.onToggleStarRepo}
+                    />
+                  )}
+                </div>
+                <span className="library-size">{repo.size}</span>
+              </>
+            }
+          </div>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 ml-4">
           {this.state.isOperationShow && this.generatorPCMenu()}
         </div>
       </div>
@@ -645,18 +721,29 @@ class SharedRepoListItem extends React.Component {
 
   renderMobileUI = () => {
     let { iconUrl, iconTitle, libPath } = this.getRepoComputeParams();
-    let { repo } = this.props;
+    let { repo, idx } = this.props;
     this.repoURL = libPath;
     return (
       <Fragment>
         <tr className={this.state.highlight ? 'tr-highlight' : ''} onMouseEnter={this.onMouseEnter} onMouseOver={this.onMouseOver} onMouseLeave={this.onMouseLeave}>
-          <td onClick={this.visitRepo}><img src={iconUrl} title={iconTitle} width="24" alt={iconTitle}/></td>
+          <td onClick={this.visitRepo}><img src={iconUrl} title={iconTitle} width="20" alt={iconTitle} /></td>
           <td onClick={this.visitRepo}>
             {this.state.isRenaming ?
               <Rename name={repo.repo_name} onRenameConfirm={this.onRenameConfirm} onRenameCancel={this.onRenameCancel} /> :
-              <Link to={libPath}>{repo.repo_name}</Link>
+              <div className='d-flex align-items-center'>
+                <Link to={libPath} className="library-name text-truncate" title={repo.repo_name}>{repo.repo_name}</Link>
+                {repo.archive_status === 'archived' && <Icon className="ml-1" symbol="archive"></Icon>}
+                {repo.starred && (
+                  <OpIcon
+                    id={`star-icon-${idx}`}
+                    className="star-icon ml-2 flex-shrink-0"
+                    symbol="starred"
+                    tooltip={gettext('Unstar')}
+                    op={this.onClickStarInMobile}
+                  />
+                )}
+              </div>
             }
-            <br />
             <span className="item-meta-info" title={repo.owner_contact_email}>{repo.owner_name}</span>
             <span className="item-meta-info">{repo.size}</span>
             <span className="item-meta-info" title={formatWithTimezone(repo.last_modified)}>{dayjs(repo.last_modified).fromNow()}</span>
@@ -752,6 +839,23 @@ class SharedRepoListItem extends React.Component {
               canTransferToDept={true}
               toggleDialog={this.onTransferToggle}
               isDepAdminTransfer={true}
+            />
+          </ModalPortal>
+        )}
+        {this.state.isWebhookDialogShow && (
+          <ModalPortal>
+            <RepoWebhookDialog
+              repo={repo}
+              onRepoWebhookToggle={this.onWebhookToggle}
+            />
+          </ModalPortal>
+        )}
+        {this.state.isArchiveDialogOpen && (
+          <ModalPortal>
+            <RepoArchiveDialog
+              repo={repo}
+              onArchiveRepo={this.onArchiveRepo}
+              toggle={this.onArchiveToggle}
             />
           </ModalPortal>
         )}

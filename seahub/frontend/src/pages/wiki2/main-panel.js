@@ -1,23 +1,30 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Dropdown, DropdownMenu, DropdownToggle, DropdownItem } from 'reactstrap';
-import { SdocWikiEditor, DocInfo, ErrorBoundary, EXTERNAL_EVENT } from '@seafile/seafile-sdoc-editor';
 import { CollaboratorsProvider, CommentContextProvider, EventBus, PluginsProvider, RightPanel } from '@seafile/sdoc-editor';
-import { gettext, wikiPermission, wikiId, siteRoot, isPro, seadocServerUrl } from '../../utils/constants';
-import TextTranslation from '../../utils/text-translation';
-import Switch from '../../components/switch';
-import Loading from '../../components/loading';
-import { Utils } from '../../utils/utils';
+import { SdocWikiEditor, DocInfo, ErrorBoundary, EXTERNAL_EVENT } from '@seafile/seafile-sdoc-editor';
+import classnames from 'classnames';
+import isHotkey from 'is-hotkey';
+import PropTypes from 'prop-types';
+import SDocServerApi from '@/api/sdoc-server-api';
+import { seafileAPI } from '@/api/seafile-api';
+import wikiAPI from '@/api/wiki-api';
+import CustomDropdown from '@/components/dropdown';
+import Icon from '@/components/icon';
+import Loading from '@/components/loading';
+import Switch from '@/components/switch';
+import { metadataAPI } from '@/features/metadata';
+import User from '@/features/metadata/model/user';
+import { gettext, wikiPermission, wikiId, siteRoot, isPro, seadocServerUrl, mediaUrl } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import WikiTopNav from './top-nav';
 import { getCurrentPageConfig } from './utils';
-import RightHeader from './wiki-right-header';
+import WikiCollaboratorsOperation from './wiki-collaborators-operation';
 import CommentPlugin from './wiki-comment/plugin-item';
-import User from '../../metadata/model/user';
-import { metadataAPI } from '../../metadata';
-import classnames from 'classnames';
-import wikiAPI from '../../utils/wiki-api';
+import RightHeader from './wiki-right-header';
 import WikiRightPanel from './wiki-right-panel';
-import SDocServerApi from '../../utils/sdoc-server-api';
+
+const HASH_SCROLL_DELAY = 100;
+const HASH_SCROLL_RETRY_DELAY = 150;
+const HASH_SCROLL_MAX_RETRIES = 5;
 
 const propTypes = {
   path: PropTypes.string.isRequired,
@@ -31,7 +38,7 @@ const propTypes = {
   config: PropTypes.object,
   currentPageId: PropTypes.string,
   isUpdateBySide: PropTypes.bool,
-  onUpdatePage: PropTypes.func,
+  onUpdatePageConfig: PropTypes.func,
   updatePageLock: PropTypes.func,
   currentPageLocked: PropTypes.bool,
   onAddWikiPage: PropTypes.func,
@@ -46,8 +53,6 @@ class MainPanel extends Component {
     this.state = {
       docUuid: '',
       currentPageConfig: {},
-      isDropdownMenuOpen: false,
-      showExportSubmenu: false,
       isShowRightPanel: false,
       collaborators: [],
       editor: {},
@@ -59,14 +64,18 @@ class MainPanel extends Component {
       previewDocInfo: {}
     };
     this.scrollRef = React.createRef();
-    this.exportDropdownRef = React.createRef();
+    this.hashScrollTimer = null;
+    this.previewRequestId = 0;
   }
 
   static getDerivedStateFromProps(props, state) {
     const { seadoc_access_token, currentPageId, config } = props;
     const appConfig = window.app.config;
     const pageOptions = window.app.pageOptions;
-    const { assetsUrl, seadocServerUrl: sdocServer, publishUrl } = window.wiki.config;
+    const { repos = [], wikiSettings = {} } = window.wiki.config;
+    const { assetsUrl, seadocServerUrl: sdocServer, publishUrl, wikiId, permission } = window.wiki.config;
+
+    const currentPageConfig = getCurrentPageConfig(config.pages, currentPageId);
     window.seafile = {
       ...window.seafile, // need docUuid
       ...appConfig,
@@ -79,8 +88,13 @@ class MainPanel extends Component {
       isWiki: true,
       isOpenSocket: window.seafile?.docUuid && true,
       publishUrl,
+      wikiId,
+      navConfig: config, // Reference assignment
+      repos: repos,
+      wikiSettings,
+      isLocked: currentPageConfig?.locked,
+      permission
     };
-    const currentPageConfig = getCurrentPageConfig(config.pages, currentPageId);
     return { ...props, docUuid: window.seafile.docUuid, currentPageConfig };
   }
 
@@ -90,11 +104,21 @@ class MainPanel extends Component {
     const eventBus = EventBus.getInstance();
     this.unsubscribeUnseenNotificationsCount = eventBus.subscribe(EXTERNAL_EVENT.UNSEEN_NOTIFICATIONS_COUNT, this.updateUnseenNotificationsCount);
     this.unsubscribeWikiFilePreview = eventBus.subscribe(EXTERNAL_EVENT.TRANSFER_PREVIEW_FILE_ID, this.toggleWikiFilePreview);
+    this.unsubscribeGenerateExdrawReadOnlyLink = eventBus.subscribe(EXTERNAL_EVENT.GENERATE_EXDRAW_READ_ONLY_LINK, this.generateExdrawReadOnlyLink);
+    document.addEventListener('keydown', this.handleGlobalKeyDown, true);
+    this.scrollToHashAnchor();
   }
 
   componentWillUnmount() {
+    this.previewRequestId += 1;
     this.unsubscribeUnseenNotificationsCount();
     this.unsubscribeWikiFilePreview();
+    this.unsubscribeGenerateExdrawReadOnlyLink();
+    document.removeEventListener('keydown', this.handleGlobalKeyDown, true);
+    if (this.hashScrollTimer) {
+      clearTimeout(this.hashScrollTimer);
+      this.hashScrollTimer = null;
+    }
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -104,39 +128,106 @@ class MainPanel extends Component {
         isPreviewFile: false
       });
     }
+
+    if (
+      prevProps.editorContent !== this.props.editorContent ||
+      prevProps.currentPageId !== this.props.currentPageId ||
+      prevState.docUuid !== this.state.docUuid
+    ) {
+      this.scrollToHashAnchor();
+    }
   }
 
+  handleGlobalKeyDown = (event) => {
+    // dispatch mod + f to trigger search and replace menu
+    if (isHotkey('mod+f', event)) {
+      event.preventDefault();
+      event.stopPropagation();
+      const eventBus = EventBus.getInstance();
+      eventBus.dispatch(EXTERNAL_EVENT.OPEN_SEARCH_REPLACE_MODAL);
+    }
+  };
+
   toggleWikiFilePreview = (data) => {
+    const isWikiLink = data?.type === 'wiki_link';
+    const isSdocLink = data?.type === 'sdoc_link';
+
+    if (isWikiLink && (!data.wiki_repo_id || !data.page_id)) return;
+    if (isSdocLink && !data.doc_uuid) return;
+    if (!isWikiLink && !isSdocLink) return;
+
+    const requestId = ++this.previewRequestId;
+    const previewDocInfo = {
+      type: data.type,
+      title: data.title,
+      pageId: isWikiLink ? data.page_id : '',
+      config: isWikiLink ? this.props.config : null,
+    };
+
     this.setState({
       isPreviewFile: true,
       isReloadingPreview: true,
-      previewDocUuid: {},
+      previewDocUuid: '',
+      docContent: {},
+      previewDocInfo,
       isShowRightPanel: false
     });
 
-    // Firstly get access token config and then use it to get wiki content
-    const getWikiPage = wikiAPI.getWiki2Page(data.wiki_repo_id, data.page_id);
-    getWikiPage.then(res => {
-      const { seadoc_access_token, assets_url } = res.data;
-      const docUuid = assets_url.slice(assets_url.lastIndexOf('/') + 1);
-      const config = {
-        docUuid,
-        sdocServer: seadocServerUrl,
-        accessToken: seadoc_access_token,
-      };
-      this.setState({ previewDocUuid: docUuid });
-
-      const sdocServerApi = new SDocServerApi(config);
-      sdocServerApi.getDocContent().then(docRes => {
-        this.setState({
+    const getDocContent = isWikiLink
+      ? wikiAPI.getWiki2Page(data.wiki_repo_id, data.page_id).then(res => {
+        const { seadoc_access_token, assets_url } = res.data;
+        const docUuid = assets_url.slice(assets_url.lastIndexOf('/') + 1);
+        const config = {
+          docUuid,
+          sdocServer: seadocServerUrl,
+          accessToken: seadoc_access_token,
+        };
+        return new SDocServerApi(config).getDocContent().then(docRes => ({
           docContent: docRes.data,
-          isReloadingPreview: false,
-          previewDocInfo: { pageId: data.page_id, config: this.props.config }
-        });
+          docUuid,
+        }));
+      })
+      : seafileAPI.getSdocAccessTokenByUuid(data.doc_uuid).then(res => {
+        const config = {
+          docUuid: data.doc_uuid,
+          sdocServer: seadocServerUrl,
+          accessToken: res.data.access_token,
+        };
+        return new SDocServerApi(config).getDocContent().then(docRes => ({
+          docContent: docRes.data,
+          docUuid: data.doc_uuid,
+        }));
+      });
+
+    getDocContent.then(({ docContent, docUuid }) => {
+      if (requestId !== this.previewRequestId) return;
+      this.setState({
+        previewDocUuid: docUuid,
+        docContent,
+        isReloadingPreview: false,
       });
     }).catch(error => {
+      if (requestId !== this.previewRequestId) return;
       // eslint-disable-next-line no-console
       console.error(error);
+      this.setState({
+        docContent: {},
+        isReloadingPreview: false,
+      });
+    });
+  };
+
+  generateExdrawReadOnlyLink = (params) => {
+    if (!params?.repoID || !params?.filePath) return;
+
+    seafileAPI.getInternalLink(params.repoID, params?.filePath).then((res) => {
+      const url = new URL(res.data.smart_link);
+      url.searchParams.set('readonly', 'true');
+      url.searchParams.set('filetype', 'Excalidraw');
+      const link = url.toString();
+      if (params?.onSuccess) {
+        params?.onSuccess(link);
+      }
     });
   };
 
@@ -150,7 +241,68 @@ class MainPanel extends Component {
   }
 
   togglePreview = () => {
+    this.previewRequestId += 1;
     this.setState({ isPreviewFile: false });
+  };
+
+  getHashScrollTarget = () => {
+    const rawHash = window.location.hash || '';
+    if (!rawHash.startsWith('#')) {
+      return '';
+    }
+
+    try {
+      return decodeURIComponent(rawHash.slice(1));
+    } catch (error) {
+      return rawHash.slice(1);
+    }
+  };
+
+  escapeSelectorValue = (value) => {
+    if (window.CSS?.escape) {
+      return window.CSS.escape(value);
+    }
+    return value.replace(/["\\]/g, '\\$&');
+  };
+
+  scrollToHashAnchor = () => {
+    if (this.hashScrollTimer) {
+      clearTimeout(this.hashScrollTimer);
+      this.hashScrollTimer = null;
+    }
+
+    const hash = this.getHashScrollTarget();
+    if (!hash || !this.scrollRef.current || !this.props.editorContent?.elements) {
+      return;
+    }
+
+    let retryCount = 0;
+
+    const tryScroll = () => {
+      const scrollContainer = this.scrollRef.current;
+      if (!scrollContainer) {
+        return;
+      }
+
+      const escapedHash = this.escapeSelectorValue(hash);
+      const target = scrollContainer.querySelector(`[data-id="${escapedHash}"]`) || scrollContainer.querySelector(`[id="${escapedHash}"]`);
+
+      if (target) {
+        scrollContainer.scrollTop = target.offsetTop - 10;
+        this.hashScrollTimer = null;
+        return;
+      }
+
+      if (retryCount >= HASH_SCROLL_MAX_RETRIES) {
+        this.hashScrollTimer = null;
+        return;
+      }
+
+      retryCount += 1;
+      this.hashScrollTimer = setTimeout(tryScroll, HASH_SCROLL_RETRY_DELAY);
+    };
+
+    this.hashScrollTimer = setTimeout(tryScroll, HASH_SCROLL_DELAY);
   };
 
   updateUnseenNotificationsCount = (count) => {
@@ -165,46 +317,11 @@ class MainPanel extends Component {
     window.location.href = `${siteRoot}wiki/file_revisions/${wikiId}/?page_id=${this.state.currentPageConfig.id}`;
   };
 
-  toggleDropdownMenu = () => {
-    this.setState({
-      isDropdownMenuOpen: !this.state.isDropdownMenuOpen
-    });
-  };
-
-  getMenu = () => {
-    const list = [];
-    if (wikiPermission === 'rw' && this.state.currentPageConfig) {
-      const { HISTORY, FREEZE_PAGE, EXPORT_PAGE } = TextTranslation;
-      if (isPro) {
-        list.push(FREEZE_PAGE);
-      }
-      list.push(HISTORY);
-      list.push(EXPORT_PAGE);
-    }
-    return list;
-  };
-
-  onMenuItemClick = (item) => {
-    const { key } = item;
-    switch (key) {
-      case 'History':
-        this.openHistory();
-        break;
-      case 'ExportAsSdoc':
-        this.exportAsSdoc();
-        break;
-      case 'ExportAsMarkdown':
-        this.exportAsMarkdown();
-        break;
-    }
-  };
-
   exportPage = (exportType) => {
     const serviceUrl = window.app.config.serviceURL;
     const pageId = this.state.currentPageConfig.id;
     let exportPageUrl = serviceUrl + '/api/v2.1/wiki2/' + wikiId + '/page/' + pageId + '/export/?export_type=' + exportType;
     window.location.href = exportPageUrl;
-    this.setState({ showExportSubmenu: false });
   };
 
   exportAsSdoc = () => {
@@ -215,22 +332,8 @@ class MainPanel extends Component {
     this.exportPage('markdown');
   };
 
-  onMenuItemKeyDown = (e, item) => {
-    if (e.key == 'Enter' || e.key == 'Space') {
-      this.onMenuItemClick(item);
-    }
-  };
-
   toggleFreezeStatus = () => {
     this.props.updatePageLock(this.state.currentPageConfig.id, !this.props.currentPageLocked);
-  };
-
-  showExportSubmenu = () => {
-    this.setState({ showExportSubmenu: true });
-  };
-
-  hideExportSubmenu = () => {
-    this.setState({ showExportSubmenu: false });
   };
 
   setIsShowRightPanel = () => {
@@ -244,10 +347,50 @@ class MainPanel extends Component {
     this.setState({ editor: editor });
   };
 
+  getMenuItems = () => {
+    const { currentPageLocked } = this.props;
+    const items = [];
+
+    if (wikiPermission === 'rw' && this.state.currentPageConfig) {
+      if (isPro) {
+        items.push({
+          key: 'freeze-page',
+          label: gettext('Freeze page'),
+          right_slot: (
+            <Switch
+              checked={currentPageLocked}
+              disabled={false}
+              size="small"
+              className="freeze-document-switch"
+              onChange={this.toggleFreezeStatus}
+            />
+          ),
+          keepOpen: true,
+          onClick: this.toggleFreezeStatus,
+        });
+      }
+      items.push({
+        key: 'History',
+        label: gettext('History'),
+        onClick: this.openHistory,
+      });
+      items.push({
+        key: 'Export',
+        label: gettext('Export'),
+        children: [
+          { key: 'ExportAsSdoc', label: gettext('Export as sdoc'), onClick: this.exportAsSdoc },
+          { key: 'ExportAsMarkdown', label: gettext('Export as Markdown'), onClick: this.exportAsMarkdown },
+        ],
+      });
+    }
+    return items;
+  };
+
   render() {
-    const menuItems = this.getMenu();
-    const { permission, pathExist, isDataLoading, config, onUpdatePage, isUpdateBySide, style, currentPageLocked } = this.props;
-    const { currentPageConfig = {}, isDropdownMenuOpen, showExportSubmenu } = this.state;
+    const menuItems = this.getMenuItems();
+    const isOpenSocket = window.seafile.isOpenSocket;
+    const { permission, pathExist, isDataLoading, config, onUpdatePageConfig, isUpdateBySide, style, currentPageLocked, seadoc_access_token } = this.props;
+    const { currentPageConfig = {} } = this.state;
     const isViewingFile = pathExist && !isDataLoading;
     const isReadOnly = currentPageLocked || !(permission === 'rw');
     return (
@@ -255,13 +398,13 @@ class MainPanel extends Component {
         <div className='wiki2-main-panel-north'>
           <div className="d-flex align-items-center flex-fill o-hidden">
             <div className='wiki2-main-panel-north-content'>
-              <i
+              <Icon
                 role="button"
                 aria-label={gettext('Side Nav Menu')}
                 onClick={this.props.mobileOpenSidePanel}
-                className="sf2-icon-menu side-nav-toggle d-md-none"
-              >
-              </i>
+                symbol="menu"
+                className="side-nav-toggle d-md-none"
+              />
               <WikiTopNav
                 config={config}
                 currentPageId={this.props.currentPageId}
@@ -275,82 +418,16 @@ class MainPanel extends Component {
             </div>
           </div>
           <div className='d-flex align-items-center'>
-            {menuItems.length > 0 && <CommentPlugin unseenNotificationsCount={this.state.unseenNotificationsCount} setIsShowRightPanel={this.setIsShowRightPanel} />}
-            {menuItems.length > 0 &&
-            <Dropdown isOpen={isDropdownMenuOpen} toggle={this.toggleDropdownMenu} className='wiki2-file-history-button'>
-              <DropdownToggle
-                tag="i"
-                tabIndex={0}
-                role="button"
-                id="cur-folder-more-op-toggle"
-                className='wiki2-file-history-button sf3-font-more sf3-font'
-                data-toggle="dropdown"
-                title={gettext('More operations')}
-                aria-label={gettext('More operations')}
-                aria-expanded={isDropdownMenuOpen}
-              />
-              <DropdownMenu>
-                {menuItems.map((menuItem, index) => {
-                  if (menuItem.key === 'Freeze page') {
-                    return <Switch
-                      key={index}
-                      checked={currentPageLocked}
-                      disabled={false}
-                      size="small"
-                      textPosition="left"
-                      className='freeze-document-switch w-100 dropdown-item'
-                      onChange={this.toggleFreezeStatus}
-                      placeholder={gettext('Freeze page')}
-                    />;
-                  } else if (menuItem.key === 'Export') {
-                    return (
-                      <div
-                        key={index}
-                        className="position-relative"
-                        onMouseEnter={this.showExportSubmenu}
-                        onMouseLeave={this.hideExportSubmenu}
-                        ref={this.exportDropdownRef}
-                      >
-                        <DropdownItem className="d-flex justify-content-between align-items-center">
-                          <span>{menuItem.value}</span>
-                          <i className="fas fa-caret-right ml-2"></i>
-                        </DropdownItem>
-                        {showExportSubmenu && (
-                          <div
-                            className="dropdown-menu show"
-                            style={{
-                              position: 'absolute',
-                              left: 'auto',
-                              right: '100%',
-                              top: 0,
-                              marginTop: 0,
-                              marginRight: '0'
-                            }}
-                          >
-                            <DropdownItem onClick={this.exportAsSdoc}>
-                              {gettext('Export as sdoc')}
-                            </DropdownItem>
-                            <DropdownItem onClick={this.exportAsMarkdown}>
-                              {gettext('Export as Markdown')}
-                            </DropdownItem>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  } else {
-                    return (
-                      <DropdownItem
-                        key={index}
-                        onClick={this.onMenuItemClick.bind(this, menuItem)}
-                        onKeyDown={this.onMenuItemKeyDown.bind(this, menuItem)}
-                      >{menuItem.value}
-                      </DropdownItem>
-                    );
-                  }
-                })}
-              </DropdownMenu>
-            </Dropdown>
-            }
+            {Utils.isDesktop() && menuItems.length > 0 && <CommentPlugin unseenNotificationsCount={this.state.unseenNotificationsCount} setIsShowRightPanel={this.setIsShowRightPanel} />}
+            {Utils.isDesktop() && menuItems.length > 0 && <WikiCollaboratorsOperation isOpenSocket={isOpenSocket} docUuid={this.state.docUuid} token={seadoc_access_token} />}
+            <CustomDropdown
+              target="wiki-more-operations"
+              items={menuItems}
+              trigger={Utils.isDesktop() ? undefined : <Icon symbol="more-level" />}
+              className="wiki2-file-history-button"
+              triggerClassName="wiki2-file-history-button"
+              menuClassName="large"
+            />
           </div>
         </div>
         <div className="main-panel-center">
@@ -362,7 +439,7 @@ class MainPanel extends Component {
             {isViewingFile && Utils.isSdocFile(this.props.path) && (
               <div className='sdoc-scroll-container' id='sdoc-scroll-container' ref={this.scrollRef}>
                 <div className='wiki-editor-container'>
-                  <RightHeader isUpdateBySide={isUpdateBySide} currentPageConfig={currentPageConfig} onUpdatePage={onUpdatePage} />
+                  <RightHeader isUpdateBySide={isUpdateBySide} currentPageConfig={currentPageConfig} onUpdatePageConfig={onUpdatePageConfig} />
                   <SdocWikiEditor
                     document={this.props.editorContent}
                     docUuid={this.state.docUuid}
@@ -372,6 +449,7 @@ class MainPanel extends Component {
                     showComment={true}
                     isShowRightPanel={this.state.isShowRightPanel}
                     setEditor={this.setEditor}
+                    mathJaxSource={mediaUrl + 'js/mathjax/tex-svg.js'}
                   />
                 </div>
               </div>

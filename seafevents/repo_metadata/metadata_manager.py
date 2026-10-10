@@ -1,0 +1,217 @@
+import json
+import logging
+import time
+import threading
+
+from collections import OrderedDict
+from copy import deepcopy
+from redis.exceptions import ConnectionError as NoMQAvailable, ResponseError, TimeoutError
+
+from seafevents.repo_metadata.ai_summary_worker import AISummaryWorker
+from seafevents.seasearch.index_task.summary_index_worker import SummaryIndexTaskWorker
+from seafevents.mq import get_mq, NoMessageException
+from seafevents.repo_metadata.metadata_server_api import MetadataServerAPI
+
+from seafevents.repo_metadata.utils import add_file_details
+from seafevents.app.config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD, ENABLE_SEAFILE_AI
+
+
+logger = logging.getLogger(__name__)
+ai_summary_logger = logging.getLogger('ai_summary')
+
+class MetadataManager(object):
+    def __init__(self, config):
+        self.metadata_server_api = MetadataServerAPI('seafevents')
+        # Face recognition is no longer available.
+        # self.face_recognition_manager = FaceRecognitionManager()
+
+        self.should_stop = threading.Event()
+        self.mq_server = REDIS_HOST
+        self.mq_port = REDIS_PORT
+        self.mq_password = REDIS_PASSWORD
+        self.mq = get_mq(self.mq_server, self.mq_port, self.mq_password)
+        self.pending_tasks = OrderedDict()
+        self.no_message_check_interval = 5 * 60
+        self.slow_task_worker_num = 3
+        self.worker_list = []
+        self.ai_summary_worker = AISummaryWorker(self.mq)
+        self.summary_index_worker = SummaryIndexTaskWorker(self.mq, config)
+        self.ai_summary_worker.summary_index_enabled = self.summary_index_worker.enabled
+
+
+    @property
+    def tname(self):
+        return threading.current_thread().name
+
+    def start(self):
+        if not self.mq:
+            return
+
+        # Reset all repo metadata statuses on startup to prevent deadlocks from crashes
+        self.ai_summary_worker.reset_ai_processing_status()
+
+        t = threading.Thread(target=self.index_master_handler, name='metadata_index_master', daemon=True)
+        t.start()
+        self.worker_list.append(t)
+
+        for i in range(int(self.slow_task_worker_num)):
+            t = threading.Thread(target=self.slow_task_worker_handler, name='slow_task_handler_thread_' + str(i), daemon=True)
+            t.start()
+            self.worker_list.append(t)
+
+        if ENABLE_SEAFILE_AI:
+            self.summary_index_worker.start()
+            self.ai_summary_worker.summary_index_enabled = self.summary_index_worker.enabled
+            self.ai_summary_worker.start()
+
+    ########################### metadata update handler thread ########################
+    def index_master_handler(self):
+        logger.info('metadata master event receive thread started')
+        while True:
+            try:
+                self._consume_metadata_updates()
+            except NoMessageException:
+                logger.warning('long time no message, reconnect to redis.')
+            except (ResponseError, NoMQAvailable, TimeoutError) as e:
+                logger.error('The connection to the redis server failed: %s' % e)
+            except Exception as e:
+                logger.error('Error handing master task: %s' % e)
+                time.sleep(0.2)
+
+    def _consume_metadata_updates(self):
+        with self.mq.pubsub(ignore_subscribe_messages=True) as p:
+            try:
+                p.subscribe('metadata_update')
+            except Exception as e:
+                logger.error('The connection to the redis server failed: %s' % e)
+            else:
+                logger.info('metadata master starting listen')
+
+            message_check_time = time.time()
+            while True:
+                while True:
+                    message = p.get_message()
+                    if not message:
+                        break
+
+                    try:
+                        data = json.loads(message['data'])
+                    except Exception:
+                        logger.warning('index master message: invalid.', message)
+                        data = None
+
+                    if data:
+                        self._route_metadata_update(data, message)
+
+                if len(self.pending_tasks) > 0:
+                    copied_pending_tasks = deepcopy(self.pending_tasks)
+                    for repo_id, commit_id in copied_pending_tasks.items():
+                        op_type = 'update-metadata'
+                        data = op_type + '\t' + repo_id
+                        self.mq.lpush('metadata_task', data)
+                        self.pending_tasks.pop(repo_id)
+
+                if (time.time() - message_check_time) > self.no_message_check_interval:
+                    raise NoMessageException
+                time.sleep(0.5)
+
+    def _route_metadata_update(self, data, message):
+        op_type = data.get('msg_type')
+        repo_id = data.get('repo_id')
+        commit_id = data.get('commit_id')
+        if op_type == 'init-metadata':
+            data = op_type + '\t' + repo_id
+            self.mq.lpush('metadata_task', data)
+            logger.debug('init metadata: %s has been add to metadata task queue' % message['data'])
+        elif op_type == 'repo-update':
+            self.pending_tasks[repo_id] = commit_id
+        # Face recognition is no longer available.
+        # elif op_type == 'update_face_recognition':
+        #     username = data.get('username', '')
+        #     data = op_type + '\t' + repo_id + '\t' + username
+        #     self.mq.lpush('face_cluster_task', data)
+        #     logger.debug('update face_recognition: %s has been add to metadata task queue' % message['data'])
+        elif op_type == 'init_ai_summary':
+            self.add_ai_summary_task(repo_id)
+            ai_summary_logger.debug('init ai_summary: %s has been add to metadata task queue' % message['data'])
+        else:
+            logger.warning('op_type invalid, repo_id: %s, op_type: %s' % (repo_id, op_type))
+    ########################### metadata update handler thread ########################
+
+    ########################### slow task handler thread ########################
+    def slow_task_worker_handler(self):
+        logger.info('%s starting update metadata work' % self.tname)
+        try:
+            while not self.should_stop.is_set():
+                try:
+                    res = self.mq.brpop('metadata_slow_task', timeout=30)
+                    if res is not None:
+                        key, value = res
+                        try:
+                            data = json.loads(value)
+                        except Exception:
+                            data = None
+
+                        if not data:
+                            logger.warning('metadata_slow_task: invalid.', res)
+                        else:
+                            repo_id = data.get('repo_id')
+                            self._handle_slow_task(repo_id, data)
+                except (ResponseError, NoMQAvailable, TimeoutError) as e:
+                    logger.error('The connection to the redis server failed: %s' % e)
+        except Exception as e:
+            logger.error('%s Handle slow Task Error' % self.tname)
+            logger.error(e, exc_info=True)
+            time.sleep(0.3)
+
+    def _handle_slow_task(self, repo_id, data):
+        task_type = data.get('task_type')
+        if task_type == 'file_info_extract':
+            self.extract_file_info(repo_id, data)
+    ########################### slow task handler thread #######################
+
+    ############################ TOOLS ########################
+    def extract_file_info(self, repo_id, data):
+        logger.info('%s start extract file info repo %s' % (threading.current_thread().name, repo_id))
+
+        obj_ids = data.get('obj_ids')
+        logger.debug('Extract file info task repo=%s, obj_count=%d', repo_id, len(obj_ids) if isinstance(obj_ids, list) else 0)
+        try:
+            add_file_details(repo_id, obj_ids, self.metadata_server_api)
+        except Exception as e:
+            logger.exception('repo: %s, update metadata file info error: %s', repo_id, e)
+
+        if self.ai_summary_worker.is_summary_enabled(repo_id):
+            try:
+                self.add_ai_summary_task(repo_id)
+                ai_summary_logger.debug('Enqueued incremental ai summary task repo=%s, obj_count=%d',
+                            repo_id, len(obj_ids) if isinstance(obj_ids, list) else 0)
+            except Exception as e:
+                ai_summary_logger.exception('repo: %s, enqueue metadata ai summary task error: %s', repo_id, e)
+
+        logger.info('%s finish extract file info repo %s' % (threading.current_thread().name, repo_id))
+
+    def add_ai_summary_task(self, repo_id):
+        if not repo_id or not self.mq:
+            return
+
+        if not self.ai_summary_worker.set_ai_processing_status_if_empty(repo_id, 'in_summary'):
+            ai_summary_logger.info('Skip AI summary task because repo is already processing, repo_id=%s', repo_id)
+            return
+
+        ai_summary_logger.info('Claimed AI summary task, repo_id=%s', repo_id)
+
+        msg = {
+            'repo_id': repo_id,
+        }
+
+        try:
+            self.mq.lpush('ai_summary_task', json.dumps(msg))
+            ai_summary_logger.info('Enqueued AI summary task, repo_id=%s', repo_id)
+        except Exception as e:
+            logger.error('Failed to enqueue ai summary task repo=%s: %s', repo_id, e)
+            self.ai_summary_worker.set_ai_processing_status(repo_id, 'summary_failed')
+            ai_summary_logger.info('Marked AI summary task as failed after enqueue failure, repo_id=%s', repo_id)
+            return
+
+        logger.debug('Enqueued ai summary repo task repo=%s, queue=%s', repo_id, 'ai_summary_task')

@@ -4,7 +4,7 @@
 {% block sub_title %}{% trans "Log In" %} - {% endblock %}
 {% block header_css_class %}hide{% endblock %}
 {% block extra_base_style %}
-<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seafile-ui.css?t=20250802" />
+<link rel="stylesheet" type="text/css" href="{{ MEDIA_URL }}css/seafile-ui.css?t=20260713" />
 {% endblock %}
 
 {% block extra_style %}
@@ -82,11 +82,11 @@ html, body, #wrapper { height:100%; }
         {% endif %}
 
         <label class="checkbox-label mt-3 mb-0 remember-me">
-            <input type="checkbox" name="remember_me" class="vam remember-input" />
+            <input type="checkbox" name="remember_me" class="form-check-input remember-input" />
             <span class="vam">{% blocktrans %}Remember me for {{remember_days}} days {% endblocktrans %}</span>
         </label>
 
-        <button type="submit" class="submit btn btn-primary btn-block h-auto mb-3">{% trans "Log In" %}</button>
+        <button type="submit" class="submit btn btn-primary btn-block mb-3">{% trans "Log In" %}</button>
     </form>
 
     {% if enable_sso %}
@@ -126,9 +126,7 @@ html, body, #wrapper { height:100%; }
     {% endif %}
 
     <div class="login-panel-bottom-container d-flex justify-content-center" id="login-bottom">
-        {% if enable_change_password %}
         <a href="{{ SITE_ROOT }}accounts/password/reset/" class="normal px-2 bottom-item">{% trans "Forgot password?" %}</a>
-        {% endif %}
         {% if enable_signup %}
         <a href="{{ signup_url }}" class="normal px-2 bottom-item" id="sign-up">{% trans "Signup" %}</a>
         {% endif %}

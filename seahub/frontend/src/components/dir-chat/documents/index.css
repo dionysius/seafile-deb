@@ -1,0 +1,249 @@
+.seafile-ai-chat-documents-wrapper {
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.seafile-ai-chat-documents-wrapper.full-content {
+  width: 100%;
+}
+
+.seafile-ai-chat-documents-wrapper .seafile-ai-chat-documents {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.seafile-ai-chat-documents-wrapper,
+.seafile-ai-chat-documents-wrapper .seafile-ai-chat-documents {
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+}
+
+.seafile-ai-chat-documents-wrapper:not(.full-content) .seafile-ai-chat-documents {
+  border-left: 1px solid var(--bs-border-secondary-color);
+}
+
+/* header */
+.seafile-ai-chat-documents .seafile-ai-chat-documents-header {
+  height: 41px;
+  width: calc(100% - 16px);
+  margin-left: 16px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.sea-ai-customize-select.sea-ai-chat-selector-display.seafile-ai-chat-documents-selector {
+  padding: 0 10px;
+  height: 30px;
+  align-items: center;
+}
+
+.sea-ai-customize-select.sea-ai-chat-selector-display.seafile-ai-chat-documents-selector .selected-option-show {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  line-height: 20px;
+}
+
+.seafile-ai-chat-documents-selector-editor .popover {
+  width: fit-content;
+  min-width: 240px;
+  max-width: 400px;
+  height: auto;
+}
+
+.seafile-ai-chat-documents-selector-editor .option-editor-container {
+  height: auto;
+}
+
+.seafile-ai-chat-documents-selector-editor .option-editor-container .option-editor-content {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 200px;
+}
+
+.sea-ai-customize-select.sea-ai-chat-selector-display.seafile-ai-chat-documents-selector .seafile-ai-chat-documents-divider {
+  height: 12px;
+  width: 1px;
+  background-color: var(--bs-border-quartus-color);
+}
+
+.sea-ai-customize-select.sea-ai-chat-selector-display.seafile-ai-chat-documents-selector .seafile-ai-chat-document-name {
+  font-weight: 500;
+}
+
+.seafile-ai-chat-documents .seafile-ai-chat-documents-header .seafile-ai-chat-documents-header-btns {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents .seafile-ai-chat-documents-header .seafile-ai-chat-documents-header-btns {
+  gap: 4px;
+}
+
+.seafile-ai-chat-documents .seafile-ai-chat-documents-header .seafile-ai-chat-documents-header-btns .seafile-multicolor-icon {
+  cursor: pointer;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents .seafile-ai-chat-documents-header .seafile-ai-chat-document-icon {
+  flex-shrink: 0;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents .seafile-ai-chat-documents-header .seafile-ai-chat-documents-count {
+  color: var(--bs-body-secondary-color);
+  flex-shrink: 0;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-icon-btn,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-more-btn {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bs-icon-color);
+  border-radius: 3px;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-icon-btn:hover,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-more-btn:hover {
+  background-color: var(--bs-icon-btn-hover-bg-color) !important;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-icon-btn:focus,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-more-btn:focus {
+  box-shadow: none;
+  outline: none;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-dropdown-menu {
+  min-width: 200px;
+  max-width: 240px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents-dropdown-menu .dropdown-item {
+  border-radius: 6px;
+  line-height: 20px;
+  padding: 8px 12px;
+}
+
+/* body */
+.seafile-ai-chat-documents .seafile-ai-chat-documents-body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* document */
+.seafile-ai-chat-documents .seafile-ai-chat-document-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 57px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  background-color: var(--bs-body-secondary-bg);
+  gap: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.seafile-ai-chat-documents .seafile-ai-chat-document-info .seafile-ai-chat-document-info-content {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.seafile-ai-chat-documents .seafile-ai-chat-document-info .seafile-ai-chat-document-info-size {
+  color: var(--bs-body-secondary-color);
+  font-size: 12px;
+}
+
+.seafile-ai-chat-documents .seafile-ai-chat-document-info .seafile-ai-chat-document-btns {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.seafile-ai-chat-documents .seafile-ai-chat-document-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-documents .seafile-ai-chat-document-content {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.seafile-ai-chat-documents-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 240px;
+  background-color: #fff;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-container {
+  flex: 1;
+  min-height: 0;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container {
+  padding: 0 !important;
+  overflow: auto;
+  background-color: #fff !important;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .sf-slate-article-content {
+  display: block;
+  width: 100%;
+  padding-left: 0;
+  overflow-x: hidden;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-article-container {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article {
+  min-height: auto;
+  max-width: none;
+  margin: 0;
+  border: none !important;
+  padding: 24px !important;
+  box-shadow: none !important;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article h1,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article h2,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article h3,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article h4,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article h5,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article h6 {
+  border-bottom: none !important;
+}
+
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article table th,
+.seafile-ai-chat-documents-wrapper.markdown-artifact .seafile-ai-chat-document-md .sf-slate-viewer-scroll-container .article table td {
+  color: inherit;
+}

@@ -43,6 +43,10 @@ const TextTranslation = {
     key: 'Download',
     value: gettext('Download')
   },
+  CHAT_WITH_AI: {
+    key: 'Chat with AI',
+    value: gettext('Chat with AI')
+  },
   DELETE: {
     key: 'Delete',
     value: gettext('Delete')
@@ -67,9 +71,25 @@ const TextTranslation = {
     key: 'Details',
     value: gettext('Details')
   },
+  VIEW_SNAPSHOT: {
+    key: 'View Snapshot',
+    value: gettext('View Snapshot')
+  },
+  OPEN_WITH: {
+    key: 'Open with',
+    value: gettext('Open with')
+  },
+  OPEN_WITH_DEFAULT: {
+    key: 'Open with Default',
+    value: gettext('Default')
+  },
   OPEN_VIA_CLIENT: {
     key: 'Open via Client',
-    value: gettext('Open via Client')
+    value: gettext('Desktop client')
+  },
+  OPEN_WITH_ONLYOFFICE: {
+    key: 'Open with OnlyOffice',
+    value: gettext('OnlyOffice')
   },
   LOCK: {
     key: 'Lock',
@@ -114,6 +134,10 @@ const TextTranslation = {
   EXPORT_DOCX: {
     key: 'Export docx',
     value: gettext('Export as docx')
+  },
+  EXPORT_MARKDOWN: {
+    key: 'Export markdown',
+    value: gettext('Export as Markdown')
   },
   HISTORY: {
     key: 'History',
@@ -258,7 +282,7 @@ const TextTranslation = {
   },
   GENERATE_TAGS: {
     key: 'Generate tags',
-    value: gettext('Generate file tags'),
+    value: gettext('Suggest file tags'),
   },
   DETECT_FACES: {
     key: 'Detect faces',

@@ -1,22 +1,25 @@
 import React, { useCallback, useRef } from 'react';
 import { UncontrolledPopover } from 'reactstrap';
-import classNames from 'classnames';
 import Picker from '@emoji-mart/react';
+import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import { Utils } from '../../../utils/utils';
-import { gettext, wikiPermission } from '../../../utils/constants';
+import { gettext, wikiPermission } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import { data } from './../utils/emoji-utils';
 
-const PageIcon = ({ currentPageConfig, onUpdatePage }) => {
+const PageIcon = ({ currentPageConfig, onUpdatePageConfig }) => {
   const popoverRef = useRef(null);
   const isDesktop = Utils.isDesktop();
 
   const handleSetIcon = useCallback((emoji) => {
-    onUpdatePage && onUpdatePage(currentPageConfig.id, { name: currentPageConfig.name, icon: emoji });
+    onUpdatePageConfig && onUpdatePageConfig(currentPageConfig.id, {
+      ...currentPageConfig,
+      icon: emoji
+    });
     setTimeout(() => {
       popoverRef.current?.toggle();
     }, 300);
-  }, [currentPageConfig.id, currentPageConfig.name, onUpdatePage]);
+  }, [currentPageConfig, onUpdatePageConfig]);
 
   const handleIconRemove = useCallback(() => {
     handleSetIcon('');
@@ -36,8 +39,8 @@ const PageIcon = ({ currentPageConfig, onUpdatePage }) => {
           target="wiki-page-icon-container"
           placement="bottom"
           hideArrow={true}
-          popperClassName='wiki-page-icon-popover'
-          innerClassName='wiki-page-icon-panel wiki-page-panel'
+          popperClassName="wiki-page-icon-popover"
+          innerClassName="wiki-page-icon-panel wiki-page-panel"
           trigger="legacy"
         >
           <div className='wiki-page-icon-panel__header popover-header'>
@@ -63,7 +66,7 @@ const PageIcon = ({ currentPageConfig, onUpdatePage }) => {
 
 PageIcon.propTypes = {
   currentPageConfig: PropTypes.object.isRequired,
-  onUpdatePage: PropTypes.func,
+  onUpdatePageConfig: PropTypes.func,
 };
 
 export default PageIcon;

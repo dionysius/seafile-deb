@@ -1,0 +1,35 @@
+.sf-metadata-delete-select-options {
+  background-color: var(--bs-body-secondary-bg);
+  border-bottom: 1px solid var(--bs-border-quartus-color);
+  min-height: 35px;
+  padding: 8px 8px 4px;
+  line-height: 1;
+}
+
+.sf-metadata-delete-select-options .sf-metadata-delete-select-option {
+  height: 20px;
+  max-width: 250px;
+  display: inline-flex;
+  line-height: 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  text-align: center;
+  padding: 0 8px;
+  margin: 0 4px 4px 0;
+  align-items: center;
+  max-width: 100% !important;
+  overflow: hidden;
+}
+
+.sf-metadata-delete-select-options .sf-metadata-delete-select-option .sf-metadata-delete-select-remove {
+  height: 14px;
+  width: 14px;
+  position: relative;
+  font-size: 10px;
+  margin-left: 4px;
+  color: inherit;
+}
+
+.sf-metadata-delete-select-options .sf-metadata-delete-select-option .sf-metadata-delete-select-remove .seafile-multicolor-icon-close {
+  color: inherit;
+}

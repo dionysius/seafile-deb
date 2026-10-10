@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# (c) 2009-2023 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
+# (c) 2009-2024 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
 # Original PyFileServer (c) 2005 Ho Chun Wei.
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/mit-license.php
@@ -12,7 +11,7 @@ r"""
     |__/|__/___/\_, /_/____/_/ |_|___/
                /___/
 
-Default confguration.
+Default configuration.
 """
 # from wsgidav.mw.debug_filter import WsgiDavDebugFilter
 from wsgidav.dir_browser import WsgiDavDirBrowser
@@ -81,6 +80,8 @@ DEFAULT_CONFIG = {
     #: 5 - show full request/response header info (HTTP Logging)
     #:     request body and GET response bodies not shown
     "verbose": DEFAULT_VERBOSE,
+    #: Suppress version info in HTTP response headers and error responses
+    "suppress_version_info": False,
     #: Log options
     "logging": {
         "enable": None,  # True: activate 'wsgidav' logger (in library mode)

@@ -37,6 +37,7 @@ import (
 	"github.com/haiwen/seafile-server/fileserver/option"
 	"github.com/haiwen/seafile-server/fileserver/repomgr"
 	"github.com/haiwen/seafile-server/fileserver/utils"
+	"github.com/haiwen/seafile-server/fileserver/workerpool"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/text/unicode/norm"
 )
@@ -48,7 +49,10 @@ const (
 	duplicateNamesCount             = 1000
 )
 
-var blockMapCacheTable sync.Map
+var (
+	blockMapCacheTable sync.Map
+	indexFilePool      *workerpool.WorkPool
+)
 
 // Dirents is an alias for slice of SeafDirent.
 type Dirents []*fsmgr.SeafDirent
@@ -71,6 +75,8 @@ func fileopInit() {
 			removeFileopExpireCache()
 		}
 	})
+
+	indexFilePool = workerpool.CreateWorkerPool(indexFileWorker, int(option.MaxIndexingFiles))
 }
 
 func initUpload() {
@@ -115,6 +121,8 @@ func parseContentType(fileName string) string {
 			contentType = "video/mp4"
 		case "webm":
 			contentType = "video/webm"
+		case "mkv":
+			contentType = "video/x-matroska"
 		case "jpeg", "JPEG", "jpg", "JPG":
 			contentType = "image/jpeg"
 		case "png", "PNG":
@@ -1386,7 +1394,10 @@ func writeBlockDataToTmpFile(r *http.Request, fsm *recvData, formFiles map[strin
 	var f *os.File
 	filePath := filepath.Join("/", parentDir, filename)
 	tmpFile, err := repomgr.GetUploadTmpFile(repoID, filePath)
-	if err != nil || tmpFile == "" {
+	if err != nil {
+		return fmt.Errorf("failed to get upload tmp file: %w", err)
+	}
+	if tmpFile == "" {
 		tmpDir := filepath.Join(httpTempDir, "cluster-shared")
 		f, err = os.CreateTemp(tmpDir, filename)
 		if err != nil {
@@ -1395,7 +1406,7 @@ func writeBlockDataToTmpFile(r *http.Request, fsm *recvData, formFiles map[strin
 		repomgr.AddUploadTmpFile(repoID, filePath, f.Name())
 		tmpFile = f.Name()
 	} else {
-		f, err = os.OpenFile(tmpFile, os.O_WRONLY|os.O_CREATE, 0666)
+		f, err = os.OpenFile(tmpFile, os.O_WRONLY, 0666)
 		if err != nil {
 			return err
 		}
@@ -1490,6 +1501,12 @@ func mkdirWithParents(repoID, parentDir, newDirPath, user string) error {
 		parentDirCan = getCanonPath(parentDir)
 	}
 
+	gcID, err := repomgr.GetCurrentGCID(repo.StoreID)
+	if err != nil {
+		err := fmt.Errorf("failed to get current gc id: %v", err)
+		return err
+	}
+
 	absPath, dirID, err := checkAndCreateDir(repo, headCommit.RootID, parentDirCan, subFolders)
 	if err != nil {
 		err := fmt.Errorf("failed to check and create dir: %v", err)
@@ -1511,7 +1528,7 @@ func mkdirWithParents(repoID, parentDir, newDirPath, user string) error {
 	}
 
 	buf := fmt.Sprintf("Added directory \"%s\"", relativeDirCan)
-	_, err = genNewCommit(repo, headCommit, rootID, user, buf, true, "", false)
+	_, err = genNewCommit(repo, headCommit, rootID, user, buf, true, gcID, true)
 	if err != nil {
 		err := fmt.Errorf("failed to generate new commit: %v", err)
 		return err
@@ -1619,7 +1636,7 @@ func genDirRecursive(repo *repomgr.Repo, toPath []string) (string, error) {
 }
 
 func clearTmpFile(fsm *recvData, parentDir string) {
-	if fsm.rstart >= 0 && fsm.rend == fsm.fsize-1 {
+	if fsm.rstart >= 0 && fsm.rend == fsm.fsize-1 && len(fsm.fileNames) > 0 {
 		filePath := filepath.Join("/", parentDir, fsm.fileNames[0])
 		tmpFile, err := repomgr.GetUploadTmpFile(fsm.repoID, filePath)
 		if err == nil && tmpFile != "" {
@@ -2490,6 +2507,48 @@ func shouldIgnoreFile(fileName string) bool {
 }
 
 func indexBlocks(ctx context.Context, repoID string, version int, filePath string, handler *multipart.FileHeader, cryptKey *seafileCrypt) (string, int64, error) {
+	req := &indexFileRequest{
+		ctx:      ctx,
+		repoID:   repoID,
+		version:  version,
+		filePath: filePath,
+		handler:  handler,
+		cryptKey: cryptKey,
+	}
+
+	recvChan := make(chan *indexFileResult)
+
+	indexFilePool.AddTask(recvChan, req)
+	result := <-recvChan
+	return result.fileID, result.size, result.err
+}
+
+type indexFileRequest struct {
+	ctx      context.Context
+	repoID   string
+	version  int
+	filePath string
+	handler  *multipart.FileHeader
+	cryptKey *seafileCrypt
+}
+
+type indexFileResult struct {
+	fileID string
+	size   int64
+	err    error
+}
+
+func indexFileWorker(args ...any) error {
+	resChan := args[0].(chan *indexFileResult)
+	req := args[1].(*indexFileRequest)
+
+	ctx := req.ctx
+	repoID := req.repoID
+	version := req.version
+	filePath := req.filePath
+	handler := req.handler
+	cryptKey := req.cryptKey
+
 	var size int64
 	if handler != nil {
 		size = handler.Size
@@ -2497,19 +2556,22 @@ func indexBlocks(ctx context.Context, repoID string, version int, filePath strin
 		f, err := os.Open(filePath)
 		if err != nil {
 			err := fmt.Errorf("failed to open file: %s: %v", filePath, err)
-			return "", -1, err
+			resChan <- &indexFileResult{err: err}
+			return nil
 		}
 		defer f.Close()
 		fileInfo, err := f.Stat()
 		if err != nil {
 			err := fmt.Errorf("failed to stat file %s: %v", filePath, err)
-			return "", -1, err
+			resChan <- &indexFileResult{err: err}
+			return nil
 		}
 		size = fileInfo.Size()
 	}
 
 	if size == 0 {
-		return fsmgr.EmptySha1, 0, nil
+		resChan <- &indexFileResult{fileID: fsmgr.EmptySha1, size: 0}
+		return nil
 	}
 
 	chunkJobs := make(chan chunkingData, 10)
@@ -2544,7 +2606,8 @@ func indexBlocks(ctx context.Context, repoID string, version int, filePath strin
 							_ = result
 						}
 					})
-					return "", -1, result.err
+					resChan <- &indexFileResult{err: result.err}
+					return nil
 				}
 				blkIDs[result.idx] = result.blkID
 			}
@@ -2557,7 +2620,8 @@ func indexBlocks(ctx context.Context, repoID string, version int, filePath strin
 							_ = result
 						}
 					})
-					return "", -1, result.err
+					resChan <- &indexFileResult{err: result.err}
+					return nil
 				}
 				blkIDs[result.idx] = result.blkID
 			}
@@ -2568,10 +2632,12 @@ func indexBlocks(ctx context.Context, repoID string, version int, filePath strin
 	fileID, err := writeSeafile(repoID, version, size, blkIDs)
 	if err != nil {
 		err := fmt.Errorf("failed to write seafile: %v", err)
-		return "", -1, err
+		resChan <- &indexFileResult{err: err}
+		return nil
 	}
 
-	return fileID, size, nil
+	resChan <- &indexFileResult{fileID: fileID, size: size}
+	return nil
 }
 
 func writeSeafile(repoID string, version int, fileSize int64, blkIDs []string) (string, error) {
@@ -2928,6 +2994,12 @@ func updateDir(repoID, dirPath, newDirID, user, headID string) (string, error) {
 
 	newDent := fsmgr.NewDirent(newDirID, dirName, (syscall.S_IFDIR | 0644), time.Now().Unix(), "", 0)
 
+	gcID, err := repomgr.GetCurrentGCID(repo.StoreID)
+	if err != nil {
+		err := fmt.Errorf("failed to get current gc id: %v", err)
+		return "", err
+	}
+
 	rootID, err := doPutFile(repo, headCommit.RootID, canonPath, newDent)
 	if err != nil || rootID == "" {
 		err := fmt.Errorf("failed to put file")
@@ -2939,7 +3011,7 @@ func updateDir(repoID, dirPath, newDirID, user, headID string) (string, error) {
 		commitDesc = "Auto merge by system"
 	}
 
-	newCommitID, err := genNewCommit(repo, headCommit, rootID, user, commitDesc, true, "", false)
+	newCommitID, err := genNewCommit(repo, headCommit, rootID, user, commitDesc, true, gcID, true)
 	if err != nil {
 		err := fmt.Errorf("failed to generate new commit: %v", err)
 		return "", err

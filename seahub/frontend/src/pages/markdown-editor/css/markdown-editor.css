@@ -15,7 +15,6 @@ html, body, #root {
   padding: 0 16px;
   background-color: #fff;
   border-bottom: 1px solid #eee;
-  box-shadow: 0 3px 2px -2px rgba(200, 200, 200, .15);
   flex-shrink: 0;
   align-items: center;
 }
@@ -40,7 +39,7 @@ html, body, #root {
     only select file info text
   */
   user-select: text;
-  color: #212529;
+  color: var(--bs-body-color);
 }
 
 .topbar-file-info .file-title {
@@ -60,11 +59,14 @@ html, body, #root {
   margin-left: 0.5rem;
   margin-right: 0;
   vertical-align: text-bottom;
+}
+
+.topbar-file-info .file-title .file-star svg {
   color: #999;
 }
 
-.topbar-file-info .file-title .file-star .star {
-  color: #999;
+.topbar-file-info .file-title .file-star:hover svg {
+  color: #666;
 }
 
 .topbar-file-info .file-state {
@@ -87,6 +89,6 @@ html, body, #root {
   min-width: 0;
 }
 
-.sf-md-viewer-content.locked .sf-editor-outline-wrapper {
-  top: 66px;
+.sf-markdown-help-wrapper .sf-panel-container {
+  border-left: 1px solid #e6e6dd;
 }

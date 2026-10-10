@@ -1,14 +1,17 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import dayjs from 'dayjs';
 import { SeafileCommentEditor } from '@seafile/comment-editor';
-import { gettext } from '../../../utils/constants';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { Utils } from '../../../utils/utils';
-import toaster from '../../toast';
+import dayjs from 'dayjs';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import OpIcon from '@/components/op-icon';
+import Tooltip from '@/components/tooltip';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import CustomDropdown from '../../dropdown';
+import Icon from '../../icon';
 import Loading from '../../loading';
+import toaster from '../../toast';
 import CommentItemReadOnly from './comment-item-readonly';
-import CommentBodyHeader from './comment-body-header';
 
 const { username, repoID, filePath } = window.app.pageOptions;
 
@@ -69,7 +72,7 @@ class CommentList extends React.Component {
   };
 
   checkParticipant = (email) => {
-    return this.props.participants.map((participant) => {return participant.email;}).includes(email);
+    return this.props.participants.map((participant) => { return participant.email; }).includes(email);
   };
 
   addParticipant = (email) => {
@@ -93,20 +96,62 @@ class CommentList extends React.Component {
     return commentsList;
   };
 
+  getCommentFilterItems = () => {
+    return [
+      {
+        key: 'all-comments',
+        label: gettext('All comments'),
+        checked: this.state.commentType === 'All comments',
+        onClick: (e) => this.setCommentType(e, 'All comments')
+      },
+      {
+        key: 'resolved-comments',
+        label: gettext('Resolved comments'),
+        checked: this.state.commentType === 'Resolved comments',
+        onClick: (e) => this.setCommentType(e, 'Resolved comments')
+      },
+      {
+        key: 'unresolved-comments',
+        label: gettext('Unresolved comments'),
+        checked: this.state.commentType === 'Unresolved comments',
+        onClick: (e) => this.setCommentType(e, 'Unresolved comments')
+      },
+    ];
+  };
+
   render() {
-    const { commentsList, isLoading } = this.props;
+    const { commentsList, isLoading, toggleCommentList } = this.props;
     const filteredComments = this.getFilteredComments();
+    let commentTip = null;
+    if (commentsList.length === 0) {
+      commentTip = gettext('All comments');
+    }
+    if (commentsList.length > 0) {
+      commentTip = gettext('All comments ({comments_count})');
+      commentTip = commentTip.replace('{comments_count}', commentsList.length);
+    }
     return (
       <div className="seafile-comment-page h-100">
 
         <div className="seafile-comment-title">
           <div className="comments-panel-header-left">
-            {gettext('Comments')}
+            {commentTip}
           </div>
           <div className="comments-panel-header-right">
-            <span className="sdoc-icon-btn" onClick={this.props.toggleCommentList}>
-              <i className="sdocfont sdoc-sm-close"></i>
-            </span>
+            <CustomDropdown
+              target="comment-filter"
+              className="d-flex"
+              items={this.getCommentFilterItems()}
+              triggerClassName="op-icon"
+              menuClassName="sdoc-dropdown-menu sdoc-comment-filter-dropdown"
+              trigger={(
+                <>
+                  <Icon symbol="filter" />
+                  <Tooltip target="comment-filter">{gettext('Filter')}</Tooltip>
+                </>
+              )}
+            />
+            <OpIcon id="comment-close" className="op-icon" symbol="close" tooltip={gettext('Close')} op={toggleCommentList} />
           </div>
         </div>
 
@@ -115,12 +160,7 @@ class CommentList extends React.Component {
           style={{ height: 'calc(100% - 170px)' }}
           ref={this.commentListScrollRef}
         >
-          <CommentBodyHeader
-            commentList={commentsList}
-            commentType={this.state.commentType}
-            setCommentType={this.setCommentType}
-          />
-          {isLoading && <Loading/>}
+          {isLoading && <Loading />}
           {!isLoading && filteredComments.length > 0 &&
             <ul className="seafile-comment-list">
               {filteredComments.map((item) => {
@@ -154,7 +194,7 @@ class CommentList extends React.Component {
             insertContent={this.onSubmit}
             collaborators={this.props.relatedUsers ? this.props.relatedUsers : []}
             participants={this.props.participants ? this.props.participants : []}
-            addParticipants={(email) => {this.addParticipant(email);}}
+            addParticipants={(email) => { this.addParticipant(email); }}
           />
         </div>
       </div>

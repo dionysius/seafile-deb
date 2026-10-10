@@ -1,4 +1,4 @@
-import { Utils } from '../utils/utils';
+import { Utils } from '@/utils/utils';
 
 class Repo {
   constructor(object) {
@@ -23,12 +23,14 @@ class Repo {
     this.modifier_email = object.modifier_email;
     this.modifier_name = object.modifier_name;
     this.modifier_avatar = object.modifier_avatar;
+    this.enable_metadata = object.enable_metadata || false;
 
     this.type = object.type;
     this.starred = object.starred;
     this.monitored = object.monitored;
     this.status = object.status;
     this.storage_name = object.storage_name;
+    this.archive_status = object.archive_status;
     if (object.is_admin != undefined) {
       this.is_admin = object.is_admin;
     }

@@ -1,16 +1,16 @@
 import React, { Fragment } from 'react';
+import { Button, Input } from 'reactstrap';
+import classnames from 'classnames';
 import dayjs from 'dayjs';
 import PropTypes from 'prop-types';
-import classnames from 'classnames';
-import { gettext } from '../../utils/constants';
-import { Button, Input } from 'reactstrap';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Utils } from '../../utils/utils';
-import toaster from '../toast';
-import Loading from '../loading';
-import SharePermissionEditor from '../select-editor/share-permission-editor';
+import { seafileAPI } from '@/api/seafile-api';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import EmptyTip from '../empty-tip';
-import '../../css/invitations.css';
+import Loading from '../loading';
+import OpIcon from '../op-icon';
+import SharePermissionEditor from '../select-editor/share-permission-editor';
+import toaster from '../toast';
 
 class UserItem extends React.Component {
 
@@ -47,8 +47,8 @@ class UserItem extends React.Component {
   };
 
   render() {
-    const { isHighlighted } = this.state;
-    const { item } = this.props;
+    const { isHighlighted, isOperationShow } = this.state;
+    const { item, index, permissions } = this.props;
     let currentPermission = item.is_admin ? 'admin' : item.permission;
     return (
       <tr
@@ -64,25 +64,22 @@ class UserItem extends React.Component {
         <td>
           <SharePermissionEditor
             isTextMode={true}
-            isEditIconShow={this.state.isOperationShow}
+            isEditIconShow={isOperationShow}
             currentPermission={currentPermission}
-            permissions={this.props.permissions}
+            permissions={permissions}
             onPermissionChanged={this.onChangeUserPermission}
           />
         </td>
         <td>{dayjs(item.expire_time).format('YYYY-MM-DD')}</td>
         <td className="name">{item.inviter_name}</td>
         <td>
-          <i
-            tabIndex="0"
-            role="button"
-            className={`sf3-font sf3-font-x-01 op-icon ${this.state.isOperationShow ? '' : 'd-none'}`}
-            onClick={this.deleteShareItem}
-            onKeyDown={Utils.onKeyDown}
-            title={gettext('Delete')}
-            aria-label={gettext('Delete')}
-          >
-          </i>
+          <OpIcon
+            id={`delete-icon-${index}`}
+            symbol="close"
+            className={classnames('op-icon', { 'd-none': !isOperationShow })}
+            op={this.deleteShareItem}
+            tooltip={gettext('Delete')}
+          />
         </td>
       </tr>
     );
@@ -90,37 +87,8 @@ class UserItem extends React.Component {
 }
 
 UserItem.propTypes = {
+  index: PropTypes.number.isRequired,
   item: PropTypes.object.isRequired,
-  permissions: PropTypes.array.isRequired,
-  deleteShareItem: PropTypes.func.isRequired,
-  onChangeUserPermission: PropTypes.func.isRequired,
-};
-
-
-class UserList extends React.Component {
-
-  render() {
-    let items = this.props.items;
-    return (
-      <tbody>
-        {items.map((item, index) => {
-          return (
-            <UserItem
-              key={index}
-              item={item}
-              permissions={this.props.permissions}
-              deleteShareItem={this.props.deleteShareItem}
-              onChangeUserPermission={this.props.onChangeUserPermission}
-            />
-          );
-        })}
-      </tbody>
-    );
-  }
-}
-
-UserList.propTypes = {
-  items: PropTypes.array.isRequired,
   permissions: PropTypes.array.isRequired,
   deleteShareItem: PropTypes.func.isRequired,
   onChangeUserPermission: PropTypes.func.isRequired,
@@ -244,7 +212,7 @@ class ShareToInvitePeople extends React.Component {
           toaster.danger(failedMsg);
         }
       }
-      this.setState({ isSubmitting: false });
+      this.setState({ isSubmitting: false, emails: '' });
     }).catch((error) => {
       const errorMsg = Utils.getErrorMsg(error);
       toaster.danger(errorMsg);
@@ -292,48 +260,50 @@ class ShareToInvitePeople extends React.Component {
     let { sharedItems, isSubmitting } = this.state;
     return (
       <div className='h-100 d-flex flex-column'>
-        <table className="w-xs-200">
-          <thead>
-            <tr>
-              <th width="50%">{gettext('Invite Guest')}</th>
-              <th width="35%">{gettext('Permission')}</th>
-              <th width="15%">{''}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <Input
-                  type="text"
-                  id="emails"
-                  placeholder={gettext('Emails, separated by \',\'')}
-                  value={this.state.emails}
-                  onChange={this.handleInputChange}
-                  onKeyDown={this.handleKeyDown}
-                />
-              </td>
-              <td>
-                <SharePermissionEditor
-                  isTextMode={false}
-                  isEditIconShow={false}
-                  currentPermission={this.state.permission}
-                  permissions={this.permissions}
-                  onPermissionChanged={this.setPermission}
-                />
-              </td>
-              <td>
-                <Button color="primary" onClick={this.shareAndInvite} className="submit-btn" disabled={isSubmitting}
-                >{isSubmitting ? <Loading /> : gettext('Submit')}
-                </Button>
-              </td>
-            </tr>
-            {this.state.errorMsg.length > 0 &&
-            <tr key={'error'}>
-              <td colSpan={3}><p className="error">{this.state.errorMsg}</p></td>
-            </tr>
-            }
-          </tbody>
-        </table>
+        <div className='overflow-auto'>
+          <table className="w-xs-200">
+            <thead>
+              <tr>
+                <th width="50%">{gettext('Invite Guest')}</th>
+                <th width="35%">{gettext('Permission')}</th>
+                <th width="15%">{''}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <Input
+                    type="text"
+                    id="emails"
+                    placeholder={gettext('Emails, separated by \',\'')}
+                    value={this.state.emails}
+                    onChange={this.handleInputChange}
+                    onKeyDown={this.handleKeyDown}
+                  />
+                </td>
+                <td>
+                  <SharePermissionEditor
+                    isTextMode={false}
+                    isEditIconShow={false}
+                    currentPermission={this.state.permission}
+                    permissions={this.permissions}
+                    onPermissionChanged={this.setPermission}
+                  />
+                </td>
+                <td>
+                  <Button color="primary" onClick={this.shareAndInvite} className="submit-btn" disabled={isSubmitting}
+                  >{isSubmitting ? <Loading /> : gettext('Submit')}
+                  </Button>
+                </td>
+              </tr>
+              {this.state.errorMsg.length > 0 &&
+              <tr>
+                <td colSpan={3}><p className="error">{this.state.errorMsg}</p></td>
+              </tr>
+              }
+            </tbody>
+          </table>
+        </div>
         <div className="share-list-container flex-fill">
           {this.state.isLoading ? (
             <Loading />
@@ -352,12 +322,20 @@ class ShareToInvitePeople extends React.Component {
                       <th width="15%">{''}</th>
                     </tr>
                   </thead>
-                  <UserList
-                    items={sharedItems}
-                    permissions={this.permissions}
-                    deleteShareItem={this.deleteShareItem}
-                    onChangeUserPermission={this.onChangeUserPermission}
-                  />
+                  <tbody>
+                    {sharedItems.map((item, index) => {
+                      return (
+                        <UserItem
+                          key={index}
+                          index={index}
+                          item={item}
+                          permissions={this.permissions}
+                          deleteShareItem={this.deleteShareItem}
+                          onChangeUserPermission={this.onChangeUserPermission}
+                        />
+                      );
+                    })}
+                  </tbody>
                 </table>
               )}
             </>

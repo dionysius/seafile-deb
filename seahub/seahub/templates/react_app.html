@@ -15,7 +15,8 @@
     shareLinkExpireDaysMax: {{ share_link_expire_days_max }},
     uploadLinkExpireDaysDefault: {{ upload_link_expire_days_default }},
     uploadLinkExpireDaysMin: {{ upload_link_expire_days_min }},
-    uploadLinkExpireDaysMax: {{ upload_link_expire_days_max }}
+    uploadLinkExpireDaysMax: {{ upload_link_expire_days_max }},
+    llmModels: {{ llm_models|safe }}
   };
   for (var key in newOptions) {
     app.pageOptions[key] = newOptions[key];

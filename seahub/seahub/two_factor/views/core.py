@@ -11,6 +11,7 @@ from django.forms import Form
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.translation import gettext as _
 from django.utils.module_loading import import_string
 from django.views.decorators.cache import never_cache
 from django.views.decorators.debug import sensitive_post_parameters
@@ -31,7 +32,8 @@ from seahub.two_factor.models import (StaticDevice, PhoneDevice,
 from seahub.two_factor.utils import random_hex, totp_digits, get_otpauth_url
 
 from seahub.two_factor.forms import (MethodForm, TOTPDeviceForm,
-                                           PhoneNumberForm, DeviceValidationForm)
+                                           TOTPDeviceAlreadyExists, PhoneNumberForm,
+                                           DeviceValidationForm)
 from seahub.two_factor.views.utils import (class_view_decorator,
                                                  CheckTwoFactorEnabledMixin,
                                                  IdempotentSessionWizardView)
@@ -121,7 +123,15 @@ class SetupView(CheckTwoFactorEnabledMixin, IdempotentSessionWizardView):
         # TOTPDeviceForm
         if self.get_method() == 'generator':
             form = [form for form in form_list if isinstance(form, TOTPDeviceForm)][0]
-            device = form.save()
+            try:
+                device = form.save()
+            except TOTPDeviceAlreadyExists:
+                form.add_error(
+                    None,
+                    _('Two-factor authentication is already enabled for this account. '
+                      'Please use the existing authenticator to sign in.'),
+                )
+                return self.render(form)
 
         # PhoneNumberForm / YubiKeyDeviceForm
         elif self.get_method() in ('call', 'sms', 'yubikey'):
@@ -188,6 +198,7 @@ class SetupView(CheckTwoFactorEnabledMixin, IdempotentSessionWizardView):
             b32key = b32encode(rawkey).decode('utf-8')
             self.request.session[QR_SESSION_KEY] = b32key
             context.update({'QR_URL': reverse(self.qrcode_url)})
+            context.update({'QR_KEY': b32key})
         elif self.steps.current == 'validation':
             context['device'] = self.get_device()
         context['cancel_url'] = reverse('edit_profile')
@@ -259,7 +270,7 @@ class QRGeneratorView(View):
     View returns an SVG image with the OTP token information
     """
     http_method_names = ['get']
-    default_qr_factory = 'qrcode.image.svg.SvgPathImage'
+    default_qr_factory = 'qrcode.image.svg.SvgPathFillImage'
 
     # The qrcode library only supports PNG and SVG for now
     image_content_types = {

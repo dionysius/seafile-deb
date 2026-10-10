@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import { getEventClassName } from '@/utils/dom';
+import { Utils } from '@/utils/utils';
+import Icon from '../icon';
 import ModalPortal from '../modal-portal';
-import SelectOptionGroup from './select-option-group';
-import { getEventClassName } from '../../utils/dom';
-import { Utils } from '../../utils/utils';
 import OpIcon from '../op-icon';
-import { gettext } from '../../utils/constants';
+import SelectOptionGroup from './select-option-group';
 
 import './index.css';
 
@@ -27,7 +28,7 @@ class CustomizeSelect extends Component {
     */
     if (this.state.isShowSelectOptions) event.stopPropagation();
     const eventClassName = getEventClassName(event);
-    if (this.props.readOnly || eventClassName.indexOf('option-search-control') > -1 || eventClassName === 'seafile-option-group-search') return;
+    if (this.props.readOnly || eventClassName.indexOf('option-search-control') > -1 || eventClassName === 'sf-option-group-search') return;
     // Prevent closing by pressing the space bar in the search input
     if (event.target.value === '') return;
     this.setState({
@@ -86,7 +87,7 @@ class CustomizeSelect extends Component {
         <div className="custom-select-dropdown-icon">{DropDownIcon}</div>
       );
     }
-    return (<i className="sf3-font sf3-font-down" aria-hidden="true"></i>);
+    return (<span className="d-inline-flex align-items-center"><Icon symbol="down" /></span>);
   };
 
   render() {
@@ -98,7 +99,7 @@ class CustomizeSelect extends Component {
         tabIndex="0"
         role="button"
         ref={(node) => this.selector = node}
-        className={classnames('seafile-customize-select custom-select',
+        className={classnames('sf-select',
           { 'focus': this.state.isShowSelectOptions },
           { 'disabled': readOnly },
           className
@@ -112,9 +113,11 @@ class CustomizeSelect extends Component {
               <span className="selected-option-show-container">
                 <span className='selected-option-show'>{value.label}</span>
                 <OpIcon
-                  className='selected-option-delete ml-1 sf3-font sf3-font-x-01'
+                  id={`remove-btn-${value.label}`}
+                  className="option-remove"
+                  symbol="close"
+                  tooltip={gettext('Remove')}
                   op={this.props.deleteSelected}
-                  title={gettext('Delete')}
                 />
               </span>
               : <span className="selected-option-show">{value.label}</span>

@@ -303,6 +303,26 @@ def sdoc_export_to_md(path, doc_uuid, download_url,
     return resp
 
 
+def sdoc_export_to_html(path, username, doc_uuid, download_url,
+                        src_type, dst_type, publish_url, page_id_name_dict):
+
+    headers = convert_file_gen_headers()
+    params = {
+        'path': path,
+        'username': username,
+        'doc_uuid': doc_uuid,
+        'download_url': download_url,
+        'src_type': src_type,
+        'dst_type': dst_type,
+        'publish_url': publish_url,
+        'page_id_name_dict': page_id_name_dict,
+    }
+    url = FILE_CONVERTER_SERVER_URL.rstrip('/') + '/api/v1/sdoc-export-to-html/'
+    resp = requests.post(url, json=params, headers=headers, timeout=30)
+
+    return resp
+
+
 def format_date(start, end):
     start_struct_time = datetime.datetime.strptime(start, "%Y-%m-%d")
     start_timestamp = time.mktime(start_struct_time.timetuple())
@@ -364,4 +384,30 @@ def get_seafevents_metrics():
     headers = {"Authorization": "Token %s" % token}
     url = urljoin(SEAFEVENTS_SERVER_URL, '/metrics')
     resp = requests.get(url, headers=headers)
+    return resp
+
+
+def add_repo_archive_task_request(repo_id, orig_storage_id, dest_storage_id, op_type, username):
+    payload = {'exp': int(time.time()) + 300, }
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+    headers = {"Authorization": "Token %s" % token}
+    url = urljoin(SEAFEVENTS_SERVER_URL, '/add-repo-archive-task')
+    params = {
+        'repo_id': repo_id,
+        'orig_storage_id': orig_storage_id,
+        'dest_storage_id': dest_storage_id,
+        'op_type': op_type,
+        'username': username
+    }
+    resp = requests.post(url, json=params, headers=headers)
+    return json.loads(resp.content)['task_id']
+
+
+def event_archive_status(task_id):
+    payload = {'exp': int(time.time()) + 300, }
+    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+    headers = {"Authorization": "Token %s" % token}
+    url = urljoin(SEAFEVENTS_SERVER_URL, '/query-archive-status')
+    params = {'task_id': task_id}
+    resp = requests.get(url, params=params, headers=headers)
     return resp

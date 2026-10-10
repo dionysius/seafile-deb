@@ -1,0 +1,18 @@
+.sea-ai-ask-chat.sea-ai-ask-chat-thinking .sea-ai-ask-message-content {
+  border: unset;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: unset;
+  height: fit-content;
+}
+
+.sea-ai-ask-chat.sea-ai-ask-chat-thinking .sea-ai-loading-tip {
+  height: 16px;
+  width: 16px;
+  margin-right: 4px;
+}
+
+.sea-ai-ask-chat.sea-ai-ask-chat-thinking .sea-ai-tip-default {
+  font-size: 12px;
+}

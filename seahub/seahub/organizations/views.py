@@ -1,7 +1,11 @@
 # Copyright (c) 2012-2016 Seafile Ltd.
 # encoding: utf-8
 
+import jwt
+import time
+import requests
 import logging
+import datetime
 import json
 from urllib.parse import urlparse
 from constance import config
@@ -32,7 +36,7 @@ from seahub.organizations.signals import org_operation_signal
 from seahub.organizations.decorators import org_staff_required
 from seahub.organizations.forms import OrgRegistrationForm
 from seahub.organizations.settings import ORG_AUTO_URL_PREFIX, \
-        ORG_MEMBER_QUOTA_ENABLED, ORG_ENABLE_ADMIN_INVITE_USER_VIA_WEIXIN, \
+        ORG_ENABLE_ADMIN_INVITE_USER_VIA_WEIXIN, \
         ORG_ENABLE_ADMIN_CUSTOM_LOGO, ORG_ENABLE_ADMIN_CUSTOM_NAME, \
         ORG_ENABLE_ADMIN_INVITE_USER, ORG_ENABLE_ADMIN_DELETE_ORG
 from seahub.organizations.utils import get_or_create_invitation_link, \
@@ -231,6 +235,11 @@ def org_register(request):
             post_data['url_prefix'] = url_prefix
             form = OrgRegistrationForm(post_data)
 
+        from seahub.utils.turnstile import check_turnstile
+        enable_turnstile = getattr(settings, 'ENABLE_TURNSTILE', False)
+        if enable_turnstile and not check_turnstile(request):
+            form.add_error(None, _("Cloudflare Turnstile check failed. Please refresh and try again."))
+
         if form.is_valid():
             name = form.cleaned_data['name']
             email = form.cleaned_data['email']
@@ -261,6 +270,27 @@ def org_register(request):
             if name:
                 Profile.objects.add_or_update(new_user.username, name)
 
+            if settings.ENABLE_RISK_CONTROL:
+                try:
+                    from seahub.api2.utils import get_client_ip
+                    from django.utils import timezone
+                    ip = get_client_ip(request)
+                    message = {
+                        'register_ip': ip,
+                        'register_time': str(timezone.now().isoformat()),
+                        'account_type': 'org',
+                        'account_id': new_org.org_id,
+                        'account_name': org_name,
+                    }
+                    payload = {'exp': int(time.time()) + 300, }
+                    token = jwt.encode(payload, settings.JWT_PRIVATE_KEY, algorithm='HS256')
+                    headers = {"Authorization": "Token %s" % token}
+                    url = settings.RISK_CONTROL_SERVER_URL.rstrip('/') + '/api/seafile/account-risk-control/'
+                    resp = requests.post(
+                        url, json=message, headers=headers, timeout=10)
+                except Exception as e:
+                    logger.error('Risk control account registration error, %s, %s, %s', new_org.org_id, org_name, e)
+
             if new_user.is_active:
                 new_user.backend = settings.AUTHENTICATION_BACKENDS[0]
                 login(request, new_user)
@@ -275,14 +305,21 @@ def org_register(request):
     up = urlparse(service_url)
     service_url_scheme = up.scheme
     service_url_remaining = up.netloc + up.path
-    return render(request, 'organizations/org_register.html', {
+
+    enable_turnstile = getattr(settings, 'ENABLE_TURNSTILE', False)
+    context = {
         'form': form,
         'login_bg_image_path': login_bg_image_path,
         'service_url_scheme': service_url_scheme,
         'service_url_remaining': service_url_remaining,
         'org_auto_url_prefix': ORG_AUTO_URL_PREFIX,
-        'strong_pwd_required': config.USER_STRONG_PASSWORD_REQUIRED
-    })
+        'strong_pwd_required': config.USER_STRONG_PASSWORD_REQUIRED,
+        'enable_turnstile': enable_turnstile,
+    }
+    if enable_turnstile:
+        context['turnstile_site_key'] = getattr(settings, 'TURNSTILE_SITE_KEY', '')
+
+    return render(request, 'organizations/org_register.html', context)
 
 
 @login_required
@@ -296,7 +333,6 @@ def react_fake_view(request, **kwargs):
     # Whether use new page
     return render(request, "organizations/org_admin_react.html", {
         'org': org,
-        'org_member_quota_enabled': ORG_MEMBER_QUOTA_ENABLED,
         'org_enable_admin_custom_logo': ORG_ENABLE_ADMIN_CUSTOM_LOGO,
         'org_enable_admin_custom_name': ORG_ENABLE_ADMIN_CUSTOM_NAME,
         'org_enable_admin_invite_user': ORG_ENABLE_ADMIN_INVITE_USER,
@@ -308,7 +344,9 @@ def react_fake_view(request, **kwargs):
         'enable_subscription': subscription_check(),
         'enable_external_billing_service': ENABLE_EXTERNAL_BILLING_SERVICE,
         'sys_enable_user_clean_trash': config.ENABLE_USER_CLEAN_TRASH,
-        'sys_enable_encrypted_library': config.ENABLE_ENCRYPTED_LIBRARY
+        'sys_enable_encrypted_library': config.ENABLE_ENCRYPTED_LIBRARY,
+        'enable_turnstile': settings.ENABLE_TURNSTILE,
+        'turnstile_site_key': settings.TURNSTILE_SITE_KEY,
         })
 
 
@@ -335,13 +373,12 @@ def org_associate(request, token):
         return HttpResponseRedirect(settings.LOGIN_REDIRECT_URL)
 
     # check org member quota
-    if ORG_MEMBER_QUOTA_ENABLED:
-        from seahub.organizations.models import OrgMemberQuota
-        org_members = len(ccnet_api.get_org_users_by_url_prefix(org.url_prefix,
-                                                                -1, -1))
-        org_members_quota = OrgMemberQuota.objects.get_quota(org_id)
-        if org_members_quota is not None and org_members >= org_members_quota:
-            return render_error(request, 'Above quota')
+    from seahub.organizations.models import OrgMemberQuota
+    org_members = len(ccnet_api.get_org_users_by_url_prefix(org.url_prefix,
+                                                            -1, -1))
+    org_members_quota = OrgMemberQuota.objects.get_quota(org_id)
+    if org_members_quota is not None and org_members >= org_members_quota:
+        return render_error(request, 'Above quota')
 
     set_org_user(org_id, username)
 

@@ -28,6 +28,11 @@ except ImportError:
     EVENTS_CONFIG_FILE = None
 
 
+try:
+    from seahub.settings import EVENTS_CONFIG_FILE
+except ImportError:
+    EVENTS_CONFIG_FILE = None
+
 SEARCH_REPOS_LIMIT = 200
 RELATED_REPOS_PREFIX = 'RELATED_REPOS_'
 RELATED_REPOS_CACHE_TIMEOUT = 2 * 60 * 60
@@ -39,7 +44,7 @@ if EVENTS_CONFIG_FILE:
     os.environ['EVENTS_CONFIG_FILE'] = EVENTS_CONFIG_FILE
 
 if HAS_FILE_SEARCH:
-    from seafes import es_search, es_wiki_search
+    from seafes import es_search, es_search_wikis
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -221,8 +226,8 @@ def search_files(repos_map, search_path, keyword, obj_desc, start, size, org_id=
     return result, total
 
 
-def search_wikis(wiki_id, keyword, count):
-    return es_wiki_search(wiki_id, keyword, count)
+def search_wikis(wiki_ids, keyword, count):
+    return es_search_wikis(wiki_ids, keyword, count)
 
 
 def ai_search_files(keyword, searched_repos, count, suffixes, search_path=None, obj_type=None, time_range=None, size_range=None, search_filename_only=None):
@@ -254,13 +259,18 @@ def ai_search_files(keyword, searched_repos, count, suffixes, search_path=None, 
 
 
 def ai_search_wikis(params):
+    # Normalize wiki_ids to list format for API
+    wiki_ids = params.get('wiki_ids')
+    if isinstance(wiki_ids, str):
+        params['wiki_ids'] = [wiki_ids]
+
     payload = {'exp': int(time.time()) + 300, }
     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
     headers = {"Authorization": "Token %s" % token}
-    url = urljoin(SEAFEVENTS_SERVER_URL, '/wiki-search')
+    url = urljoin(SEAFEVENTS_SERVER_URL, '/search-wikis')
     resp = requests.post(url, json=params, headers=headers)
     if resp.status_code == 500:
-        raise Exception('search in wiki error status: %s body: %s', resp.status_code, resp.text)
+        raise Exception('search in wikis error status: %s body: %s', resp.status_code, resp.text)
     resp_json = resp.json()
     results = resp_json.get('results')
     total = resp_json.get('total')

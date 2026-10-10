@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import { Button, ModalFooter } from 'reactstrap';
-import { gettext } from '../../../utils/constants';
-import OpIcon from '../../op-icon';
-import { Utils } from '../../../utils/utils';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../../icon';
 
 const ItemPropTypes = {
   member: PropTypes.object,
@@ -42,11 +42,14 @@ class Item extends Component {
         <td width="17%"><img className="avatar" src={member.avatar_url} alt=""/></td>
         <td width="78%">{member.name}</td>
         <td width="10%">
-          <OpIcon
-            className="sf3-font sf3-font-close op-icon"
-            title={gettext('Delete')}
-            op={this.removeSelectedMember}
-          />
+          <span
+            className="op-icon"
+            role="button"
+            tabIndex="0"
+            name={member.email}
+            onClick={this.removeSelectedMember.bind(this, member.email)}>
+            <Icon symbol="close" />
+          </span>
         </td>
       </tr>
     );

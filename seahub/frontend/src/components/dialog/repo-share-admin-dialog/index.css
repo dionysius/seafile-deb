@@ -1,0 +1,29 @@
+@media(min-width:768px) {
+  .repo-share-admin-container {
+    max-width: 1100px;
+  }
+}
+
+.repo-share-admin-container .modal-title {
+  display: flex;
+}
+
+.repo-share-admin-container .modal-title .file-toolbar-btn {
+  margin-left: 8px;
+  min-width: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.repo-share-admin-container .modal-title .file-toolbar-btn:hover {
+  background-color: var(--bs-hover-bg) !important;
+}
+
+.repo-share-admin-content-container {
+  max-height: 500px;
+}
+
+.repo-share-admin-content-container .table-real-container {
+  height: 20rem;
+  overflow: auto;
+}

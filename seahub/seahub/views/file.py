@@ -54,10 +54,11 @@ from seahub.utils import render_error, is_org_context, \
     EMPTY_SHA1, HtmlDiff, gen_inner_file_get_url, \
     get_conf_text_ext, PREVIEW_FILEEXT, \
     normalize_file_path, get_service_url, \
-    normalize_cache_key, gen_file_get_url_by_sharelink, gen_file_get_url_new
+    normalize_cache_key, gen_file_get_url_by_sharelink, gen_file_get_url_new, \
+    get_site_scheme_and_netloc, get_file_history_suffix, IS_EMAIL_CONFIGURED
 from seahub.utils.ip import get_remote_ip
 from seahub.utils.file_types import (IMAGE, PDF, SVG, AUDIO,
-                                     MARKDOWN, TEXT, VIDEO, SEADOC, EXCALIDRAW)
+                                     MARKDOWN, TEXT, VIDEO, SEADOC, EXCALIDRAW, EPUB)
 from seahub.utils.timeutils import timestamp_to_isoformat_timestr
 from seahub.utils.star import is_file_starred
 from seahub.utils.file_op import check_file_lock, \
@@ -298,6 +299,21 @@ def get_file_view_path_and_perm(request, repo_id, obj_id, path,
         inner_url = gen_inner_file_get_url(token, filename)
         return (outer_url, inner_url, user_perm)
 
+def should_use_origin_file_history(repo, path):
+    if not repo.is_virtual:
+        return False
+
+    suffix_list = get_file_history_suffix()
+    if suffix_list and isinstance(suffix_list, list):
+        suffix_list = [x.lower() for x in suffix_list]
+    else:
+        suffix_list = []
+
+    filename = os.path.basename(path)
+    file_type, file_ext = [x.lower() for x in get_file_type_and_ext(filename)]
+
+    return file_ext in suffix_list
+
 def handle_textual_file(request, filetype, raw_path, ret_dict):
     # encoding option a user chose
     file_enc = request.GET.get('file_enc', 'auto')
@@ -376,7 +392,9 @@ def can_preview_file(file_name, file_size, repo):
 
     # Seafile defines 10 kinds of filetype:
     # TEXT, MARKDOWN, IMAGE, VIDEO, AUDIO, PDF, SVG
-    if filetype in (TEXT, MARKDOWN, IMAGE, PDF) or fileext in get_conf_text_ext():
+    if filetype in (TEXT, MARKDOWN, IMAGE, PDF, EPUB) or fileext in get_conf_text_ext():
+        if filetype == EPUB and repo.encrypted:
+            return False, _('The library is encrypted, can not open file online.')
         if file_size > FILE_PREVIEW_MAX_SIZE:
             error_msg = _('File size surpasses %s, can not be opened online.') % \
                 filesizeformat(FILE_PREVIEW_MAX_SIZE)
@@ -599,7 +617,7 @@ def view_lib_file(request, repo_id, path):
         # redirect to sdoc export
         filetype, fileext = get_file_type_and_ext(filename)
         if filetype == SEADOC:
-            file_uuid = get_seadoc_file_uuid(repo, path)
+            file_uuid = get_seadoc_file_uuid(repo, path, pending=True)
             file_url = reverse('seadoc_export', args=[file_uuid])
             return HttpResponseRedirect(file_url)
 
@@ -681,6 +699,8 @@ def view_lib_file(request, repo_id, path):
         'can_download_file': can_download_file,
         'file_download_url': gen_file_get_url_new(repo_id, path),
         'mobile_login': mobile_login,
+        'enable_onlyoffice': ENABLE_ONLYOFFICE,
+        'is_email_configured': IS_EMAIL_CONFIGURED,
     }
 
     # check whether file is starred
@@ -727,7 +747,7 @@ def view_lib_file(request, repo_id, path):
     return_dict['fileext'] = fileext
     return_dict['filetype'] = filetype
 
-    file_uuid = get_seadoc_file_uuid(repo, path)
+    file_uuid = get_seadoc_file_uuid(repo, path, pending=True)
     return_dict['file_uuid'] = file_uuid
 
     # get file raw url
@@ -749,15 +769,16 @@ def view_lib_file(request, repo_id, path):
     if filetype in FILE_TYPE_FOR_NEW_FILE_LINK:
         raw_path = gen_file_get_url_new(repo_id, path)
 
-    if filetype in (IMAGE, VIDEO, AUDIO, PDF, SVG, 'Unknown'):
+    if filetype in (IMAGE, VIDEO, AUDIO, PDF, SVG, EPUB, 'Unknown'):
         template = 'common_file_view_react.html'
 
-    edit_pdf = request.GET.get('edit_pdf', 'false')
+    open_with_onlyoffice = request.GET.get('open_with_onlyoffice', 'false')
 
     if filetype == SEADOC:
         return_dict['assets_url'] = '/api/v2.1/seadoc/download-image/' + file_uuid
         return_dict['seadoc_server_url'] = SEADOC_SERVER_URL
         return_dict['enable_seadoc'] = ENABLE_SEADOC
+        return_dict['llm_models'] = json.dumps(settings.LLM_MODELS)
 
         can_edit_file = True
         locked_by_online_office = if_locked_by_online_office(repo_id, path)
@@ -794,7 +815,7 @@ def view_lib_file(request, repo_id, path):
         send_file_access_msg(request, repo, path, 'web')
         return render(request, template, return_dict)
 
-    elif filetype == PDF and not edit_pdf == 'true':
+    elif filetype == PDF and not open_with_onlyoffice == 'true':
         return_dict['raw_path'] = raw_path
         return_dict['enable_pdf_thumbnail'] = settings.ENABLE_PDF_THUMBNAIL
 
@@ -808,8 +829,13 @@ def view_lib_file(request, repo_id, path):
 
         return render(request, template, return_dict)
 
-    elif ENABLE_OFFICE_WEB_APP and fileext in OFFICE_WEB_APP_FILE_EXTENSION or \
-            ENABLE_ONLYOFFICE and fileext in ONLYOFFICE_FILE_EXTENSION:
+    elif (
+        (ENABLE_OFFICE_WEB_APP and fileext in OFFICE_WEB_APP_FILE_EXTENSION)
+        or
+        (fileext != 'csv' and ENABLE_ONLYOFFICE and fileext in ONLYOFFICE_FILE_EXTENSION)
+        or
+        (fileext == 'csv' and ENABLE_ONLYOFFICE and open_with_onlyoffice == 'true')
+    ):
 
         if repo.encrypted:
             return_dict['err'] = _('The library is encrypted, can not open file online.')
@@ -971,6 +997,15 @@ def view_lib_file(request, repo_id, path):
         return_dict['img_next'] = img_next
         return_dict['raw_path'] = raw_path
 
+        can_rotate = True
+        if parse_repo_perm(permission).can_edit_on_web is False:
+            can_rotate = False
+        return_dict['can_rotate'] = can_rotate
+
+        send_file_access_msg(request, repo, path, 'web')
+        return render(request, template, return_dict)
+
+    elif filetype == EPUB:
         send_file_access_msg(request, repo, path, 'web')
         return render(request, template, return_dict)
 
@@ -1052,7 +1087,15 @@ def view_history_file_common(request, repo_id, ret_dict):
 
     # construct some variables
     u_filename = os.path.basename(path)
-    current_commit = get_commit(repo.id, repo.version, commit_id)
+    if should_use_origin_file_history(repo, path):
+        origin_repo_id = repo.origin_repo_id
+        origin_repo = get_repo(origin_repo_id)
+        if not origin_repo:
+            raise Http404
+        current_commit = get_commit(origin_repo.id, origin_repo.version, commit_id)
+    else:
+        current_commit = get_commit(repo_id, repo.version, commit_id)
+
     if not current_commit:
         raise Http404
 
@@ -1382,10 +1425,11 @@ def view_shared_file(request, fileshare):
         if not can_edit:
             ret_dict['seadoc_access_token'] = gen_seadoc_access_token(file_uuid, filename, username, permission=seadoc_perm)
         else:
-            name = username
-            username = str(time.time())
+            if not request.user.is_authenticated:
+                username = 'anon_%d' % int(time.time() * 1000)
             ret_dict['seadoc_access_token'] = gen_share_seadoc_access_token(file_uuid, filename, username, name, permission=seadoc_perm)
 
+        ret_dict['name'] = name
         ret_dict['share_link_username'] = username
 
         send_file_access_msg(request, repo, path, 'web')
@@ -1421,6 +1465,13 @@ def view_shared_file(request, fileshare):
     if ENABLE_OFFICE_WEB_APP and fileext in OFFICE_WEB_APP_FILE_EXTENSION or \
             ENABLE_ONLYOFFICE and fileext in ONLYOFFICE_FILE_EXTENSION:
 
+        meta_property_dict = {
+            'file_share_link': request.path,
+            'file_name': filename,
+            'icon_path_for_ogp': file_icon_filter(filename),
+            'desc_for_ogp': _('Share link for %s.') % filename
+        }
+
         def online_office_lock_or_refresh_lock(repo_id, path, username):
             try:
                 if not is_locked:
@@ -1447,6 +1498,7 @@ def view_shared_file(request, fileshare):
                 # send file audit message
                 send_file_access_msg(request, repo, path, 'share-link')
 
+                wopi_dict.update(meta_property_dict)
                 return render(request, 'view_file_wopi.html', wopi_dict)
             else:
                 ret_dict['err'] = _('Error when prepare Office Online file preview page.')
@@ -1467,6 +1519,7 @@ def view_shared_file(request, fileshare):
                 # send file audit message
                 send_file_access_msg(request, repo, path, 'share-link')
 
+                onlyoffice_dict.update(meta_property_dict)
                 return render(request, 'view_file_onlyoffice.html', onlyoffice_dict)
             else:
                 ret_dict['err'] = _('Error when prepare OnlyOffice file preview page.')
@@ -1501,6 +1554,15 @@ def view_shared_file(request, fileshare):
     desc_for_ogp = _('Share link for %s.') % filename
     icon_path_for_ogp = file_icon_filter(filename)
 
+    thumbnail_for_og_image = ''
+    if filetype == IMAGE or \
+            filetype == VIDEO and settings.ENABLE_VIDEO_THUMBNAIL or \
+            filetype == PDF and settings.ENABLE_PDF_THUMBNAIL:
+        thumbnail_for_og_image = get_site_scheme_and_netloc() + reverse('share_link_thumbnail_get',
+                                                                        args=[token,
+                                                                              256,
+                                                                              path.lstrip('/')])
+
     file_obj = seafile_api.get_dirent_by_path(repo_id, path)
 
     data = {'repo': repo,
@@ -1527,6 +1589,7 @@ def view_shared_file(request, fileshare):
             'file_share_link': file_share_link,
             'desc_for_ogp': desc_for_ogp,
             'icon_path_for_ogp': icon_path_for_ogp,
+            'thumbnail_for_og_image': thumbnail_for_og_image,
             'enable_share_link_report_abuse': ENABLE_SHARE_LINK_REPORT_ABUSE,
             'shared_file_download_url': shared_file_download_url
             }
@@ -1537,6 +1600,7 @@ def view_shared_file(request, fileshare):
         data['seadoc_access_token'] = ret_dict['seadoc_access_token']
         data['can_edit_file'] = ret_dict['can_edit_file']
         data['file_perm'] = ret_dict['file_perm']
+        data['name'] = ret_dict['name']
         data['share_link_username'] = ret_dict['share_link_username']
 
     if filetype == EXCALIDRAW:
@@ -1679,6 +1743,13 @@ def view_file_via_shared_dir(request, fileshare):
     if ENABLE_OFFICE_WEB_APP and fileext in OFFICE_WEB_APP_FILE_EXTENSION or \
             ENABLE_ONLYOFFICE and fileext in ONLYOFFICE_FILE_EXTENSION:
 
+        meta_property_dict = {
+            'file_share_link': request.path,
+            'file_name': filename,
+            'icon_path_for_ogp': file_icon_filter(filename),
+            'desc_for_ogp': _('Share link for %s.') % filename
+        }
+
         if not request.user.is_authenticated:
             username = ANONYMOUS_EMAIL
         else:
@@ -1695,6 +1766,7 @@ def view_file_via_shared_dir(request, fileshare):
                 # send file audit message
                 send_file_access_msg(request, repo, real_path, 'share-link')
 
+                wopi_dict.update(meta_property_dict)
                 return render(request, 'view_file_wopi.html', wopi_dict)
             else:
                 ret_dict['err'] = _('Error when prepare Office Online file preview page.')
@@ -1711,6 +1783,7 @@ def view_file_via_shared_dir(request, fileshare):
                 # send file audit message
                 send_file_access_msg(request, repo, real_path, 'share-link')
 
+                onlyoffice_dict.update(meta_property_dict)
                 return render(request, 'view_file_onlyoffice.html', onlyoffice_dict)
             else:
                 ret_dict['err'] = _('Error when prepare OnlyOffice file preview page.')
@@ -1758,8 +1831,6 @@ def view_file_via_shared_dir(request, fileshare):
         if not permissions['can_download']:
             raw_path = ''
 
-    
-
     # generate dir navigator
     if fileshare.path == '/':
         zipped = gen_path_link(req_path, repo.name)
@@ -1771,6 +1842,15 @@ def view_file_via_shared_dir(request, fileshare):
     file_share_link = request.path
     desc_for_ogp = _('Share link for %s.') % filename
     icon_path_for_ogp = file_icon_filter(filename)
+
+    thumbnail_for_og_image = ''
+    if filetype == IMAGE or \
+            filetype == VIDEO and settings.ENABLE_VIDEO_THUMBNAIL or \
+            filetype == PDF and settings.ENABLE_PDF_THUMBNAIL:
+        thumbnail_for_og_image = get_site_scheme_and_netloc() + reverse('share_link_thumbnail_get',
+                                                                        args=[token,
+                                                                              256,
+                                                                              req_path.lstrip('/')])
 
     file_obj = seafile_api.get_dirent_by_path(repo_id, req_path)
 
@@ -1801,6 +1881,7 @@ def view_file_via_shared_dir(request, fileshare):
             'file_share_link': file_share_link,
             'desc_for_ogp': desc_for_ogp,
             'icon_path_for_ogp': icon_path_for_ogp,
+            'thumbnail_for_og_image': thumbnail_for_og_image,
             'enable_share_link_report_abuse': ENABLE_SHARE_LINK_REPORT_ABUSE,
         }
     if filetype == SEADOC:

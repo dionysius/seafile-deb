@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { gettext } from '../../utils/constants';
-import ItemDropdownMenu from '../dropdown-menu/metadata-item-dropdown-menu';
-import { EVENT_BUS_TYPE } from '../../metadata/constants';
-import TextTranslation from '../../utils/text-translation';
-import EventBus from '../common/event-bus';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { EVENT_BUS_TYPE } from '@/features/metadata/constants';
+import { gettext } from '@/utils/constants';
+import TextTranslation from '@/utils/text-translation';
 import OpElement from '../../components/op-element';
 import OpIcon from '../../components/op-icon';
+import CustomDropdown from '../dropdown';
+import EventBus from '../event-bus';
+import Icon from '../icon';
 
 const AllTagsToolbar = () => {
   const [selectedTagIds, setSelectedTagIds] = useState([]);
@@ -22,18 +23,6 @@ const AllTagsToolbar = () => {
     eventBus && eventBus.dispatch(EVENT_BUS_TYPE.DELETE_TAGS, selectedTagIds);
   }, [selectedTagIds, eventBus]);
 
-  const getMenuList = useCallback(() => {
-    if (!canModify) return [];
-    const { MERGE_TAGS, NEW_CHILD_TAG } = TextTranslation;
-    const list = [];
-    if (selectedTagIds.length > 1) {
-      list.push(MERGE_TAGS);
-      return list;
-    }
-    list.push(NEW_CHILD_TAG);
-    return list;
-  }, [selectedTagIds, canModify]);
-
   const onMenuItemClick = useCallback((operation, e) => {
     switch (operation) {
       case TextTranslation.MERGE_TAGS.key: {
@@ -47,6 +36,26 @@ const AllTagsToolbar = () => {
     }
   }, [eventBus, selectedTagIds]);
 
+  const menuItems = useMemo(() => {
+    if (!canModify) {
+      return [];
+    }
+
+    if (selectedTagIds.length > 1) {
+      return [{
+        key: TextTranslation.MERGE_TAGS.key,
+        label: TextTranslation.MERGE_TAGS.value,
+        onClick: (e) => onMenuItemClick(TextTranslation.MERGE_TAGS.key, e),
+      }];
+    }
+
+    return [{
+      key: TextTranslation.NEW_CHILD_TAG.key,
+      label: TextTranslation.NEW_CHILD_TAG.value,
+      onClick: (e) => onMenuItemClick(TextTranslation.NEW_CHILD_TAG.key, e),
+    }];
+  }, [canModify, onMenuItemClick, selectedTagIds.length]);
+
   useEffect(() => {
     const unsubscribeSelectTags = eventBus && eventBus.subscribe(EVENT_BUS_TYPE.SELECT_TAGS, (ids) => {
       setSelectedTagIds(ids);
@@ -55,7 +64,7 @@ const AllTagsToolbar = () => {
     return () => {
       unsubscribeSelectTags && unsubscribeSelectTags();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const length = selectedTagIds.length;
@@ -64,23 +73,27 @@ const AllTagsToolbar = () => {
       <OpElement
         className="cur-view-path-btn px-2"
         title={gettext('Unselect')}
-        op={unSelect}>
-        <span className="sf3-font-x-01 sf3-font mr-2"></span>
+        op={unSelect}
+      >
+        <span className="d-flex mr-2" aria-label={gettext('Unselect')} title={gettext('Unselect')}>
+          <Icon symbol="close" />
+        </span>
         <span>{length}{' '}{gettext('selected')}</span>
       </OpElement>
       {canDelete &&
         <OpIcon
-          className="cur-view-path-btn sf3-font-delete1 sf3-font"
-          title={gettext('Delete')}
+          id="delete-btn"
+          className="cur-view-path-btn"
+          symbol="delete"
+          tooltip={gettext('Delete')}
           op={deleteTags}
         />
       }
       {length > 0 && (
-        <ItemDropdownMenu
-          item={{}}
-          toggleClass={'cur-view-path-btn sf3-font-more sf3-font'}
-          onMenuItemClick={onMenuItemClick}
-          getMenuList={getMenuList}
+        <CustomDropdown
+          target="all-tags-more-operations-btn"
+          items={menuItems}
+          triggerClassName="cur-view-path-btn"
         />
       )}
     </div>

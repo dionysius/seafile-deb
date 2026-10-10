@@ -1,7 +1,8 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
-import { gettext } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
+import Icon from '@/components/icon';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 
 const propTypes = {
   resumableFile: PropTypes.object.isRequired,
@@ -11,7 +12,7 @@ const propTypes = {
 
 const UPLOAD_UPLOADING = 'uploading';
 const UPLOAD_ERROR = 'error';
-const UPLOAD_ISSAVING = 'isSaving';
+const UPLOAD_IS_SAVING = 'isSaving';
 const UPLOAD_UPLOADED = 'uploaded';
 
 class UploadListItem extends React.Component {
@@ -31,7 +32,7 @@ class UploadListItem extends React.Component {
       uploadState = UPLOAD_ERROR;
     } else {
       if (resumableFile.remainingTime === 0 && !resumableFile.isSaved) {
-        uploadState = UPLOAD_ISSAVING;
+        uploadState = UPLOAD_IS_SAVING;
       }
 
       if (resumableFile.isSaved) {
@@ -82,7 +83,7 @@ class UploadListItem extends React.Component {
           <span className="file-size">{this.formatFileSize(resumableFile.size)}</span>
         </td>
         <td className="upload-progress">
-          {(this.state.uploadState === UPLOAD_UPLOADING || this.state.uploadState === UPLOAD_ISSAVING) &&
+          {(this.state.uploadState === UPLOAD_UPLOADING || this.state.uploadState === UPLOAD_IS_SAVING) &&
             <Fragment>
               {resumableFile.size >= (100 * 1000 * 1000) &&
                 <Fragment>
@@ -126,7 +127,7 @@ class UploadListItem extends React.Component {
                       {progress > 0 && <p className="progress-text mb-0">{`${gettext('Uploading...')} ${progress}%`}</p>}
                     </>
                   )}
-                  {this.state.uploadState === UPLOAD_ISSAVING && (
+                  {this.state.uploadState === UPLOAD_IS_SAVING && (
                     <p className="progress-text mb-0">{gettext('Saving...')}</p>
                   )}
                 </>
@@ -135,7 +136,7 @@ class UploadListItem extends React.Component {
           }
           {this.state.uploadState === UPLOAD_UPLOADED && (
             <div className="d-flex align-items-center">
-              <span className="upload-success-icon sf2-icon-tick mr-2"></span>
+              <span className="upload-success-icon mr-2"><Icon symbol="check" /></span>
               <span className="upload-success-msg">{gettext('Uploaded')}</span>
             </div>
           )}
@@ -147,7 +148,9 @@ class UploadListItem extends React.Component {
               role="button"
               tabIndex={0}
             >
-              <span className="upload-failure-icon sf3-font sf3-font-info mr-2" aria-hidden="true"></span>
+              <span className="upload-failure-icon mr-2" aria-hidden="true">
+                <Icon symbol="info" />
+              </span>
               <span className="upload-failure-msg" dangerouslySetInnerHTML={{ __html: error }}></span>
             </div>
           )}

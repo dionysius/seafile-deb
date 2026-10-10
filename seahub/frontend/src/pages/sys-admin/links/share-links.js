@@ -1,15 +1,16 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import classnames from 'classnames';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import classnames from 'classnames';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { gettext } from '../../../utils/constants';
-import toaster from '../../../components/toast';
-import { Utils } from '../../../utils/utils';
-import EmptyTip from '../../../components/empty-tip';
-import Loading from '../../../components/loading';
-import Paginator from '../../../components/paginator';
+import PropTypes from 'prop-types';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import EmptyTip from '@/components/empty-tip';
+import Loading from '@/components/loading';
+import OpIcon from '@/components/op-icon';
+import Paginator from '@/components/paginator';
+import toaster from '@/components/toast';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import UserLink from '../user-link';
 
 dayjs.extend(relativeTime);
@@ -62,6 +63,7 @@ class Content extends Component {
                 {items.map((item, index) => {
                   return (<Item
                     key={index}
+                    idx={index}
                     item={item}
                     deleteShareLink={this.props.deleteShareLink}
                   />);
@@ -138,7 +140,7 @@ class Item extends Component {
 
   render() {
     let { isOpIconShown, isHighlighted } = this.state;
-    let { item } = this.props;
+    let { item, idx } = this.props;
     return (
       <tr
         className={classnames({
@@ -154,12 +156,13 @@ class Item extends Component {
         <td>{item.view_cnt}</td>
         <td>{this.renderExpiration()}</td>
         <td>
-          <i
-            className={`op-icon sf3-font-delete1 sf3-font ${isOpIconShown ? '' : 'invisible'}`}
-            title={gettext('Remove')}
-            onClick={this.deleteShareLink}
-          >
-          </i>
+          <OpIcon
+            id={`delete-link-${idx}`}
+            className={`op-icon ${isOpIconShown ? '' : 'invisible'}`}
+            symbol="delete"
+            tooltip={gettext('Remove')}
+            op={this.deleteShareLink}
+          />
         </td>
       </tr>
     );
@@ -168,6 +171,7 @@ class Item extends Component {
 
 
 Item.propTypes = {
+  idx: PropTypes.number.isRequired,
   item: PropTypes.object.isRequired,
   deleteShareLink: PropTypes.func.isRequired,
 };
@@ -236,7 +240,7 @@ class ShareLinks extends Component {
   };
 
   render() {
-    let { shareLinkList, currentPage, perPage, hasNextPage } = this.state;
+    let { shareLinkList, perPage, hasNextPage } = this.state;
     return (
       <>
         <div className="main-panel-center flex-row">
@@ -246,7 +250,7 @@ class ShareLinks extends Component {
                 loading={this.state.loading}
                 errorMsg={this.state.errorMsg}
                 items={shareLinkList}
-                currentPage={currentPage}
+                currentPage={this.props.currentPage}
                 perPage={perPage}
                 hasNextPage={hasNextPage}
                 getShareLinksByPage={this.getShareLinksByPage}

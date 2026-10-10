@@ -1,13 +1,13 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import Logo from './components/logo';
-import EmptyTip from './components/empty-tip';
-import Account from './components/common/account';
-import TermsPreviewWidget from './components/terms-preview-widget';
-import { Utils } from './utils/utils';
-import { gettext } from './utils/constants';
+import Account from '@/components/account';
+import EmptyTip from '@/components/empty-tip';
+import Logo from '@/components/logo';
+import TermsPreviewWidget from '@/components/terms-preview-widget';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 
-import './css/tc-accept.css';
+import '@/css/tc-accept.css';
 
 const {
   termsName,
@@ -23,7 +23,7 @@ class TCView extends React.Component {
           <Logo />
           <Account />
         </div>
-        { termsText ?
+        {termsText ?
           <div className="o-auto">
             <div className="py-4 px-4 my-6 mx-auto content">
               <h2 dangerouslySetInnerHTML={{ __html: Utils.HTMLescape(termsName) }}></h2>

@@ -8,6 +8,7 @@ import json
 import datetime
 import posixpath
 import re
+import hashlib
 from dateutil.relativedelta import relativedelta
 from urllib.parse import quote
 
@@ -59,7 +60,7 @@ from seahub.group.views import remove_group_common, \
     rename_group_with_new_name, is_group_staff
 from seahub.group.utils import BadGroupNameError, ConflictGroupNameError, \
     validate_group_name, is_group_member, group_id_to_name, is_group_admin
-from seahub.thumbnail.utils import generate_thumbnail
+from seahub.thumbnail.utils import generate_thumbnail, generate_thumbnail_key
 from seahub.notifications.models import UserNotification
 from seahub.options.models import UserOptions
 from seahub.profile.models import Profile, DetailedProfile
@@ -95,7 +96,7 @@ from seahub.utils.timeutils import utc_to_local, \
         timestamp_to_isoformat_timestr
 from seahub.views import is_registered_user, check_folder_permission, \
     create_default_library, list_inner_pub_repos
-from seahub.views.file import get_file_view_path_and_perm, send_file_access_msg, can_edit_file
+from seahub.views.file import get_file_view_path_and_perm, send_file_access_msg, can_edit_file, should_use_origin_file_history
 if HAS_FILE_SEARCH or HAS_FILE_SEASEARCH:
     from seahub.search.utils import search_files, get_search_repos_map, SEARCH_FILEEXT, ai_search_files, \
         RELATED_REPOS_PREFIX, SEARCH_REPOS_LIMIT, RELATED_REPOS_CACHE_TIMEOUT, format_repos, is_invisible_path, \
@@ -111,12 +112,13 @@ from seahub.settings import THUMBNAIL_EXTENSION, THUMBNAIL_ROOT, \
     ENABLE_SEAFILE_AI, SEAFILE_AI_SERVER_URL
 from seahub.subscription.utils import subscription_check
 from seahub.organizations.models import OrgAdminSettings, DISABLE_ORG_ENCRYPTED_LIBRARY
+from seahub.organizations.settings import ORG_MEMBER_QUOTA_DEFAULT
 from seahub.seadoc.utils import get_seadoc_file_uuid, gen_seadoc_image_parent_path, get_seadoc_asset_upload_link
 from seahub.views.file import get_office_feature_by_repo
 from seahub.repo_metadata.models import RepoMetadata, RepoMetadataViews
 from seahub.repo_metadata.utils import init_metadata, init_tags, add_init_metadata_task
 from seahub.repo_metadata.metadata_server_api import MetadataServerAPI
-from seahub.ai.utils import get_ai_credit_by_user, get_ai_cost_by_user
+from seahub.ai.utils import get_ai_credit_by_user, get_ai_credit_used_by_user
 
 try:
     from seahub.settings import CLOUD_MODE
@@ -126,16 +128,6 @@ try:
     from seahub.settings import MULTI_TENANCY
 except ImportError:
     MULTI_TENANCY = False
-try:
-    from seahub.settings import ORG_MEMBER_QUOTA_DEFAULT
-except ImportError:
-    ORG_MEMBER_QUOTA_DEFAULT = None
-
-try:
-    from seahub.settings import ORG_MEMBER_QUOTA_ENABLED
-except ImportError:
-    ORG_MEMBER_QUOTA_ENABLED = False
-
 try:
     from seahub.settings import OFFICE_WEB_APP_FILE_EXTENSION
 except ImportError:
@@ -328,10 +320,11 @@ class AccountInfo(APIView):
 
         if ENABLE_SEAFILE_AI and SEAFILE_AI_SERVER_URL:
             info['ai_credit'] = get_ai_credit_by_user(request.user, org_id)
-            info['ai_cost'] = round(get_ai_cost_by_user(request.user, org_id), 2)
-            info['ai_usage_rate'] = str(float(info['ai_cost']) / info['ai_credit'] * 100) + '%'
-            if info['ai_credit'] == -1:
+            info['ai_credit_used'] = round(get_ai_credit_used_by_user(request.user, org_id), 2)
+            if info['ai_credit'] <= 0:
                 info['ai_usage_rate'] = '0%'
+            else:
+                info['ai_usage_rate'] = str(float(info['ai_credit_used']) / info['ai_credit'] * 100) + '%'
 
         if quota_total > 0:
             info['space_usage'] = str(float(quota_usage) / quota_total * 100) + '%'
@@ -821,6 +814,7 @@ def repo_download_info(request, repo_id, gen_sync_token=True):
         'repo_size': repo_size,
         'repo_size_formatted': repo_size_formatted,
         'mtime': repo.latest_modify,
+        'last_modified': timestamp_to_isoformat_timestr(repo.latest_modify),
         'mtime_relative': translate_seahub_time(repo.latest_modify),
         'encrypted': enc,
         'enc_version': enc_version,
@@ -2272,7 +2266,7 @@ class UpdateBlksLinkView(APIView):
         url = gen_file_upload_url(token, 'update-blks-api')
         return Response(url)
 
-def get_dir_file_recursively(username, repo_id, path, all_dirs):
+def _collect_dir_file_recursively(username, repo_id, path, all_dirs):
     is_pro = is_pro_version()
     path_id = seafile_api.get_dir_id_by_path(repo_id, path)
     dirs = seafile_api.list_dir_with_perm(repo_id, path,
@@ -2310,27 +2304,81 @@ def get_dir_file_recursively(username, repo_id, path, all_dirs):
 
         all_dirs.append(entry)
 
-        # Use dict to reduce memcache fetch cost in large for-loop.
-        file_list =  [item for item in all_dirs if item['type'] == 'file']
-        contact_email_dict = {}
-        nickname_dict = {}
-        modifiers_set = {x['modifier_email'] for x in file_list}
-        for e in modifiers_set:
-            if e not in contact_email_dict:
-                contact_email_dict[e] = email2contact_email(e)
-            if e not in nickname_dict:
-                nickname_dict[e] = email2nickname(e)
+        if stat.S_ISDIR(dirent.mode):
+            sub_path = posixpath.join(path, dirent.obj_name)
+            _collect_dir_file_recursively(username, repo_id, sub_path, all_dirs)
 
-        for e in file_list:
-            e['modifier_contact_email'] = contact_email_dict.get(e['modifier_email'], '')
-            e['modifier_name'] = nickname_dict.get(e['modifier_email'], '')
+    return all_dirs
 
+
+def get_dir_file_recursively(username, repo_id, path, all_dirs):
+    _collect_dir_file_recursively(username, repo_id, path, all_dirs)
+
+    # Resolve modifier display names once, after the whole tree has been
+    # walked.
+    file_list = [item for item in all_dirs if item['type'] == 'file']
+    contact_email_dict = {}
+    nickname_dict = {}
+    modifiers_set = {x['modifier_email'] for x in file_list}
+    for e in modifiers_set:
+        if e not in contact_email_dict:
+            contact_email_dict[e] = email2contact_email(e)
+        if e not in nickname_dict:
+            nickname_dict[e] = email2nickname(e)
+
+    for e in file_list:
+        e['modifier_contact_email'] = contact_email_dict.get(e['modifier_email'], '')
+        e['modifier_name'] = nickname_dict.get(e['modifier_email'], '')
+
+    return all_dirs
+
+
+RECURSIVE_FILE_LIST_MAX_COUNT = 200
+def get_recursive_file_list(username, repo_id, path, all_files, order_by=None, desc=False):
+    if len(all_files) >= RECURSIVE_FILE_LIST_MAX_COUNT:
+        return all_files
+
+    path_id = seafile_api.get_dir_id_by_path(repo_id, path)
+    dirs = seafile_api.list_dir_with_perm(repo_id, path, path_id, username, -1, -1)
+
+    for dirent in dirs:
+        if len(all_files) >= RECURSIVE_FILE_LIST_MAX_COUNT:
+            break
+
+        if dirent.permission == PERMISSION_INVISIBLE:
+            continue
+
+        if path == '/' and dirent.obj_name in ('_Internal', 'images'):
+            continue
 
         if stat.S_ISDIR(dirent.mode):
             sub_path = posixpath.join(path, dirent.obj_name)
-            get_dir_file_recursively(username, repo_id, sub_path, all_dirs)
+            get_recursive_file_list(username, repo_id, sub_path, all_files, order_by, desc)
+            continue
+        
+        all_files.append({
+            'type': 'file',
+            '_parent_dir': path,
+            '_is_dir': False,
+            '_obj_id': dirent.obj_id,
+            '_id': hashlib.md5((repo_id + path + dirent.obj_name).encode('utf-8')).hexdigest(),
+            '_name': dirent.obj_name,
+            '_mtime': timestamp_to_isoformat_timestr(dirent.mtime),
+            '_last_modifier': dirent.modifier,
+            '_file_modifier': dirent.modifier,
+            '_size': dirent.size,
+            'permission': dirent.permission,
+            '_file_mtime': timestamp_to_isoformat_timestr(dirent.mtime),
+            '_suffix': dirent.obj_name.split('.')[-1] if '.' in dirent.obj_name else ''
+        })
 
-    return all_dirs
+    if order_by in ('_size', '_mtime', '_name', '_file_mtime'):
+        if order_by == '_name':
+            all_files.sort(key=lambda item: item[order_by].lower(), reverse=desc)
+        else:
+            all_files.sort(key=lambda item: item[order_by], reverse=desc)
+
+    return all_files
 
 def get_dir_entrys_by_id(request, repo, path, dir_id, request_type=None):
     """ Get dirents in a dir
@@ -3546,13 +3594,27 @@ class FileRevision(APIView):
             permission = normalize_custom_permission_name(permission)
             if not permission:
                 return api_error(status.HTTP_403_FORBIDDEN, 'Permission denied.')
+            
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
 
         file_name = os.path.basename(path)
         commit_id = request.GET.get('commit_id', None)
 
         try:
-            obj_id = seafserv_threaded_rpc.get_file_id_by_commit_and_path(
-                repo_id, commit_id, path)
+            if should_use_origin_file_history(repo, path):
+                origin_repo_id = repo.origin_repo_id
+                origin_repo = get_repo(origin_repo_id)
+                real_path = posixpath.join(repo.origin_path, path.lstrip('/'))
+                if not origin_repo:
+                    error_msg = 'Origin library %s not found.' % origin_repo_id
+                    return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+                obj_id = seafserv_threaded_rpc.get_file_id_by_commit_and_path(
+                    origin_repo_id, commit_id, real_path)
+            else:
+                obj_id = seafserv_threaded_rpc.get_file_id_by_commit_and_path(repo_id, commit_id, path)
         except:
             return api_error(status.HTTP_404_NOT_FOUND, 'Revision not found.')
 
@@ -5017,7 +5079,8 @@ class ThumbnailView(APIView):
         success, status_code = generate_thumbnail(request, repo_id, size, path)
         if success:
             thumbnail_dir = os.path.join(THUMBNAIL_ROOT, str(size))
-            thumbnail_file = os.path.join(thumbnail_dir, obj_id)
+            thumbnail_key = generate_thumbnail_key(repo_id, path)
+            thumbnail_file = os.path.join(thumbnail_dir, thumbnail_key)
             try:
                 with open(thumbnail_file, 'rb') as f:
                     thumbnail = f.read()
@@ -5094,6 +5157,14 @@ class OrganizationView(APIView):
             logger.error(e)
             return api_error(status.HTTP_400_BAD_REQUEST, "Quota is not valid")
 
+        try:
+            member_limit = int(member_limit)
+        except (TypeError, ValueError):
+            return api_error(status.HTTP_400_BAD_REQUEST, 'Member limit is not valid')
+
+        if member_limit <= 0:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'Member limit is not valid')
+
         vid = get_virtual_id_by_email(username)
         try:
             User.objects.get(email = vid)
@@ -5119,9 +5190,8 @@ class OrganizationView(APIView):
             org_id = org.org_id
 
             # set member limit
-            if ORG_MEMBER_QUOTA_ENABLED:
-                from seahub.organizations.models import OrgMemberQuota
-                OrgMemberQuota.objects.set_quota(org_id, member_limit)
+            from seahub.organizations.models import OrgMemberQuota
+            OrgMemberQuota.objects.set_quota(org_id, member_limit)
 
             # set quota
             quota = quota_mb * get_file_size_unit('MB')

@@ -1,10 +1,11 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
-import { DropdownToggle, Dropdown, DropdownMenu, DropdownItem } from 'reactstrap';
-import { gettext, siteRoot } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
-import ModalPortal from '../modal-portal';
+import { gettext, siteRoot } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import ShareDialog from '../dialog/share-dialog';
+import CustomDropdown from '../dropdown';
+import Icon from '../icon';
+import ModalPortal from '../modal-portal';
 
 const propTypes = {
   path: PropTypes.string.isRequired,
@@ -27,61 +28,15 @@ class ViewFileToolbar extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      isDropdownMenuOpen: false,
-      isMoreMenuShow: false,
       isShareDialogShow: false,
     };
   }
-
-  toggleDropdownMenu = () => {
-    this.setState({ isDropdownMenuOpen: !this.state.isDropdownMenuOpen });
-  };
-
-  onDropdownToggleKeyDown = (e) => {
-    if (e.key == 'Enter' || e.key == 'Space') {
-      this.toggleDropdownMenu();
-    }
-  };
-
-  onDropDownMouseMove = (e) => {
-    e.preventDefault();
-    if (this.state.isSubMenuShown && e.target && e.target.className === 'dropdown-item') {
-      this.setState({
-        isSubMenuShown: false
-      });
-    }
-  };
-
-  toggleSubMenu = (e) => {
-    e.stopPropagation();
-    this.setState({
-      isSubMenuShown: !this.state.isSubMenuShown }, () => {
-      this.toggleDropdownMenu();
-    });
-  };
-
-  toggleSubMenuShown = (item) => {
-    this.setState({
-      isSubMenuShown: true,
-      currentItem: item.text
-    });
-  };
-
-  onMenuItemKeyDown = (item, e) => {
-    if (e.key == 'Enter' || e.key == 'Space') {
-      item.onClick();
-    }
-  };
 
   onEditClick = (e) => {
     e.preventDefault();
     let { path, repoID } = this.props;
     let url = siteRoot + 'lib/' + repoID + '/file' + Utils.encodePath(path) + '?mode=edit';
     window.open(url);
-  };
-
-  toggleMore = () => {
-    this.setState({ isMoreMenuShow: !this.state.isMoreMenuShow });
   };
 
   onShareToggle = () => {
@@ -120,63 +75,25 @@ class ViewFileToolbar extends React.Component {
     return (
       <Fragment>
         {opList.length > 0 &&
-        <Dropdown isOpen={this.state.isDropdownMenuOpen} toggle={this.toggleDropdownMenu} className="view-file-toolbar-dropdown">
-          <DropdownToggle
-            tag="span"
-            role="button"
-            className="path-item"
-            onClick={this.toggleDropdownMenu}
-            onKeyDown={this.onDropdownToggleKeyDown}
-            data-toggle="dropdown"
-          >
-            {this.props.children}
-            <i className="sf3-font-down sf3-font ml-1 path-item-dropdown-toggle" aria-hidden="true"></i>
-          </DropdownToggle>
-          <DropdownMenu className='position-fixed' onMouseMove={this.onDropDownMouseMove}>
-            {opList.map((item, index) => {
-              if (item == 'Divider') {
-                return <DropdownItem key={index} divider />;
-              } else if (item.subOpList) {
-                return (
-                  <Dropdown
-                    key={index}
-                    direction="right"
-                    className="w-100"
-                    isOpen={this.state.isSubMenuShown && this.state.currentItem == item.text}
-                    toggle={this.toggleSubMenu}
-                    onMouseMove={(e) => {e.stopPropagation();}}
-                  >
-                    <DropdownToggle
-                      tag="span"
-                      className="dropdown-item font-weight-normal rounded-0 d-flex align-items-center"
-                      onMouseEnter={this.toggleSubMenuShown.bind(this, item)}
-                    >
-                      <i className={`sf3-font-${item.icon} sf3-font mr-2 dropdown-item-icon`} aria-hidden="true"></i>
-                      <span className="mr-auto">{item.text}</span>
-                      <i className="sf3-font-down sf3-font rotate-270" aria-hidden="true"></i>
-                    </DropdownToggle>
-                    <DropdownMenu>
-                      {item.subOpList.map((item, index) => {
-                        if (item == 'Divider') {
-                          return <DropdownItem key={index} divider />;
-                        } else {
-                          return (<DropdownItem key={index} onClick={item.onClick} onKeyDown={this.onMenuItemKeyDown.bind(this, item)}>{item.text}</DropdownItem>);
-                        }
-                      })}
-                    </DropdownMenu>
-                  </Dropdown>
-                );
-              } else {
-                return (
-                  <DropdownItem key={index} onClick={item.onClick} onKeyDown={this.onMenuItemKeyDown.bind(this, item)}>
-                    <i className={`sf3-font-${item.icon} sf3-font mr-2 dropdown-item-icon`} aria-hidden="true"></i>
-                    {item.text}
-                  </DropdownItem>
-                );
-              }
+          <CustomDropdown
+            className="view-file-toolbar-dropdown"
+            items={opList.map((item, index) => item === 'Divider' ? item : {
+              key: item.key || item.text || `view-file-op-${index}`,
+              label: item.text,
+              icon_dom: item.icon ? <Icon symbol={item.icon} className="mr-2 dropdown-item-icon" /> : null,
+              onClick: item.onClick,
+              subOpList: item.subOpList,
             })}
-          </DropdownMenu>
-        </Dropdown>
+            trigger={(
+              <>
+                {this.props.children}
+                <Icon symbol="down" className="ml-1 path-item-dropdown-toggle" />
+              </>
+            )}
+            triggerClassName="path-item"
+            menuClassName="position-fixed"
+            menuPortal={false}
+          />
         }
         {this.state.isShareDialogShow && (
           <ModalPortal>

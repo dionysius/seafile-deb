@@ -1,9 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button, Modal, Input, ModalBody, ModalFooter, Label, Form, InputGroup, FormGroup } from 'reactstrap';
-import { gettext } from '../../utils/constants';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
-import { Utils } from '../../utils/utils';
+import PropTypes from 'prop-types';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import Icon from '../icon';
 
 const propTypes = {
   toggle: PropTypes.func.isRequired,
@@ -148,10 +149,10 @@ class AddOrgUserDialog extends React.Component {
               <InputGroup className="passwd">
                 <Input id="userPwd" innerRef={input => {this.passwdInput = input;}} value={this.state.password || ''} onChange={this.inputPassword} />
                 <Button onClick={this.togglePasswordVisible}>
-                  <i className={`link-operation-icon sf3-font sf3-font-eye${this.state.isPasswordVisible ? '-slash' : ''}`}></i>
+                  <Icon symbol={this.state.isPasswordVisible ? 'eye-slash' : 'eye'} className="link-operation-icon" />
                 </Button>
                 <Button onClick={this.generatePassword}>
-                  <i className="link-operation-icon sf3-font sf3-font-magic"></i>
+                  <Icon symbol="magic" className="link-operation-icon" />
                 </Button>
               </InputGroup>
             </FormGroup>
@@ -163,6 +164,7 @@ class AddOrgUserDialog extends React.Component {
           {this.state.errMessage && <Label className="err-message">{this.state.errMessage}</Label>}
         </ModalBody>
         <ModalFooter>
+          <Button color="secondary" onClick={this.toggle}>{gettext('Cancel')}</Button>
           <Button color="primary" disabled={this.state.isAddingUser} onClick={this.handleSubmit} className={this.state.isAddingUser ? 'btn-loading' : ''}>{gettext('Submit')}</Button>
         </ModalFooter>
       </Modal>

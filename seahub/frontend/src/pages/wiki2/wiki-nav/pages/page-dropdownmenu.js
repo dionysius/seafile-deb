@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import { Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from 'reactstrap';
-import toaster from '../../../../components/toast';
-import { gettext } from '../../../../utils/constants';
+import CustomDropdown from '@/components/dropdown';
+import Icon from '@/components/icon';
+import toaster from '@/components/toast';
+import { gettext } from '@/utils/constants';
 import { getWikPageLink } from '../../utils';
 import { INSERT_POSITION } from '../constants';
-import Icon from '../../../../components/icon';
+
+const { serviceURL: serviceUrl } = window.app.config;
 
 export default class PageDropdownMenu extends Component {
 
@@ -19,15 +21,14 @@ export default class PageDropdownMenu extends Component {
     importPage: PropTypes.func,
     onDeletePage: PropTypes.func,
     canDeletePage: PropTypes.bool,
+    freezeItem: PropTypes.func,
+    unfreezeItem: PropTypes.func,
   };
 
   constructor(props) {
     super(props);
     this.pageNameMap = this.calculateNameMap();
-    this.state = {
-      isMenuOpen: false,
-      isImportPageMenuShown: false,
-    };
+    this.state = {};
   }
 
   calculateNameMap = () => {
@@ -36,26 +37,6 @@ export default class PageDropdownMenu extends Component {
       map[page.name] = true;
       return map;
     }, {});
-  };
-
-  showImportPageMenu = (e) => {
-    if (e) e.stopPropagation();
-    if (!this.state.isImportPageMenuShown) {
-      this.setState({ isImportPageMenuShown: true });
-    }
-  };
-
-  hideImportPageMenu = (e) => {
-    if (e) e.stopPropagation();
-    if (this.state.isImportPageMenuShown) {
-      this.setState({ isImportPageMenuShown: false });
-    }
-  };
-
-  onDropdownToggle = () => {
-    this.setState({
-      isMenuOpen: !this.state.isMenuOpen
-    });
   };
 
   onRename = (event) => {
@@ -78,7 +59,7 @@ export default class PageDropdownMenu extends Component {
 
   duplicatePage = () => {
     const { page } = this.props;
-    this.props.duplicatePage({ from_page_id: page.id }, () => {}, this.duplicatePageFailure);
+    this.props.duplicatePage({ from_page_id: page.id }, () => { }, this.duplicatePageFailure);
   };
 
   importPage = (suffix) => {
@@ -93,7 +74,7 @@ export default class PageDropdownMenu extends Component {
         const selectedFile = e.target.files[0];
         this.props.importPage(
           { from_page_id: page.id, file: selectedFile },
-          () => {},
+          () => { },
           this.importPageFailure
         );
       }
@@ -117,7 +98,8 @@ export default class PageDropdownMenu extends Component {
 
   handleCopyLink = () => {
     const { page } = this.props;
-    const wikiLink = getWikPageLink(page.id);
+    const { href: url } = window.location;
+    const wikiLink = getWikPageLink(serviceUrl, url, page.id);
     const successText = gettext('Copied link to clipboard');
     const failedText = gettext('Copy failed');
 
@@ -130,84 +112,82 @@ export default class PageDropdownMenu extends Component {
 
   handleOpenInNewTab = () => {
     const { page } = this.props;
-    const wikiLink = getWikPageLink(page.id);
+    const { href: url } = window.location;
+    const wikiLink = getWikPageLink(serviceUrl, url, page.id);
     window.open(wikiLink);
-  };
-
-  renderItem = (onClick, icon, text) => {
-    return (
-      <DropdownItem onClick={onClick}>
-        <i className={`sf3-font sf3-font-${icon}`} aria-hidden="true" />
-        <span className="item-text">{text}</span>
-      </DropdownItem>
-    );
   };
 
   render() {
     const { canDeletePage = true } = this.props;
-    const { isMenuOpen } = this.state;
+    const menuItems = [
+      {
+        key: 'copy-link',
+        label: gettext('Copy link'),
+        icon_dom: <Icon symbol="copy" aria-hidden="true" />,
+        onClick: this.handleCopyLink,
+      },
+      {
+        key: 'rename',
+        label: gettext('Modify name'),
+        icon_dom: <Icon symbol="rename" aria-hidden="true" />,
+        onClick: this.onRename,
+      },
+      {
+        key: 'add-page-above',
+        label: gettext('Add page above'),
+        icon_dom: <Icon symbol="new" aria-hidden="true" />,
+        onClick: this.addPageAbove,
+      },
+      {
+        key: 'add-page-below',
+        label: gettext('Add page below'),
+        icon_dom: <Icon symbol="new" aria-hidden="true" />,
+        onClick: this.addPageBelow,
+      },
+      {
+        key: 'duplicate-page',
+        label: gettext('Duplicate page'),
+        icon_dom: <Icon symbol="copy" aria-hidden="true" />,
+        onClick: this.duplicatePage,
+      },
+      ...(canDeletePage ? [{
+        key: 'delete-page',
+        label: gettext('Delete page'),
+        icon_dom: <Icon symbol="delete" aria-hidden="true" />,
+        onClick: this.onDeletePage,
+      }] : []),
+      {
+        key: 'import-page',
+        label: gettext('Import page'),
+        icon_dom: <Icon symbol="import-sdoc" aria-hidden="true" />,
+        children: [
+          { key: 'import-docx', label: gettext('Import page from docx'), onClick: () => this.importPage('.docx') },
+          { key: 'import-md', label: gettext('Import page from Markdown'), onClick: () => this.importPage('.md') },
+        ],
+      },
+      'Divider',
+      {
+        key: 'open-in-new-tab',
+        label: gettext('Open in new tab'),
+        icon_dom: <Icon symbol="open-in-new-tab" aria-hidden="true" />,
+        onClick: this.handleOpenInNewTab,
+      },
+    ];
+
     return (
-      <Dropdown
-        isOpen={isMenuOpen}
-        toggle={this.onDropdownToggle}
+      <CustomDropdown
+        target="wiki-nav-item-more-operations"
+        items={menuItems}
         className="page-operation-dropdown"
-      >
-        <DropdownToggle
-          className="op-icon"
-          tag="span"
-          data-toggle="dropdown"
-          role="button"
-          tabIndex={0}
-          title={gettext('More operations')}
-          aria-label={gettext('More operations')}
-        >
-          <Icon symbol="more-level" />
-        </DropdownToggle>
-        <DropdownMenu
-          className="page-operation-dropdown-menu dtable-dropdown-menu large position-fixed"
-          flip={true}
-          direction="down"
-          style={{ maxHeight: '80vh', overflowY: 'auto' }}
-          modifiers={[
-            { name: 'preventOverflow', options: { boundary: 'window', padding: 8 } },
-            { name: 'flip', enabled: true, options: { fallbackPlacements: ['top'] } }
-          ]}
-        >
-          {this.renderItem(this.handleCopyLink, 'link', gettext('Copy link'))}
-          {this.renderItem(this.onRename, 'rename', gettext('Modify name'))}
-          {this.renderItem(this.addPageAbove, 'enlarge', gettext('Add page above'))}
-          {this.renderItem(this.addPageBelow, 'enlarge', gettext('Add page below'))}
-          {this.renderItem(this.duplicatePage, 'copy1', gettext('Duplicate page'))}
-          {canDeletePage && this.renderItem(this.onDeletePage, 'delete1', gettext('Delete page'))}
-          <Dropdown
-            direction="right"
-            className="w-100"
-            inNavbar={true}
-            isOpen={this.state.isImportPageMenuShown}
-            toggle={() => {}}
-            onMouseEnter={this.showImportPageMenu}
-            onMouseLeave={this.hideImportPageMenu}
-          >
-            <DropdownToggle
-              tag="span"
-              className="dropdown-item font-weight-normal rounded-0 d-flex align-items-center pr-2 justify-content-between"
-              onMouseEnter={this.showImportPageMenu}
-            >
-              <span>
-                <i className='sf3-font sf3-font-import-sdoc' aria-hidden="true" />
-                <span>{gettext('Import page')}</span>
-              </span>
-              <i className="sf3-font-down sf3-font rotate-270 mr-0" aria-hidden="true"></i>
-            </DropdownToggle>
-            <DropdownMenu className="ml-0">
-              <DropdownItem key="import-docx" onClick={this.importPage.bind(this, '.docx')}>{gettext('Import page from docx')}</DropdownItem>
-              <DropdownItem key="import-md" onClick={this.importPage.bind(this, '.md')}>{gettext('Import page from Markdown')}</DropdownItem>
-            </DropdownMenu>
-          </Dropdown>
-          <hr className='divider' />
-          {this.renderItem(this.handleOpenInNewTab, 'open-in-new-tab', gettext('Open in new tab'))}
-        </DropdownMenu>
-      </Dropdown>
+        triggerClassName="op-icon"
+        menuClassName="page-operation-dropdown-menu large position-fixed"
+        modifier={[
+          { name: 'preventOverflow', options: { boundary: 'window', padding: 8 } },
+          { name: 'flip', enabled: true, options: { fallbackPlacements: ['top'] } },
+        ]}
+        freezeItem={this.props.freezeItem}
+        unfreezeItem={this.props.unfreezeItem}
+      />
     );
   }
 }

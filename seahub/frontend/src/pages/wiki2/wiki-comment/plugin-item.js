@@ -1,5 +1,8 @@
 import React, { useCallback } from 'react';
-import { Utils } from '../../../utils/utils';
+import Icon from '@/components/icon';
+import Tooltip from '@/components/tooltip';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 
 import './plugin-item.css';
 
@@ -13,13 +16,15 @@ const CommentPlugin = ({ setIsShowRightPanel, unseenNotificationsCount }) => {
 
   return (
     <span
+      id="comment-btn"
       className="op-item wiki-plugin-operation-btn-container"
       onClick={handleOnClick}
       role='button'
       tabIndex={0}
       onKeyDown={Utils.onKeyDown}
     >
-      <i className='sdocfont sdoc-comments'></i>
+      <Icon symbol='comment' />
+      <Tooltip target="comment-btn">{gettext('Comment')}</Tooltip>
       {unseenNotificationsCount > 0 && (
         <span className="sdoc-unread-message-tip"></span>
       )}

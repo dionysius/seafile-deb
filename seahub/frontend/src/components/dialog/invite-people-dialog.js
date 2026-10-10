@@ -1,12 +1,12 @@
 import React from 'react';
+import { Modal, ModalBody, ModalFooter, Input, Button, Label } from 'reactstrap';
 import PropTypes from 'prop-types';
-import { Utils } from '../../utils/utils';
-import { gettext } from '../../utils/constants';
-import { seafileAPI } from '../../utils/seafile-api';
-import { Modal, ModalBody, ModalFooter, Input, Button } from 'reactstrap';
-import toaster from '../toast';
+import { seafileAPI } from '@/api/seafile-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import Loading from '../loading';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
+import toaster from '../toast';
 
 const InvitePeopleDialogPropTypes = {
   onInvitePeople: PropTypes.func.isRequired,
@@ -107,7 +107,7 @@ class InvitePeopleDialog extends React.Component {
       <Modal isOpen={true} toggle={this.props.toggleDialog}>
         <SeahubModalHeader toggle={this.props.toggleDialog}>{gettext('Invite Guest')}</SeahubModalHeader>
         <ModalBody>
-          <label htmlFor="emails">{gettext('Emails')}</label>
+          <Label for="emails">{gettext('Emails')}</Label>
           <Input
             type="text"
             id="emails"

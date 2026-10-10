@@ -1,10 +1,11 @@
 import React, { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { gettext } from '../../../utils/constants';
+import PropTypes from 'prop-types';
+import { gettext } from '@/utils/constants';
 import OpIcon from '../../op-icon';
 
 const propTypes = {
+  index: PropTypes.number.isRequired,
   permission: PropTypes.object.isRequired,
   onEditCustomPermission: PropTypes.func.isRequired,
   onDeleteCustomPermission: PropTypes.func.isRequired,
@@ -52,8 +53,8 @@ class CustomPermissionItem extends React.Component {
   };
 
   render() {
-    const { isHighlighted } = this.state;
-    const { permission } = this.props;
+    const { isHighlighted, isShowOperations } = this.state;
+    const { index, permission } = this.props;
     const { name, description } = permission;
     return (
       <tr
@@ -66,19 +67,23 @@ class CustomPermissionItem extends React.Component {
         tabIndex="0"
         onFocus={this.onMouseEnter}
       >
-        <td width='22%' className="text-truncate" title={name}>{name}</td>
-        <td width='56%' className="text-truncate">{description}</td>
-        <td width='22%'>
-          {this.state.isShowOperations && (
+        <td className="text-truncate" title={name}>{name}</td>
+        <td className="text-truncate">{description}</td>
+        <td>
+          {isShowOperations && (
             <Fragment>
               <OpIcon
-                className="sf3-font sf3-font-rename op-icon"
-                title={gettext('Edit')}
+                id={`edit-icon-${index}`}
+                symbol="rename"
+                className="op-icon"
+                tooltip={gettext('Edit')}
                 op={this.onEditCustomPermission}
               />
               <OpIcon
-                className="sf3-font sf3-font-delete1 op-icon"
-                title={gettext('Delete')}
+                id={`delete-icon-${index}`}
+                symbol="delete"
+                className="op-icon"
+                tooltip={gettext('Delete')}
                 op={this.onDeleteCustomPermission}
               />
             </Fragment>

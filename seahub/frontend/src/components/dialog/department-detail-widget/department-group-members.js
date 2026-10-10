@@ -1,10 +1,11 @@
 import React, { Component, Fragment } from 'react';
 import PropTypes from 'prop-types';
-import { Tooltip } from 'reactstrap';
-import { gettext, mediaUrl } from '../../../utils/constants';
+import Tooltip from '@/components/tooltip';
+import { gettext, mediaUrl } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import EmptyTip from '../../empty-tip';
+import Icon from '../../icon';
 import Loading from '../../loading';
-import { Utils } from '../../../utils/utils';
 
 const ItemPropTypes = {
   member: PropTypes.object,
@@ -19,8 +20,7 @@ class Item extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      highlight: false,
-      tooltipOpen: false,
+      highlight: false
     };
   }
 
@@ -35,10 +35,6 @@ class Item extends Component {
   onChange = (e) => {
     const { member } = this.props;
     this.props.onUserChecked(member);
-  };
-
-  toggleTooltip = () => {
-    this.setState({ tooltipOpen: !this.state.tooltipOpen });
   };
 
   render() {
@@ -56,10 +52,10 @@ class Item extends Component {
           <td width="12%"><img className="avatar" src={member.avatar_url} alt=""/></td>
           <td width="60%">{member.name}</td>
           <td width="15%" className={this.state.highlight ? 'visible' : 'invisible' } id={`no-select-${index}`}>
-            <i className="sf3-font-help sf3-font"></i>
-            <Tooltip placement='bottom' isOpen={this.state.tooltipOpen} toggle={this.toggleTooltip} target={`no-select-${index}`} delay={{ show: 0, hide: 0 }} fade={false}>
-              {tip}
-            </Tooltip>
+            <span className="d-inline-flex align-items-center">
+              <Icon symbol="about" />
+            </span>
+            <Tooltip target={`no-select-${index}`} placement="bottom">{tip}</Tooltip>
           </td>
         </tr>
       );

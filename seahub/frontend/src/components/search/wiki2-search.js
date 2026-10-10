@@ -1,12 +1,15 @@
-import React, { useCallback, useState, useRef, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
 import { Modal, ModalBody, Input, Button } from 'reactstrap';
 import isHotkey from 'is-hotkey';
-import searchAPI from '../../utils/search-api';
-import { gettext } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
-import toaster from '../toast';
+import PropTypes from 'prop-types';
+import searchAPI from '@/api/search-api';
+import { gettext, mediaUrl } from '@/utils/constants';
+import { debounce, Utils } from '@/utils/utils';
+import Icon from '../icon';
+import IconBtn from '../icon-btn';
 import Loading from '../loading';
+import toaster from '../toast';
+import Tooltip from '../tooltip';
 import Wiki2SearchResult from './wiki2-search-result';
 
 import './wiki2-search.css';
@@ -23,8 +26,8 @@ function Wiki2Search({ setCurrentPage, config, getCurrentPageId, wikiId }) {
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [isLoading, setIsLoading] = useState(false);
   const [isResultGotten, setIsResultGotten] = useState(false);
-  let searchResultListContainerRef = useRef(null);
-  let highlightRef = useRef(null);
+  const searchResultListContainerRef = useRef(null);
+  const highlightRef = useRef(null);
 
   const onDocumentKeyDown = useCallback((e) => {
     if (!isModalOpen && isHotkey('mod+k')(e)) {
@@ -64,6 +67,8 @@ function Wiki2Search({ setCurrentPage, config, getCurrentPageId, wikiId }) {
       if (isEnter(e)) {
         const highlightResult = results[highlightIndex];
         if (highlightResult && highlightResult.page.id !== getCurrentPageId()) {
+          e.preventDefault();
+          e.stopPropagation();
           setCurrentPage(highlightResult.page.id);
           resetToDefault();
         }
@@ -147,24 +152,56 @@ function Wiki2Search({ setCurrentPage, config, getCurrentPageId, wikiId }) {
     });
   }, [config, wikiId]);
 
+  const debouncedSearch = useMemo(() => {
+    const fn = debounce((newValue) => {
+      getWikiSearchResult(newValue);
+    }, 300);
+    return fn;
+  }, [getWikiSearchResult]);
+
+  useEffect(() => {
+    return () => {
+      if (debouncedSearch.cancel) {
+        debouncedSearch.cancel();
+      }
+    };
+  }, [debouncedSearch]);
+
   const onInputChange = useCallback((e) => {
     const { value } = e.target;
     setValue(value);
     setIsResultGotten(false);
     setResults([]);
+    debouncedSearch(value);
+  }, [debouncedSearch]);
+
+  const onHighlightIdx = useCallback((idx) => {
+    setHighlightIndex(idx);
   }, []);
+
+  const onItemClick = useCallback((e, item) => {
+    if (!item.page || item.page.id === getCurrentPageId()) {
+      return;
+    }
+    setCurrentPage(item.page.id);
+    resetToDefault();
+  }, [getCurrentPageId, resetToDefault, setCurrentPage]);
 
   return (
     <>
       <Button className="wiki2-search border-0 p-0 font-weight-normal" onClick={() => setIsModalOpen(true)}>
-        <i className="sf3-font sf3-font-search" aria-hidden="true"></i>
+        <span className="w-6 h-6 d-flex align-items-center justify-content-center">
+          <Icon symbol="search" aria-hidden="true" />
+        </span>
         <span>{gettext('Search')}</span>
       </Button>
       {isModalOpen &&
-        <Modal className="wiki2-search-modal" isOpen={isModalOpen} toggle={resetToDefault} autoFocus={false} size='lg'>
+        <Modal className="wiki2-search-modal" isOpen={isModalOpen} toggle={resetToDefault} autoFocus={false} returnFocusAfterClose={false} size='lg'>
           <ModalBody>
-            <div className="wiki2-search-input mb-4 position-relative">
-              <i className="sf3-font sf3-font-search" aria-hidden="true"></i>
+            <div className="wiki2-search-input">
+              <span className="d-flex align-items-center search-icon-left input-icon-addon">
+                <Icon symbol="search" />
+              </span>
               <Input
                 type="text"
                 className="form-control search-input"
@@ -176,33 +213,56 @@ function Wiki2Search({ setCurrentPage, config, getCurrentPageId, wikiId }) {
                 onKeyDown={onKeyDown}
                 autoFocus={true}
               />
-              <button
-                type="button"
-                className="search-icon-right input-icon-addon sf3-font sf3-font-x-01 mr-2"
-                onClick={onClearSearch}
-                aria-label={gettext('Close')}
-              >
-              </button>
-            </div>
-            <div className="wiki2-search-result-container" style={{ maxHeight: (window.innerHeight - 200) + 'px' }} ref={searchResultListContainerRef}>
-              {isLoading && <Loading />}
-              {(value === '' && !isResultGotten) &&
-                <p className='sf-tip-default d-flex justify-content-center'>{gettext('Type characters to start search')}</p>}
-              {(value !== '' && isResultGotten && results.length === 0) &&
-                <p className='sf-tip-default d-flex justify-content-center'>{gettext('No result')}</p>}
-              {results.map((result, index) => {
-                return (
-                  <Wiki2SearchResult
-                    result={result}
-                    key={result._id}
-                    getCurrentPageId={getCurrentPageId}
-                    setCurrentPage={setCurrentPage}
-                    resetToDefault={resetToDefault}
-                    isHighlight={highlightIndex === index}
-                    setRef={highlightIndex === index ? (ref) => {highlightRef.current = ref;} : () => {}}
+              {value !== '' && (
+                <>
+                  <IconBtn
+                    id="wiki2-search-clear-btn"
+                    symbol="close"
+                    className="search-icon-right wiki2-search-input-clear"
+                    onClick={onClearSearch}
+                    aria-label={gettext('Clear search')}
                   />
-                );
-              })}
+                  <Tooltip target="wiki2-search-clear-btn">{gettext('Clear search')}</Tooltip>
+                </>
+              )}
+            </div>
+            <div className="wiki2-search-result-container" style={{ maxHeight: (window.innerHeight - 200) }} ref={searchResultListContainerRef}>
+              {isLoading && <Loading />}
+              {(value === '' && !isResultGotten) && (
+                <div className="search-result-none search-result-start-searching-tip">
+                  <img className='none-image' src={`${mediaUrl}img/start-searching.png`} alt="" width="48" height="48" />
+                  <span className='none-tip'>{gettext('Enter characters to start searching')}</span>
+                </div>
+              )}
+              {(value !== '' && isResultGotten && results.length === 0) && (
+                <div className="search-result-none search-result-no-results-tip">
+                  <img className='none-image' src={`${mediaUrl}img/no-results.png`} alt="" width="48" height="48" />
+                  <span className='none-tip'>{gettext('No results matching')}</span>
+                </div>
+              )}
+              {value !== '' && results.length > 0 && (
+                <div className="wiki2-search-result">
+                  <h6 className="wiki2-search-result-header d-flex align-items-center">
+                    <span>{gettext('Wiki pages')}</span>
+                  </h6>
+                  <ul className="wiki2-search-result-list">
+                    {results.map((result, index) => {
+                      return (
+                        <Wiki2SearchResult
+                          key={result._id}
+                          index={index}
+                          result={result}
+                          highlightIndex={highlightIndex}
+                          onHighlightIdx={onHighlightIdx}
+                          getCurrentPageId={getCurrentPageId}
+                          onItemClick={onItemClick}
+                          setRef={highlightIndex === index ? (ref) => {highlightRef.current = ref;} : () => {}}
+                        />
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
           </ModalBody>
         </Modal>

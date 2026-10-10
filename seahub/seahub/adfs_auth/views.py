@@ -45,15 +45,11 @@ from seahub.base.accounts import User
 from seahub.auth.models import SocialAuthUser
 from seahub.profile.models import Profile, DetailedProfile
 from seahub.utils import render_error
-from seahub.utils.auth import is_force_user_sso
+from seahub.utils.auth import user_local_password_enabled
 from seahub.utils.licenseparse import user_number_over_limit
 from seahub.adfs_auth.signals import saml_sso_failed
 # Added by khorkin
 from seahub.base.sudo_mode import update_sudo_mode_ts
-try:
-    from seahub.settings import ORG_MEMBER_QUOTA_ENABLED
-except ImportError:
-    ORG_MEMBER_QUOTA_ENABLED = False
 
 SAML_PROVIDER_IDENTIFIER = getattr(settings, 'SAML_PROVIDER_IDENTIFIER', 'saml')
 SAML_ATTRIBUTE_MAPPING = getattr(settings, 'SAML_ATTRIBUTE_MAPPING', {})
@@ -130,18 +126,17 @@ def _handle_user_over_limit(request, org=None):
     if org:
         ccnet_db = CcnetDB()
         org_members = ccnet_db.count_org_active_users(org.org_id)
-        if ORG_MEMBER_QUOTA_ENABLED:
-            from seahub.organizations.models import OrgMemberQuota
-            org_members_quota = OrgMemberQuota.objects.get_quota(org.org_id)
-            if org_members_quota is not None and org_members >= org_members_quota:
-                logger.error('The number of users exceeds the organization quota.')
-                # send error msg to admin
-                error_msg = 'The number of users exceeds the organization quota.'
-                org_admins = get_org_admins(org)
-                for org_admin in org_admins:
-                    saml_sso_failed.send(sender=None, to_user=org_admin.email,
-                                         error_msg=error_msg)
-                return render_error(request, _("The number of users exceeds the limit."))
+        from seahub.organizations.models import OrgMemberQuota
+        org_members_quota = OrgMemberQuota.objects.get_quota(org.org_id)
+        if org_members_quota is not None and org_members >= org_members_quota:
+            logger.error('The number of users exceeds the organization quota.')
+            # send error msg to admin
+            error_msg = 'The number of users exceeds the organization quota.'
+            org_admins = get_org_admins(org)
+            for org_admin in org_admins:
+                saml_sso_failed.send(sender=None, to_user=org_admin.email,
+                                     error_msg=error_msg)
+            return render_error(request, _("The number of users exceeds the limit."))
 
 def _handle_acs_in_org(request, org_id):
     
@@ -425,6 +420,11 @@ def _handle_acs(request):
     
     # saml2 connect
     relay_state = request.POST.get('RelayState', '/saml2/complete/')
+    if not url_has_allowed_host_and_scheme(url=relay_state,
+                                           allowed_hosts=request.get_host()):
+        logger.warning('Unsafe RelayState "%s" received; using default redirect URL instead.', relay_state)
+        relay_state = '/saml2/complete/'
+
     is_saml2_connect = parse_qs(urlparse(unquote(relay_state)).query).get('is_saml2_connect', [''])[0]
     if is_saml2_connect == 'true':
         if not request.user.is_authenticated:
@@ -551,6 +551,12 @@ def _handle_acs(request):
     if not relay_state:
         logger.warning('The RelayState parameter exists but is empty')
         relay_state = default_relay_state
+
+    if not url_has_allowed_host_and_scheme(url=relay_state,
+                                           allowed_hosts=request.get_host()):
+        logger.warning('Unsafe RelayState "%s" received; using default redirect URL instead.', relay_state)
+        relay_state = default_relay_state
+
     logger.debug('Redirecting to the RelayState: %s', relay_state)
     
     api_token = get_api_token(request)
@@ -744,7 +750,7 @@ def saml2_disconnect(request, org_id=None):
     if request.user.enc_password == '!':
         return HttpResponseBadRequest(_('Failed to unbind SAML, please set a password first.'))
     
-    if is_force_user_sso(request.user):
+    if not user_local_password_enabled(request.user):
         return render_error(request, _('Failed to unbind SAML, the user is forced login by SSO.') )
         
 

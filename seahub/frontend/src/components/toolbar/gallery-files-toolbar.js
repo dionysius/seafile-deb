@@ -1,18 +1,22 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { gettext } from '../../utils/constants';
-import { EVENT_BUS_TYPE, PRIVATE_COLUMN_KEY } from '../../metadata/constants';
-import RowUtils from '../../metadata/views/table/utils/row-utils';
-import { buildGalleryToolbarMenuOptions } from '../../metadata/utils/menu-builder';
-import TextTranslation from '../../utils/text-translation';
-import ItemDropdownMenu from '../dropdown-menu/item-dropdown-menu';
-import { getFileNameFromRecord } from '../../metadata/utils/cell/core';
-import { Utils } from '../../utils/utils';
-import OpIcon from '../../components/op-icon';
-import OpElement from '../../components/op-element';
-import { openInNewTab, openParentFolder } from '../../metadata/utils/file';
-import { checkIsDir } from '../../metadata/utils/row';
-import { useMetadataStatus } from '../../hooks';
-import { getColumnByKey } from '../../metadata/utils/column';
+import { EVENT_BUS_TYPE, PRIVATE_COLUMN_KEY } from '@/features/metadata/constants';
+import { getParentDirFromRecord } from '@/features/metadata/utils/cell';
+import { getFileNameFromRecord } from '@/features/metadata/utils/cell/core';
+import { getColumnByKey } from '@/features/metadata/utils/column';
+import { openInNewTab, openParentFolder } from '@/features/metadata/utils/file';
+import { buildGalleryToolbarMenuOptions } from '@/features/metadata/utils/menu-builder';
+import { checkIsDir } from '@/features/metadata/utils/row';
+import { useMetadataStatus } from '@/hooks';
+import { gettext } from '@/utils/constants';
+import TextTranslation from '@/utils/text-translation';
+import { Utils } from '@/utils/utils';
+import { setPendingAttachments } from '../dir-chat/hooks/ai-chat-tools';
+import { AttachmentObject } from '../dir-chat/models';
+import CustomDropdown from '../dropdown';
+import EventBus, { eventBus as globalEventBus, EVENT_BUS_TYPE as DIR_EVENT_BUS_TYPE } from '../event-bus';
+import Icon from '../icon';
+import OpIcon from '../op-icon';
+import RowUtils from '../sf-table/utils/row';
 
 const GalleryFilesToolbar = () => {
   const [selectedRecordIds, setSelectedRecordIds] = useState([]);
@@ -46,26 +50,10 @@ const GalleryFilesToolbar = () => {
       unsubscribeSelectedFileIds && unsubscribeSelectedFileIds();
       unsubscribeMetadata && unsubscribeMetadata();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const records = useMemo(() => selectedRecordIds.map(id => RowUtils.getRecordById(id, metadataRef.current)).filter(Boolean) || [], [selectedRecordIds]);
-
-  const toolbarMenuOptions = useMemo(() => {
-    if (!records.length) return [];
-    const metadataStatus = {
-      enableFaceRecognition,
-      enableGenerateDescription: getColumnByKey(metadataRef.current.columns, PRIVATE_COLUMN_KEY.FILE_DESCRIPTION) !== null,
-      enableTags
-    };
-    return buildGalleryToolbarMenuOptions(
-      records,
-      readOnly,
-      metadataStatus,
-      null,
-      faceRecognitionPermission
-    );
-  }, [records, readOnly, enableFaceRecognition, enableTags, faceRecognitionPermission]);
 
   const onMenuItemClick = useCallback((operation) => {
     switch (operation) {
@@ -76,6 +64,29 @@ const GalleryFilesToolbar = () => {
       }
       case TextTranslation.OPEN_PARENT_FOLDER.key: {
         openParentFolder(records[0]);
+        break;
+      }
+      case TextTranslation.CHAT_WITH_AI.key: {
+        const attachments = records
+          .filter((record) => !checkIsDir(record))
+          .map((record) => {
+            const fileName = getFileNameFromRecord(record);
+            const parentDir = getParentDirFromRecord(record);
+            return new AttachmentObject({
+              repo_id: repoID,
+              path: Utils.joinPath(parentDir, fileName),
+              name: fileName,
+            });
+          });
+
+        setPendingAttachments(attachments, records.length === 1);
+        globalEventBus.dispatch(DIR_EVENT_BUS_TYPE.SWITCH_TO_CHAT_VIEW);
+        if (attachments.length > 0) {
+          EventBus.getInstance().dispatch(DIR_EVENT_BUS_TYPE.CHAT_ATTACH_FILES, {
+            attachments,
+            reset: records.length === 1,
+          });
+        }
         break;
       }
       case TextTranslation.EXTRACT_FILE_DETAIL.key:
@@ -117,6 +128,43 @@ const GalleryFilesToolbar = () => {
     }
   }, [repoID, records, eventBus, readOnly]);
 
+  const toolbarMenuOptions = useMemo(() => {
+    if (!records.length) return [];
+    const metadataStatus = {
+      enableFaceRecognition,
+      enableGenerateDescription: getColumnByKey(metadataRef.current.columns, PRIVATE_COLUMN_KEY.FILE_DESCRIPTION) !== null,
+      enableTags
+    };
+    let options = buildGalleryToolbarMenuOptions(
+      records,
+      readOnly,
+      metadataStatus,
+      null,
+      faceRecognitionPermission
+    );
+
+    return options.map(item => {
+      if (item === 'Divider') return item;
+      if (item.subOpList) {
+        return {
+          ...item,
+          onClick: () => onMenuItemClick(item.key),
+          subOpList: item.subOpList.map((subItem) => {
+            if (subItem === 'Divider') return subItem;
+            return {
+              ...subItem,
+              onClick: () => onMenuItemClick(subItem.key)
+            };
+          })
+        };
+      }
+      return {
+        ...item,
+        onClick: () => onMenuItemClick(item.key)
+      };
+    });
+  }, [records, enableFaceRecognition, enableTags, readOnly, faceRecognitionPermission, onMenuItemClick]);
+
   // Individual button handlers
   const onMoveClick = useCallback(() => {
     eventBus.dispatch(EVENT_BUS_TYPE.TOGGLE_MOVE_DIALOG, records);
@@ -148,51 +196,27 @@ const GalleryFilesToolbar = () => {
   const length = selectedRecordIds.length;
   return (
     <div className="selected-dirents-toolbar">
-      <OpElement
-        className="cur-view-path-btn px-2"
-        title={gettext('Unselect')}
-        op={unSelect}
-      >
-        <span className="sf3-font-x-01 sf3-font mr-2"></span>
+      <span className="cur-view-path-btn px-2" onClick={unSelect}>
+        <span className="d-flex mr-2" aria-label={gettext('Unselect')} title={gettext('Unselect')}>
+          <Icon symbol="close" />
+        </span>
         <span>{length}{' '}{gettext('selected')}</span>
-      </OpElement>
+      </span>
       {length === 1 && !readOnly && (
         <>
-          <OpIcon
-            className="cur-view-path-btn sf3-font-move1 sf3-font"
-            title={gettext('Move')}
-            op={onMoveClick}
-          />
-          <OpIcon
-            className="cur-view-path-btn sf3-font-copy1 sf3-font"
-            title={gettext('Copy')}
-            op={onCopyClick}
-          />
+          <OpIcon id="move-btn" symbol="move" className="cur-view-path-btn" tooltip={gettext('Move')} aria-label={gettext('Move')} op={onMoveClick} />
+          <OpIcon id="copy-btn" symbol="copy" className="cur-view-path-btn" tooltip={gettext('Copy')} aria-label={gettext('Copy')} op={onCopyClick} />
         </>
       )}
-      <OpIcon
-        className="cur-view-path-btn sf3-font-download1 sf3-font"
-        title={gettext('Download')}
-        op={onDownloadClick}
-      />
-      {!readOnly && (
-        <OpIcon
-          className="cur-view-path-btn sf3-font-delete1 sf3-font"
-          title={gettext('Delete')}
-          op={onDeleteClick}
-        />
-      )}
+      <OpIcon id="download-btn" symbol="download" className="cur-view-path-btn" tooltip={gettext('Download')} aria-label={gettext('Download')} op={onDownloadClick} />
+      {!readOnly && <OpIcon id="delete-btn" symbol="delete" className="cur-view-path-btn" tooltip={gettext('Delete')} aria-label={gettext('Delete')} op={onDeleteClick} />}
 
       {toolbarMenuOptions.length > 0 && (
-        <ItemDropdownMenu
-          ref={menuRef}
-          toggleClass="cur-view-path-btn sf3-font-more sf3-font"
-          item={{}}
-          freezeItem={() => {}}
-          unfreezeItem={() => {}}
-          toggleItemMenuShow={() => {}}
-          getMenuList={() => toolbarMenuOptions}
-          onMenuItemClick={onMenuItemClick}
+        <CustomDropdown
+          target="gallery-files-toolbar-menu-toggle"
+          forwardedRef={menuRef}
+          items={toolbarMenuOptions}
+          triggerClassName="cur-view-path-btn"
         />
       )}
     </div>

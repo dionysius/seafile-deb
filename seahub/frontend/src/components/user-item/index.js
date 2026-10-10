@@ -1,12 +1,13 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { gettext, enableShowContactEmailWhenSearchUser, enableShowLoginIDWhenSearchUser } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
+import PropTypes from 'prop-types';
+import { gettext, enableShowContactEmailWhenSearchUser, enableShowLoginIDWhenSearchUser } from '@/utils/constants';
+import OpIcon from '../op-icon';
 
 import './index.css';
 
 const propTypes = {
+  idx: PropTypes.number,
   user: PropTypes.shape({
     name: PropTypes.string.isRequired,
     avatar_url: PropTypes.string.isRequired,
@@ -28,30 +29,26 @@ class UserItem extends React.Component {
   };
 
   render() {
-    const { className, user, enableDeleteUser } = this.props;
+    const { idx, className, user, enableDeleteUser = true } = this.props;
     const { name, avatar_url, contact_email, login_id } = user;
     return (
       <div className={classnames('user-item', className)} title={name}>
         <span className="user-avatar">
           <img className="user-avatar-icon" alt={name} src={avatar_url} />
         </span>
-        <div className="d-flex align-items-center">
-          <span className="user-name">{name}</span>
+        <div className="user-name-container d-flex align-items-center">
+          <span className="user-name text-truncate">{name}</span>
           {(enableShowContactEmailWhenSearchUser && !enableDeleteUser) && <span className="user-option-email">({contact_email})</span>}
           {(enableShowLoginIDWhenSearchUser && !enableDeleteUser) && <span className="user-option-email">({login_id})</span>}
         </div>
         {enableDeleteUser && (
-          <span
-            className="user-remove ml-2"
-            onClick={this.onDeleteUser}
-            title={gettext('Remove')}
-            role="button"
-            tabIndex={0}
-            aria-label={gettext('Remove')}
-            onKeyDown={Utils.onKeyDown}
-          >
-            <i className="sf3-font sf3-font-x-01"></i>
-          </span>
+          <OpIcon
+            id={`remove-btn-${idx}`}
+            className="user-remove"
+            symbol="close"
+            tooltip={gettext('Remove')}
+            op={this.onDeleteUser}
+          />
         )}
       </div>
     );

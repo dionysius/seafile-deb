@@ -2,11 +2,13 @@ import logging
 
 from seafevents.seasearch.index_store.index_manager import IndexManager
 from seafevents.seasearch.index_store.repo_file_index import RepoFileIndex
+from seafevents.seasearch.index_store.summary_vector_index import SummaryVectorIndex
 from seafevents.seasearch.index_store.wiki_index import WikiIndex
 from seafevents.seasearch.utils.seasearch_api import SeaSearchAPI
 from seafevents.seasearch.utils.constants import SHARD_NUM
 from seafevents.repo_data import repo_data
-from seafevents.utils import parse_bool, get_opt_from_conf_or_env
+from seafevents.utils import get_opt_from_conf_or_env
+from seafevents.app.config import ENABLE_SEARCH, IS_PRO_VERSION, SEARCH_ENGINE
 
 
 logger = logging.getLogger('seasearch')
@@ -20,6 +22,7 @@ class IndexTaskManager:
         self._repo_data = None
         self.index_manager = None
         self._repo_file_index = None
+        self._summary_vector_index = None
         self._wiki_index = None
 
     def init(self, config):
@@ -28,23 +31,16 @@ class IndexTaskManager:
     def _parse_config(self, config):
         """Parse file index update related parts of events.conf"""
         section_name = 'SEASEARCH'
-        key_enabled = 'enabled'
-
-        if not config.has_section(section_name):
+        if not IS_PRO_VERSION or not ENABLE_SEARCH or SEARCH_ENGINE != 'seasearch':
             return
 
-        # [ enabled ]
-        enabled = get_opt_from_conf_or_env(config, section_name, key_enabled, default=False)
-        enabled = parse_bool(enabled)
-        if not enabled:
-            return
         self.enabled = True
 
         seasearch_url = get_opt_from_conf_or_env(
-            config, section_name, 'seasearch_url'
+            config, section_name, 'seasearch_url', 'SEASEARCH_URL'
         )
         seasearch_token = get_opt_from_conf_or_env(
-            config, section_name, 'seasearch_token'
+            config, section_name, 'seasearch_token', 'SEASEARCH_TOKEN'
         )
         wiki_size_limit = get_opt_from_conf_or_env(
             config, section_name, 'wiki_file_size_limit', default=int(5)
@@ -61,6 +57,7 @@ class IndexTaskManager:
             int(SHARD_NUM),
             config
         )
+        self._summary_vector_index = SummaryVectorIndex(self.seasearch_api, int(SHARD_NUM))
         self._wiki_index = WikiIndex(
             self.seasearch_api,
             self._repo_data,
@@ -73,7 +70,12 @@ class IndexTaskManager:
             query, repos, self._repo_file_index, count, suffixes, search_path, obj_type, time_range, size_range, search_filename_only
         )
 
-    def wiki_search(self, query, wiki, count):
-        return self.index_manager.wiki_search(query, wiki, self._wiki_index, count)
+    def search_wikis(self, query, wiki_ids, count):
+        return self.index_manager.search_wikis(query, wiki_ids, self._wiki_index, count)
+
+    def delete_summary_vector_index(self, repo_id):
+        if not self.enabled:
+            return
+        self._summary_vector_index.delete_summary_vector_index(repo_id)
 
 index_task_manager = IndexTaskManager()

@@ -1,0 +1,112 @@
+{% load i18n %}
+{% if placement == 'trigger' %}
+<button
+    type="button"
+    class="wiki2-search wiki2-search-btn"
+    id="wiki-search-trigger"
+    aria-haspopup="dialog"
+    aria-controls="wiki-search-modal"
+    aria-label="{% trans 'Search' %}"
+>
+    <span class="w-6 h-6 d-flex align-items-center justify-content-center" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+            <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M14.2197 0.719727C21.6756 0.719727 27.7197 6.76388 27.7197 14.2197C27.7197 17.4073 26.6141 20.336 24.7666 22.6455L31.2803 29.1582L29.1592 31.2803L22.6455 24.7666C20.336 26.6141 17.4073 27.7197 14.2197 27.7197C6.76388 27.7197 0.719727 21.6756 0.719727 14.2197C0.719727 6.76388 6.76388 0.719727 14.2197 0.719727ZM14.2197 3.71973C8.42074 3.71973 3.71973 8.42074 3.71973 14.2197C3.71973 20.0187 8.42074 24.7197 14.2197 24.7197C20.0187 24.7197 24.7197 20.0187 24.7197 14.2197C24.7197 8.42074 20.0187 3.71973 14.2197 3.71973Z"
+                fill="currentColor"
+            ></path>
+        </svg>
+    </span>
+    <span>{% trans "Search" %}</span>
+</button>
+{% elif placement == 'modal' %}
+<div class="wiki2-search-modal-backdrop hidden" id="wiki-search-modal-backdrop" aria-hidden="true"></div>
+<div
+    class="wiki2-search-modal hidden"
+    id="wiki-search-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-label="{% trans 'Search' %}"
+    data-searching="{% trans 'Searching...' %}"
+    data-untitled="{% trans 'Untitled' %}"
+    data-current-page="{% trans 'Current page' %}"
+    data-search-failed="{% trans 'Search failed' %}"
+>
+    <div class="wiki2-search-modal__dialog" role="document">
+        <div class="wiki2-search-modal__body">
+            <div class="wiki2-search-input">
+                <span class="d-flex search-icon-left input-icon-addon" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+                        <path
+                            fill-rule="evenodd"
+                            clip-rule="evenodd"
+                            d="M14.2197 0.719727C21.6756 0.719727 27.7197 6.76388 27.7197 14.2197C27.7197 17.4073 26.6141 20.336 24.7666 22.6455L31.2803 29.1582L29.1592 31.2803L22.6455 24.7666C20.336 26.6141 17.4073 27.7197 14.2197 27.7197C6.76388 27.7197 0.719727 21.6756 0.719727 14.2197C0.719727 6.76388 6.76388 0.719727 14.2197 0.719727ZM14.2197 3.71973C8.42074 3.71973 3.71973 8.42074 3.71973 14.2197C3.71973 20.0187 8.42074 24.7197 14.2197 24.7197C20.0187 24.7197 24.7197 20.0187 24.7197 14.2197C24.7197 8.42074 20.0187 3.71973 14.2197 3.71973Z"
+                            fill="currentColor"
+                        ></path>
+                    </svg>
+                </span>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="wiki-search-input"
+                    placeholder="{% trans 'Search' %}"
+                    autocomplete="off"
+                >
+                <div
+                    class="wiki2-search-input__clear hidden"
+                    id="wiki-search-clear"
+                    role="button"
+                    tabindex="0"
+                    aria-label="{% trans 'Clear search' %}"
+                >
+                    <svg
+                        viewBox="0 0 1024 1024"
+                        width="200"
+                        height="200"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path d="M489.6 444.8l294.4-294.4 67.2 67.2-294.4 294.4 294.4 294.4-67.2 67.2-294.4-294.4-272 272-67.2-67.2 272-272-272-272 67.2-67.2z" fill="currentColor"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="wiki2-search-result-container" id="wiki-search-result-container">
+                <div class="wiki2-search-status wiki2-search-status--empty" id="wiki-search-status">
+                    <div class="search-result-none" id="wiki-search-status-default">
+                        <img
+                            class="none-image"
+                            src="{{ MEDIA_URL }}img/start-searching.png"
+                            alt=""
+                            width="48"
+                            height="48"
+                        >
+                        <span class="none-tip">{% trans "Enter characters to start searching" %}</span>
+                    </div>
+                    <div class="search-result-none" id="wiki-search-status-no-result" hidden>
+                        <img
+                            class="none-image"
+                            src="{{ MEDIA_URL }}img/no-results.png"
+                            alt=""
+                            width="48"
+                            height="48"
+                        >
+                        <span class="none-tip">{% trans "No result" %}</span>
+                    </div>
+                    <span id="wiki-search-status-message" hidden></span>
+                </div>
+                <div class="wiki2-search-result hidden" id="wiki-search-result-panel">
+                    <h6 class="wiki2-search-result-header">{% trans "Wiki pages" %}</h6>
+                    <ul
+                        class="wiki2-search-result-list"
+                        id="wiki-search-result-list"
+                        role="listbox"
+                        aria-label="{% trans 'Wiki pages' %}"
+                    ></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <span class="wiki2-search-clear-tooltip" id="wiki-search-clear-tooltip" role="tooltip">{% trans "Clear search" %}</span>
+</div>
+{% endif %}

@@ -1,31 +1,32 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Button } from 'reactstrap';
-import { isPro, gettext } from '../../../utils/constants';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { systemAdminAPI } from '../../../utils/system-admin-api';
-import { Utils } from '../../../utils/utils';
-import toaster from '../../toast';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { systemAdminAPI } from '@/api/system-admin-api';
+import { isPro, gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import EmptyTip from '../../../components/empty-tip';
-import SharePermissionEditor from '../../select-editor/share-permission-editor';
-import GroupSelect from '../../common/group-select';
 import Loading from '../../../components/loading';
+import GroupSelect from '../../group-select';
+import Icon from '../../icon';
+import SharePermissionEditor from '../../select-editor/share-permission-editor';
+import toaster from '../../toast';
 
 class GroupItem extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      isOperationShow: false
+      isHighlighted: false
     };
   }
 
   onMouseEnter = () => {
-    this.setState({ isOperationShow: true });
+    this.setState({ isHighlighted: true });
   };
 
   onMouseLeave = () => {
-    this.setState({ isOperationShow: false });
+    this.setState({ isHighlighted: false });
   };
 
   deleteShareItem = () => {
@@ -41,15 +42,20 @@ class GroupItem extends React.Component {
   render() {
     let item = this.props.item;
     let currentPermission = Utils.getSharedPermission(item);
+    const { isHighlighted } = this.state;
     return (
-      <tr onMouseEnter={this.onMouseEnter} onMouseLeave={this.onMouseLeave}>
+      <tr
+        onMouseEnter={this.onMouseEnter}
+        onMouseLeave={this.onMouseLeave}
+        className={isHighlighted ? 'tr-highlight' : ''}
+      >
         <td className='name'>{item.group_name}</td>
         <td>
           <SharePermissionEditor
             repoID={item.repo_id}
             isTextMode={true}
             autoFocus={true}
-            isEditIconShow={this.state.isOperationShow}
+            isEditIconShow={isHighlighted}
             currentPermission={currentPermission}
             permissions={this.props.permissions}
             onPermissionChanged={this.onChangeUserPermission}
@@ -58,10 +64,13 @@ class GroupItem extends React.Component {
         </td>
         <td>
           <span
-            className={`sf2-icon-x3 action-icon ${this.state.isOperationShow ? '' : 'hide'}`}
+            className={`op-icon ${isHighlighted ? '' : 'invisible'}`}
+            role="button"
+            tabIndex="0"
             onClick={this.deleteShareItem}
             title={gettext('Delete')}
           >
+            <Icon symbol="close" />
           </span>
         </td>
       </tr>

@@ -1,16 +1,16 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import classnames from 'classnames';
 import { Link } from '@gatsbyjs/reach-router';
-import { Utils } from '../../../utils/utils';
-import { seafileAPI } from '../../../utils/seafile-api';
-import { gettext, siteRoot, isPro, username } from '../../../utils/constants';
-import Loading from '../../loading';
-import toaster from '../../../components/toast';
+import classnames from 'classnames';
+import PropTypes from 'prop-types';
+import { seafileAPI } from '@/api/seafile-api';
+import { gettext, siteRoot, isPro, username } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import EmptyTip from '../../../components/empty-tip';
 import SharePermissionEditor from '../../../components/select-editor/share-permission-editor';
-import EventBus from '../../common/event-bus';
-import { EVENT_BUS_TYPE } from '../../common/event-bus-type';
+import toaster from '../../../components/toast';
+import EventBus, { EVENT_BUS_TYPE } from '../../event-bus';
+import Loading from '../../loading';
+import OpIcon from '../../op-icon';
 
 const itemPropTypes = {
   item: PropTypes.object.isRequired,
@@ -101,16 +101,12 @@ class Item extends Component {
           />
         </td>
         <td>
-          <i
-            tabIndex="0"
-            role="button"
-            className={`sf3-font sf3-font-x-01 op-icon ${this.state.isOperationShow ? '' : 'invisible'}`}
-            onClick={this.onDeleteLink}
-            onKeyDown={Utils.onKeyDown}
+          <OpIcon
+            symbol="close"
+            className={`op-icon ${this.state.isOperationShow ? '' : 'd-none'}`}
+            op={this.onDeleteLink}
             title={gettext('Delete')}
-            aria-label={gettext('Delete')}
-          >
-          </i>
+          />
         </td>
       </tr>
     );

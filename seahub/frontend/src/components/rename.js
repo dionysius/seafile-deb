@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { gettext } from '../utils/constants';
-import { Utils } from '../utils/utils';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import toaster from './toast';
 
 const propTypes = {
@@ -101,7 +101,7 @@ class Rename extends React.Component {
 
   render() {
     return (
-      <div className="rename-container">
+      <div className="rename-container d-flex">
         <input
           ref={this.inputRef}
           value={this.state.name}

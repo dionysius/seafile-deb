@@ -4,7 +4,9 @@ import os
 import uuid
 import hashlib
 import posixpath
+import time
 
+from django.conf import settings
 from django.db import models
 
 from seaserv import seafile_api
@@ -16,6 +18,8 @@ from seahub.utils import normalize_file_path, normalize_dir_path
 ########## Manager
 class FileUUIDMapManager(models.Manager):
 
+    DEFAULT_PENDING_CREATE_RETRY_SECONDS = 0.2
+    DEFAULT_PENDING_CREATE_RETRY_COUNT = 3
     def get_fileuuidmap_by_uuid(self, uuid):
         try:
             return super(FileUUIDMapManager, self).get(uuid=uuid)
@@ -26,18 +30,27 @@ class FileUUIDMapManager(models.Manager):
         return super(FileUUIDMapManager, self).filter(uuid__in=uuids)
         
 
-    def get_or_create_fileuuidmap(self, repo_id, parent_path, filename, is_dir):
+    def get_or_create_fileuuidmap(self, repo_id, parent_path, filename, is_dir, pending=False):
         """ create filemap by repo_id、 parent_path、filename、id_dir
             args:
             - `repo_id`:
             - `parent_path`:
             - `filename`: input a dirname  if it's dir
             - `id_dir`: input True or False
+            - `pending`: retry before create to reduce async rename inconsistency
             return:
                 uuid of filemap
         """
         repo_id, parent_path = self.model.get_origin_repo_id_and_parent_path(repo_id, parent_path)
         uuid = self.get_fileuuidmap_by_path(repo_id, parent_path, filename, is_dir)
+        if not uuid and pending:
+            retry_seconds = self.DEFAULT_PENDING_CREATE_RETRY_SECONDS
+            retry_count = self.DEFAULT_PENDING_CREATE_RETRY_COUNT
+            for _ in range(retry_count):
+                time.sleep(retry_seconds)
+                uuid = self.get_fileuuidmap_by_path(repo_id, parent_path, filename, is_dir)
+                if uuid:
+                    break
         if not uuid:
             uuid = self.model(repo_id=repo_id, parent_path=parent_path,
                               filename=filename, is_dir=is_dir)
@@ -78,7 +91,7 @@ class FileUUIDMapManager(models.Manager):
         )
         return uuids
 
-    def get_or_create_fileuuidmap_by_path(self, repo_id, path, is_dir):
+    def get_or_create_fileuuidmap_by_path(self, repo_id, path, is_dir, pending=False):
         if is_dir:
             path = normalize_dir_path(path)
         else:
@@ -89,7 +102,7 @@ class FileUUIDMapManager(models.Manager):
         parent_path = os.path.dirname(path)
         obj_name = os.path.basename(path)
 
-        return self.get_or_create_fileuuidmap(repo_id, parent_path, obj_name, is_dir)
+        return self.get_or_create_fileuuidmap(repo_id, parent_path, obj_name, is_dir, pending=pending)
 
     def delete_fileuuidmap_by_path(self, repo_id, parent_path, filename, is_dir):
         repo_id, parent_path = self.model.get_origin_repo_id_and_parent_path(repo_id, parent_path)

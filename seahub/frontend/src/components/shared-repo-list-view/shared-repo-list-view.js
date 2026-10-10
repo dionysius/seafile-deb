@@ -1,24 +1,21 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
-import classNames from 'classnames';
-import { gettext } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
-import SharedRepoListItem from './shared-repo-list-item';
-import toaster from '../toast';
+import { LIST_MODE } from '@/constants/view-mode';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
+import { hideMenu, handleContextClick } from '../context-menu/actions';
+import ContextMenu from '../context-menu/context-menu';
 import LibsMobileThead from '../libs-mobile-thead';
 import Loading from '../loading';
-import { LIST_MODE } from '../dir-view-mode/constants';
-import ContextMenu from '../context-menu/context-menu';
-import { hideMenu, handleContextClick } from '../context-menu/actions';
+import RepoListCard from '../repo-list-card';
+import toaster from '../toast';
+import SharedRepoListItem from './shared-repo-list-item';
 
 const propTypes = {
   currentViewMode: PropTypes.string,
   libraryType: PropTypes.string,
   currentGroup: PropTypes.object,
   isShowTableThread: PropTypes.bool,
-  sortBy: PropTypes.string,
-  sortOrder: PropTypes.string,
-  sortItems: PropTypes.func,
   repoList: PropTypes.array.isRequired,
   onItemUnshare: PropTypes.func.isRequired,
   onItemDelete: PropTypes.func,
@@ -26,6 +23,10 @@ const propTypes = {
   hasNextPage: PropTypes.bool,
   inAllLibs: PropTypes.bool,
   onTransferRepo: PropTypes.func,
+  onToggleStarRepo: PropTypes.func.isRequired,
+  isItemFreezed: PropTypes.bool,
+  onFreezedItem: PropTypes.func,
+  onUnfreezedItem: PropTypes.func,
 };
 
 class SharedRepoListView extends React.Component {
@@ -38,42 +39,27 @@ class SharedRepoListView extends React.Component {
     this.repoItems = [];
   }
 
-  sortByName = (e) => {
-    e.preventDefault();
-    const sortBy = 'name';
-    const sortOrder = this.props.sortOrder == 'asc' ? 'desc' : 'asc';
-    this.props.sortItems(sortBy, sortOrder);
-  };
-
-  sortByTime = (e) => {
-    e.preventDefault();
-    const sortBy = 'time';
-    const sortOrder = this.props.sortOrder == 'asc' ? 'desc' : 'asc';
-    this.props.sortItems(sortBy, sortOrder);
-  };
-
-  sortBySize = (e) => {
-    e.preventDefault();
-    const sortBy = 'size';
-    const sortOrder = this.props.sortOrder == 'asc' ? 'desc' : 'asc';
-    this.props.sortItems(sortBy, sortOrder);
-  };
-
-  getSortMetaData = () => {
-    return {
-      sortByName: this.props.sortBy == 'name',
-      sortByTime: this.props.sortBy == 'time',
-      sortBySize: this.props.sortBy == 'size',
-      sortIcon: this.props.sortOrder == 'asc' ? <span aria-hidden="true" className="sf3-font sf3-font-down rotate-180 d-inline-block"></span> : <span aria-hidden="true" className="sf3-font sf3-font-down"></span>
-    };
+  setItemFreezed = (isItemFreezed) => {
+    if (this.props.onFreezedItem && this.props.onUnfreezedItem) {
+      isItemFreezed ? this.props.onFreezedItem() : this.props.onUnfreezedItem();
+      return;
+    }
+    this.setState({ isItemFreezed });
   };
 
   onFreezedItem = () => {
-    this.setState({ isItemFreezed: true });
+    this.setItemFreezed(true);
   };
 
   onUnfreezedItem = () => {
-    this.setState({ isItemFreezed: false });
+    this.setItemFreezed(false);
+  };
+
+  getIsItemFreezed = () => {
+    if (typeof this.props.isItemFreezed === 'boolean') {
+      return this.props.isItemFreezed;
+    }
+    return this.state.isItemFreezed;
   };
 
   onItemRename = (repo, newName) => {
@@ -102,7 +88,7 @@ class SharedRepoListView extends React.Component {
   onMenuItemClick = (operation, currentObject, event) => {
     const index = this.getRepoIndex(currentObject);
     if (this.repoItems[index]) {
-      this.repoItems[index].onMenuItemClick(event);
+      this.repoItems[index].onMenuItemClick(operation, event);
     }
     hideMenu();
   };
@@ -123,20 +109,23 @@ class SharedRepoListView extends React.Component {
         {this.props.repoList.map((repo, index) => {
           return (
             <SharedRepoListItem
+              idx={index}
               ref={this.setRepoItemRef(index)}
               key={repo.repo_id}
               repo={repo}
               libraryType={this.props.libraryType}
               currentGroup={this.props.currentGroup}
-              isItemFreezed={this.state.isItemFreezed}
+              isItemFreezed={this.getIsItemFreezed()}
               onFreezedItem={this.onFreezedItem}
               onUnfreezedItem={this.onUnfreezedItem}
               onTransferRepo={this.props.onTransferRepo}
+              onToggleStarRepo={this.props.onToggleStarRepo}
               onItemUnshare={this.props.onItemUnshare}
               onItemDelete={this.props.onItemDelete}
               onItemRename={this.props.onItemRename}
               currentViewMode={currentViewMode}
               onContextMenu={this.onContextMenu}
+              updateRepoStatus={this.props.updateRepoStatus}
             />
           );
         })}
@@ -145,35 +134,28 @@ class SharedRepoListView extends React.Component {
   };
 
   renderPCUI = () => {
-    const { currentViewMode, currentGroup, libraryType, inAllLibs } = this.props;
-    const { sortByName, sortByTime, sortBySize, sortIcon } = this.getSortMetaData();
+    const { currentViewMode, currentGroup, libraryType } = this.props;
 
-    const content = currentViewMode == LIST_MODE ? (
-      <table className={classNames({ 'table-thead-hidden': inAllLibs })}>
-        <thead>
-          <tr>
-            <th width="4%"></th>
-            <th width="3%"><span className="sr-only">{gettext('Library Type')}</span></th>
-            <th width="35%"><a className="d-block table-sort-op" href="#" onClick={this.sortByName}>{gettext('Name')} {sortByName && sortIcon}</a></th>
-            <th width="10%"><span className="sr-only">{gettext('Actions')}</span></th>
-            <th width="14%"><a className="d-block table-sort-op" href="#" onClick={this.sortBySize}>{gettext('Size')} {sortBySize && sortIcon}</a></th>
-            <th width="17%"><a className="d-block table-sort-op" href="#" onClick={this.sortByTime}>{gettext('Last Update')} {sortByTime && sortIcon}</a></th>
-            <th width="17%">{gettext('Owner')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {this.renderRepoListView()}
-        </tbody>
-      </table>
-    ) : (
-      <div className="d-flex justify-content-between flex-wrap">
-        {this.renderRepoListView()}
-      </div>
-    );
+    if (currentViewMode === LIST_MODE) {
+      return (
+        <>
+          <RepoListCard>
+            {this.renderRepoListView()}
+          </RepoListCard>
+          <ContextMenu
+            id={`${libraryType === 'public' ? 'shared-repo-item-menu' : `shared-repo-item-menu-${currentGroup.id}`}`}
+            onMenuItemClick={this.onMenuItemClick}
+          />
+        </>
+      );
+    }
 
+    // Grid mode
     return (
       <>
-        {content}
+        <div className="repo-grid-container">
+          {this.renderRepoListView()}
+        </div>
         <ContextMenu
           id={`${libraryType === 'public' ? 'shared-repo-item-menu' : `shared-repo-item-menu-${currentGroup.id}`}`}
           onMenuItemClick={this.onMenuItemClick}
@@ -183,14 +165,15 @@ class SharedRepoListView extends React.Component {
   };
 
   renderMobileUI = () => {
-    const { inAllLibs = false } = this.props;
     return (
-      <table className="table-thead-hidden">
-        <LibsMobileThead inAllLibs={inAllLibs} />
-        <tbody>
-          {this.renderRepoListView()}
-        </tbody>
-      </table>
+      <div className="library-list-mobile-container">
+        <table className="table-thead-hidden">
+          <LibsMobileThead />
+          <tbody>
+            {this.renderRepoListView()}
+          </tbody>
+        </table>
+      </div>
     );
   };
 

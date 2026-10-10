@@ -47,6 +47,69 @@ class DeletedReposTest(BaseTestCase):
                 )
         self.assertEqual(response.status_code, 200)
 
+    def test_can_delete_deleted_repos(self):
+        self.logout()
+        self.login_as(self.user)
+        name = self.user.username
+        repo = seafile_api.get_repo(self.create_repo(name='test-repo', desc='',
+                                                    username=name,
+                                                    passwd=None))
+        remove_status = self.remove_repo(repo.id)
+        assert remove_status == 0
+
+        response = self.client.delete(
+                reverse("api2-v2.1-deleted-repo", args=[repo.id])
+                )
+        self.assertEqual(response.status_code, 200)
+
+    def test_can_clean_deleted_repos(self):
+        self.logout()
+        self.login_as(self.user)
+        name = self.user.username
+
+        repo_1 = seafile_api.get_repo(self.create_repo(name='test-repo-1', desc='',
+                                                       username=name,
+                                                       passwd=None))
+        repo_2 = seafile_api.get_repo(self.create_repo(name='test-repo-2', desc='',
+                                                       username=name,
+                                                       passwd=None))
+        self.remove_repo(repo_1.id)
+        self.remove_repo(repo_2.id)
+
+        response = self.client.delete(reverse("api2-v2.1-deleted-repos"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(seafile_api.get_trash_repos_by_owner(name), [])
+
+    def test_can_not_delete_notdeleted_repos(self):
+        self.logout()
+        self.login_as(self.user)
+        name = self.user.username
+        repo = seafile_api.get_repo(self.create_repo(name='test-repo-no-del',
+                                                     desc='',
+                                                     username=name,
+                                                     passwd=None))
+
+        response = self.client.delete(
+                reverse("api2-v2.1-deleted-repo", args=[repo.id])
+                )
+        self.assertEqual(response.status_code, 404)
+
+    def test_can_not_delete_repos_notbelong_self(self):
+        self.logout()
+        self.login_as(self.user)
+        repo = seafile_api.get_repo(self.create_repo(name='test-repo', desc='',
+                                                    username=self.user.username,
+                                                    passwd=None))
+        remove_status = self.remove_repo(repo.id)
+        assert remove_status == 0
+        self.logout()
+        self.login_as(self.admin)
+
+        response = self.client.delete(
+                reverse("api2-v2.1-deleted-repo", args=[repo.id])
+                )
+        self.assertEqual(response.status_code, 403)
+
     def test_can_restore_deleted_repos_with_notdeleted(self):
         self.logout()
         self.login_as(self.user)

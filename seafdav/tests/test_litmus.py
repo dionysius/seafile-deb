@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
-# (c) 2009-2023 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
+# (c) 2009-2024 Martin Wendt and contributors; see WsgiDAV https://github.com/mar10/wsgidav
 # Licensed under the MIT license:
 # http://www.opensource.org/licenses/mit-license.php
-"""
+r"""
 Run the [Litmus test suite](http://www.webdav.org/neon/litmus/) against WsgiDAV
 server.
 
@@ -104,7 +103,7 @@ class WsgiDAVLitmusTest(unittest.TestCase):
         raise unittest.SkipTest(f"Test requires litmus test suite{extra}")
 
     def test_litmus_with_authentication(self):
-        """Run litmus test suite on HTTP with authentification."""
+        """Run litmus test suite on HTTP with authentication."""
         with WsgiDavTestServer(with_auth=True, with_ssl=False):
             try:
                 res = subprocess.call(
@@ -117,7 +116,7 @@ class WsgiDAVLitmusTest(unittest.TestCase):
         return
 
     def test_litmus_anonymous(self):
-        """Run litmus test suite on HTTP with authentification."""
+        """Run litmus test suite on HTTP with authentication."""
         with WsgiDavTestServer(with_auth=False, with_ssl=False):
             try:
                 res = subprocess.call(["litmus", "http://127.0.0.1:8080/"])
@@ -128,7 +127,7 @@ class WsgiDAVLitmusTest(unittest.TestCase):
         return
 
     def test_litmus_with_ssl_and_authentication(self):
-        """Run litmus test suite on SSL / HTTPS with authentification."""
+        """Run litmus test suite on SSL / HTTPS with authentication."""
         with WsgiDavTestServer(with_auth=True, with_ssl=True):
             try:
                 res = subprocess.call(

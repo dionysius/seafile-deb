@@ -11,12 +11,15 @@
 }
 
 .wiki-plugin-operation-btn-container:hover {
-  background-color: #efefef;
-  cursor: pointer
+  background-color: var(--bs-icon-btn-hover-bg-color);
+  cursor: pointer;
 }
 
-.wiki-plugin-operation-btn-container .sdocfont {
+.wiki-plugin-operation-btn-container svg {
+  width: 16px;
+  height: 16px;
   color: #666666;
+  fill: #666;
   cursor: pointer;
 }
 

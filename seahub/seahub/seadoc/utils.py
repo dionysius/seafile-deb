@@ -12,7 +12,7 @@ from zipfile import ZipFile, is_zipfile
 from seaserv import seafile_api, USE_GO_FILESERVER
 
 from seahub.tags.models import FileUUIDMap
-from seahub.settings import SEADOC_PRIVATE_KEY
+from seahub.settings import SEADOC_PRIVATE_KEY, JWT_PRIVATE_KEY
 from seahub.utils import normalize_file_path, gen_file_get_url, gen_file_upload_url, gen_inner_file_get_url, \
     get_inner_fileserver_root
 from seahub.utils.auth import AUTHORIZATION_PREFIX
@@ -100,7 +100,7 @@ def is_valid_seadoc_access_token(auth, file_uuid, return_payload=False):
     return is_valid
 
 
-def get_seadoc_file_uuid(repo, path):
+def get_seadoc_file_uuid(repo, path, pending=False):
     repo_id = repo.repo_id
     if repo.is_virtual:
         repo_id = repo.origin_repo_id
@@ -111,7 +111,7 @@ def get_seadoc_file_uuid(repo, path):
     filename = os.path.basename(path)
 
     uuid_map = FileUUIDMap.objects.get_or_create_fileuuidmap(
-        repo_id, parent_dir, filename, is_dir=False)
+        repo_id, parent_dir, filename, is_dir=False, pending=pending)
 
     file_uuid = str(uuid_map.uuid)  # 36 chars str
     return file_uuid
@@ -192,6 +192,12 @@ def can_access_seadoc_asset(request, repo_id, path, file_uuid):
     seadoc_share_session = request.session.get('seadoc_share_session')
     if seadoc_share_session and seadoc_share_session.get('file_uuid') == file_uuid:
         return True
+    
+    thumbnail_access_token = request.COOKIES.get('thumbnail_access_token')
+    if thumbnail_access_token:
+        payload = jwt.decode(thumbnail_access_token, JWT_PRIVATE_KEY, algorithms=['HS256'])
+        if payload.get('file_uuid') == file_uuid:
+            return True
 
     return False
 

@@ -1,29 +1,62 @@
 # Copyright (c) 2012-2016 Seafile Ltd.
 import os
+import json
 import logging
 import posixpath
-import json
 from datetime import datetime
 
 from constance import config
 from seaserv import seafile_api
 
-from django.http import Http404
+from django.conf import settings
+from django.http import Http404, HttpResponseRedirect
 from django.shortcuts import render
+from django.utils.http import http_date
+from django.urls import reverse
 
 from seahub.wiki2.models import Wiki2 as Wiki
-from seahub.wiki2.models import Wiki2Publish
+from seahub.wiki2.models import Wiki2Publish, Wiki2Settings
 from seahub.utils import get_file_type_and_ext, render_permission_error
 from seahub.utils.file_types import SEADOC
 from seahub.auth.decorators import login_required
 from seahub.wiki2.utils import check_wiki_permission, get_wiki_config
-
-from seahub.utils.repo import get_repo_owner, is_repo_admin, is_repo_owner, is_group_repo_staff
+from seahub.views import get_seadoc_file_uuid
+from seahub.utils import gen_file_get_url
+from seahub.utils.repo import get_repo_owner, is_repo_admin, list_user_admin_reops
 from seahub.settings import SEADOC_SERVER_URL
 from seahub.seadoc.utils import gen_seadoc_access_token
+from seahub.api2.endpoints.utils import sdoc_export_to_html
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
+
+WIKI_COVER_LIST = {
+    'wiki-cover-1.jpg',
+    'wiki-cover-2.jpg',
+    'wiki-cover-3.jpg',
+    'wiki-cover-4.jpg',
+    'wiki-cover-5.jpg',
+    'wiki-cover-6.jpg',
+    'wiki-cover-7.jpg',
+    'wiki-cover-8.jpg',
+    'wiki-cover-9.jpg',
+}
+
+
+def get_wiki_cover_url(page):
+    cover_img_url = page.get('cover_img_url', '')
+    if not cover_img_url:
+        return ''
+
+    if cover_img_url in WIKI_COVER_LIST:
+        return '{}img/wiki/cover/{}'.format(settings.MEDIA_URL, cover_img_url)
+
+    doc_uuid = page.get('docUuid', '')
+    if not doc_uuid:
+        return ''
+
+    cover_name = cover_img_url[1:] if cover_img_url.startswith('/') else cover_img_url
+    return '/api/v2.1/seadoc/download-image/{}/{}'.format(doc_uuid, cover_name)
 
 
 @login_required
@@ -34,11 +67,11 @@ def wiki_view(request, wiki_id, page_id=None):
     wiki = Wiki.objects.get(wiki_id=wiki_id)
     if not wiki:
         raise Http404
-    
+
     username = request.user.username
     repo_owner = get_repo_owner(request, wiki_id)
     wiki.owner = repo_owner
-    
+
     file_path = ''
 
     if page_id:
@@ -69,7 +102,7 @@ def wiki_view(request, wiki_id, page_id=None):
         except Exception as e:
             logger.warning(e)
 
-    
+
     is_admin = is_repo_admin(username, repo_id)
     last_modified = datetime.fromtimestamp(last_modified)
     try:
@@ -77,6 +110,35 @@ def wiki_view(request, wiki_id, page_id=None):
         publish_url = publish_config.publish_url
     except Wiki2Publish.DoesNotExist:
         publish_url = ''
+
+    try:
+        admin_repos = list_user_admin_reops(request)
+    except Exception as e:
+        logger.error(e)
+        admin_repos = []
+
+    display_repos = []
+    for r in admin_repos:
+        if r.get('encrypted'):
+            continue
+        display_repos.append(r)
+
+    settings_obj = Wiki2Settings.objects.filter(wiki_id=wiki_id).first()
+    if settings_obj:
+        linked_repos = settings_obj.get_linked_repos()
+        settings = {
+            "enable_link_repos": bool(settings_obj.enable_link_repos),
+            "linked_repos": linked_repos
+        }
+    else:
+        wiki_settings = Wiki2Settings.objects.create(wiki_id=wiki_id, enable_link_repos=True)
+        settings = {
+            "enable_link_repos": bool(wiki_settings.enable_link_repos),
+            "linked_repos": []
+        }
+
+    repos_json = json.dumps(display_repos)
+    settings_json = json.dumps(settings)
     return render(request, "wiki/wiki_edit.html", {
         "wiki": wiki,
         "is_admin": is_admin,
@@ -87,7 +149,9 @@ def wiki_view(request, wiki_id, page_id=None):
         "seadoc_server_url": SEADOC_SERVER_URL,
         "permission": permission,
         "enable_user_clean_trash": config.ENABLE_USER_CLEAN_TRASH,
-        "publish_url": publish_url
+        "publish_url": publish_url,
+        "repos": repos_json,
+        "settings": settings_json
     })
 
 
@@ -133,7 +197,6 @@ def wiki_publish_view(request, publish_url, page_id=None):
         except Exception as e:
             logger.warning(e)
 
-    last_modified = datetime.fromtimestamp(last_modified)
     # update visit_count
     try:
         current_count = wiki_publish.visit_count
@@ -142,16 +205,173 @@ def wiki_publish_view(request, publish_url, page_id=None):
     except Exception as e:
         logger.warning(e)
 
-    return render(request, "wiki/wiki_publish.html", {
+    template_name = 'wiki/wiki_publish.html'
+    render_context = {
         "wiki": wiki,
         "file_path": file_path,
         "repo_name": repo.name if repo else '',
         "modifier": latest_contributor,
-        "modify_time": last_modified,
+        "modify_time": datetime.fromtimestamp(last_modified),
         "seadoc_server_url": SEADOC_SERVER_URL,
         "permission": 'public',
-        "publish_url": publish_url
-    })
+        "publish_url": publish_url,
+    }
+
+    if not wiki_publish.enable_server_render:
+        response = render(request, template_name, render_context)
+        response['Last-Modified'] = http_date(last_modified)
+        return response
+
+    # server-side rendering of sdoc → HTML
+    try:
+        wiki_config = get_wiki_config(wiki.repo_id, '')
+        pages = wiki_config.get('pages', [])
+        if not pages:
+            response = render(request, template_name, render_context)
+            response['Last-Modified'] = http_date(last_modified)
+            return response
+
+        navigation = wiki_config.get('navigation', [])
+        first_navigation_id = navigation[0].get('id') if navigation else None
+
+        if not page_id:
+            page_id = first_navigation_id or pages[0]['id']
+
+        page_info = next(filter(lambda t: t['id'] == page_id, pages), {})
+        if not page_info:
+            if first_navigation_id:
+                page_id = first_navigation_id
+                page_info = next(filter(lambda t: t['id'] == page_id, pages), {})
+
+            if not page_info:
+                page_id = pages[0]['id']
+                page_info = pages[0]
+
+        file_path = page_info.get('path', '')
+        wiki_title = page_info.get('name', '')
+        page_map = {page['id']: page for page in pages}
+        current_page = page_map.get(page_id, {})
+        wiki_pages = {}
+        for page in pages:
+            wiki_pages[page['id']] = {
+                'name': page.get('name', ''),
+                'icon': page.get('icon', ''),
+                'cover_img_url': page.get('cover_img_url', ''),
+                'docUuid': page.get('docUuid', ''),
+            }
+
+        def find_navigation_path(items, target_id):
+            for nav_item in items:
+                if nav_item.get('id') == target_id:
+                    return [nav_item]
+
+                children = nav_item.get('children') or []
+                child_path = find_navigation_path(children, target_id)
+                if child_path:
+                    return [nav_item] + child_path
+
+            return []
+
+        current_path = find_navigation_path(navigation, page_id)
+        current_path_ids = {item.get('id') for item in current_path}
+
+        def normalize_navigation_item(item, depth=0):
+            page = page_map.get(item.get('id'))
+            if not page:
+                return None
+
+            children = []
+            for child in item.get('children', []) or []:
+                normalized_child = normalize_navigation_item(child, depth + 1)
+                if normalized_child:
+                    children.append(normalized_child)
+
+            has_children = bool(children)
+            normalized_item = {
+                'id': item['id'],
+                'type': item.get('type', 'page'),
+                'name': page.get('name', ''),
+                'icon': page.get('icon', ''),
+                'path': page.get('path', ''),
+                'locked': page.get('locked', False),
+                'url': f"/wiki/publish/{publish_url}/{item['id']}/",
+                'depth': depth,
+                'has_children': has_children,
+                'is_current': item['id'] == page_id,
+                'is_expanded': item['id'] in current_path_ids and item['id'] != page_id,
+            }
+
+            if has_children or 'children' in item:
+                normalized_item['children'] = children
+
+            return normalized_item
+
+        wiki_navigation = [
+            item for item in
+            (normalize_navigation_item(nav_item) for nav_item in navigation)
+            if item
+        ]
+
+        wiki_breadcrumb = []
+        for breadcrumb_item in current_path:
+            page = page_map.get(breadcrumb_item.get('id'))
+            if not page:
+                continue
+
+            wiki_breadcrumb.append({
+                'id': breadcrumb_item['id'],
+                'name': page.get('name', ''),
+                'icon': page.get('icon', ''),
+                'url': f"/wiki/publish/{publish_url}/{breadcrumb_item['id']}/",
+                'has_children': bool(breadcrumb_item.get('children')),
+            })
+
+        file_id = seafile_api.get_file_id_by_path(wiki_id, file_path)
+        download_token = seafile_api.get_fileserver_access_token(wiki_id,
+                                                                 file_id,
+                                                                 'download',
+                                                                 '',
+                                                                 use_onetime=False)
+        src_type = 'sdoc'
+        dst_type = 'html'
+        filename = os.path.basename(file_path)
+        doc_uuid = get_seadoc_file_uuid(repo, file_path)
+        download_url = gen_file_get_url(download_token, filename)
+
+        def get_page_id_name_dict(wiki_config):
+            page_id_name_dict = {}
+            for page in wiki_config.get('pages', []):
+                page_id_name_dict[page['id']] = page['name']
+            return page_id_name_dict
+
+        page_id_name_dict = get_page_id_name_dict(wiki_config)
+        html_resp = sdoc_export_to_html(file_path, '', doc_uuid,
+                                        download_url, src_type, dst_type,
+                                        publish_url, page_id_name_dict)
+        if not html_resp.ok:
+            raise ValueError('converter returned non-success status {}'.format(html_resp.status_code))
+
+        wiki_html = html_resp.content.decode('utf-8')
+        template_name = 'wiki/wiki_publish_ssr.html'
+        render_context.update({
+            "wiki_repo_name": wiki.name,
+            "wiki_title": wiki_title,
+            "wiki_html": wiki_html,
+            "wiki_navigation": wiki_navigation,
+            "wiki_breadcrumb": wiki_breadcrumb,
+            "current_page": current_page,
+            "current_page_cover_url": get_wiki_cover_url(current_page),
+            "wiki_pages_json": json.dumps(wiki_pages),
+        })
+        response = render(request, template_name, render_context)
+        response['Last-Modified'] = http_date(last_modified)
+        return response
+    except Exception as e:
+        logger.warning('SSR fallback for published wiki %s: %s', wiki_id, e)
+        response = render(request, template_name, render_context)
+        response['Last-Modified'] = http_date(last_modified)
+        return response
+
 
 def wiki_history_view(request, wiki_id):
     """ view wiki history page. for wiki2
@@ -160,11 +380,11 @@ def wiki_history_view(request, wiki_id):
     wiki = Wiki.objects.get(wiki_id=wiki_id)
     if not wiki:
         raise Http404
-    
+
     username = request.user.username
     repo_owner = get_repo_owner(request, wiki_id)
     wiki.owner = repo_owner
-    
+
     page_id = request.GET.get('page_id')
 
     if page_id:
@@ -193,3 +413,33 @@ def wiki_history_view(request, wiki_id):
         "seadoc_access_token": gen_seadoc_access_token(file_uuid, file_name, username, permission='rw'),
         "seadoc_server_url": SEADOC_SERVER_URL
     })
+
+
+@login_required
+def wiki_search_result_view(request, wiki_id, doc_uuid):
+    """Redirect /wikis/<wiki_id>/<doc_uuid>/ to /wikis/<wiki_id>/<page_id>/
+    by looking up doc_uuid in wiki config.
+    """
+    wiki = Wiki.objects.get(wiki_id=wiki_id)
+    if not wiki:
+        raise Http404
+
+    username = request.user.username
+
+    # perm check
+    if not check_wiki_permission(wiki, username):
+        return render_permission_error(request, 'Permission denied.')
+
+    wiki_config = get_wiki_config(wiki.repo_id, username)
+    pages = wiki_config.get('pages', [])
+
+    page_id = None
+    for page in pages:
+        if page.get('docUuid') == doc_uuid:
+            page_id = page.get('id')
+            break
+    if not page_id:
+        raise Http404
+
+    redirect_url = reverse('wiki', args=[wiki_id, page_id])
+    return HttpResponseRedirect(redirect_url)

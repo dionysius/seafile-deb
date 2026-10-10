@@ -13,6 +13,15 @@ body {
   flex-shrink: 0;
 }
 
+.file-view-header .file-title .seafile-multicolor-icon {
+  color: #999;
+}
+
+.file-view-header .file-title .seafile-multicolor-icon:hover,
+.file-view-header .file-title .seafile-multicolor-icon:focus {
+  color: #333;
+}
+
 .onlyoffice-file-view-header-shown {
   transition: height .3s ease-in-out;
   height: 56px;
@@ -44,7 +53,7 @@ body {
 
 .exdraw-view-header #unfold-onlyoffice-file-view-header {
   right: 152px;
-  z-index: 6
+  z-index: 6;
 }
 
 .sf-only-office.doc-view-header #unfold-onlyoffice-file-view-header,
@@ -65,17 +74,27 @@ body {
   right: 200px;
 }
 
-.file-view-header .file-toolbar-btn {
-  position: relative;
-  min-width: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 3px;
-  margin-left: 10px;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.exdraw-view-header #unfold-onlyoffice-file-view-header {
+  right: 152px;
+  z-index: 6;
+}
+
+.sf-only-office.doc-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.odp-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.fodp-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.ods-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.fods-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.odt-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.fodt-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.ppsx-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.ppt-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.pps-view-header #unfold-onlyoffice-file-view-header,
+.sf-only-office.xls-view-header #unfold-onlyoffice-file-view-header {
+  right: 172px;
+}
+
+.sf-collabora-online #unfold-onlyoffice-file-view-header {
+  right: 200px;
 }
 
 .file-view-header .file-toolbar-btn .sdocfont {
@@ -85,13 +104,13 @@ body {
 }
 
 .file-view-header .file-toolbar-btn .seafile-multicolor-icon {
-  fill: #666;
-  width: .875rem;
-  height: .875rem;
+  color: var(--bs-icon-color);
+  width: 1rem;
+  height: 1rem;
 }
 
 .file-view-header .file-toolbar-btn:hover {
-  background-color: var(--bs-hover-bg) !important;
+  background-color: var(--bs-icon-btn-hover-bg-color) !important;
 }
 
 .file-view-header .file-toolbar-btn.disabled {
@@ -130,6 +149,11 @@ body {
   width: 100%;
 }
 
+.file-view-header .image-zoomer .dropdown .more-dropdown-toggle {
+  width: fit-content;
+  height: fit-content;
+}
+
 .file-title {
   font-size: 1.2rem;
   font-weight: bold;
@@ -141,12 +165,6 @@ body {
   font-size: .875rem;
   color: #999;
   margin-left: .5rem;
-}
-
-.file-star:hover,
-.file-star:focus {
-  text-decoration: none;
-  color: #999;
 }
 
 .file-locked-icon {
@@ -206,7 +224,6 @@ body {
 
 @media (min-width: 768px) {
   .file-view-body .seafile-comment {
-    width: 360px;
     border-left: 1px solid #e6e6dd;
   }
 }

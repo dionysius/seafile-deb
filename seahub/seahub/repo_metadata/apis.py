@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import posixpath
-from datetime import datetime
+from datetime import datetime, timezone
 
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -15,13 +15,14 @@ from seahub.api2.utils import api_error, to_python_boolean
 from seahub.api2.throttling import UserRateThrottle
 from seahub.api2.authentication import TokenAuthentication
 from seahub.repo_metadata.models import RepoMetadata, RepoMetadataViews
-from seahub.utils import is_org_context
+from seahub.utils import HAS_FILE_SEASEARCH, is_org_context
 from seahub.views import check_folder_permission
 from seahub.repo_metadata.utils import add_init_metadata_task, recognize_faces, gen_unique_id, init_metadata, \
     get_unmodifiable_columns, can_read_metadata, init_faces, \
     extract_file_details, get_table_by_name, remove_faces_table, FACES_SAVE_PATH, \
     init_tags, init_tag_self_link_columns, remove_tags_table, add_init_face_recognition_task, \
-    get_update_record, update_people_cover_photo
+    add_init_ai_summary_task, delete_summary_vector_index, get_update_record, update_people_cover_photo, init_ai_summary, \
+    remove_ai_summary, filter_face_recognition_views
 from seahub.repo_metadata.metadata_server_api import MetadataServerAPI, list_metadata_view_records
 from seahub.utils.repo import is_repo_admin, is_repo_owner
 from seahub.share.utils import check_invisible_folder
@@ -29,9 +30,11 @@ from seaserv import seafile_api
 from seahub.repo_metadata.constants import FACE_RECOGNITION_VIEW_ID, METADATA_RECORD_UPDATE_LIMIT
 from seahub.file_tags.models import FileTags
 from seahub.repo_tags.models import RepoTags
-from seahub.settings import MD_FILE_COUNT_LIMIT
+from seahub.settings import EMBEDDING_MODEL_CONFIGURED, MD_FILE_COUNT_LIMIT
 from seahub.utils.timeutils import timestamp_to_isoformat_timestr
 from seahub.search.utils import get_invisible_repos_info_by_username, is_invisible_path
+from seahub.utils import HAS_FILE_SEASEARCH
+from seahub.ai.utils import verify_ai_config, verify_chat_ai_config
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +62,9 @@ class MetadataManage(APIView):
 
         is_enabled = False
         is_tags_enabled = False
-        tags_lang = ''
         details_settings = '{}'
         face_recognition_enabled = False
+        summary_enabled = False
         global_hidden_columns = []
         try:
             record = RepoMetadata.objects.filter(repo_id=repo_id).first()
@@ -75,9 +78,11 @@ class MetadataManage(APIView):
                     details_settings = '{}'
                 if record.tags_enabled:
                     is_tags_enabled = True
-                    tags_lang = record.tags_lang
-                if record.face_recognition_enabled:
-                    face_recognition_enabled = True
+                # Face recognition is no longer available.
+                # if record.face_recognition_enabled:
+                #     face_recognition_enabled = True
+                if record.summary_enabled:
+                    summary_enabled = True
                 if not global_hidden_columns:
                     global_hidden_columns = []
                 if not is_repo_owner(request, repo_id, request.user.username):
@@ -87,7 +92,7 @@ class MetadataManage(APIView):
                     except Exception as e:
                         logger.error(e)
 
-               
+
         except Exception as e:
             logger.error(e)
             error_msg = 'Internal Server Error'
@@ -97,7 +102,7 @@ class MetadataManage(APIView):
             'enabled': is_enabled,
             'tags_enabled': is_tags_enabled,
             'face_recognition_enabled': face_recognition_enabled,
-            'tags_lang': tags_lang,
+            'summary_enabled': summary_enabled,
             'details_settings': details_settings,
             'global_hidden_columns': global_hidden_columns,
             'show_view': show_view,
@@ -149,6 +154,7 @@ class MetadataManage(APIView):
             metadata.enabled = False
             metadata.face_recognition_enabled = False
             metadata.tags_enabled = False
+            metadata.summary_enabled = False
             metadata.details_settings = '{}'
             metadata.save()
             status_code = e.args[0] if e.args else 500
@@ -188,11 +194,17 @@ class MetadataManage(APIView):
         # check dose the repo have opened metadata manage
         record = RepoMetadata.objects.filter(repo_id=repo_id).first()
         if not record or not record.enabled:
-            error_msg = f'The repo {repo_id} has disabledd the metadata manage.'
+            error_msg = f'The repo {repo_id} has disabled the metadata manage.'
             return api_error(status.HTTP_409_CONFLICT, error_msg)
 
         metadata_server_api = MetadataServerAPI(repo_id, request.user.username)
         try:
+            if record.summary_enabled:
+                record.summary_enabled = False
+                record.ai_summary_indexed_at = None
+                record.ai_processing_status = ''
+                record.save()
+                delete_summary_vector_index({'repo_id': repo_id})
             metadata_server_api.delete_base()
         except Exception as err:
             logger.error(err)
@@ -212,7 +224,7 @@ class MetadataManage(APIView):
             return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
 
         return Response({'success': True})
-    
+
 
 class MetadataCheckRecordsLimit(APIView):
     authentication_classes = (TokenAuthentication, SessionAuthentication)
@@ -889,10 +901,18 @@ class MetadataBatchRecords(APIView):
             columns_data = metadata_server_api.list_columns(METADATA_TABLE.id)
             all_columns = columns_data.get('columns', [])
             metadata_columns = []
+            editable_columns = [
+                '_rate',
+                '_tags',
+                '_file_creator',
+                '_last_modifier',
+                '_status',
+            ]
             for column in all_columns:
-                if column.get('key') in ['_rate', '_tags']:
+                key = column.get('key')
+                if key in editable_columns:
                     metadata_columns.append({
-                        'key': column.get('key'),
+                        'key': key,
                         'name': column.get('name'),
                         'type': column.get('type'),
                         'data': column.get('data', {})
@@ -1098,6 +1118,8 @@ class MetadataViews(APIView):
             error_msg = 'Internal Server Error'
             return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
 
+        metadata_views = filter_face_recognition_views(metadata_views)
+
         return Response(metadata_views)
 
     def post(self, request, repo_id):
@@ -1136,14 +1158,12 @@ class MetadataViews(APIView):
         if permission != 'rw':
             error_msg = 'Permission denied.'
             return api_error(status.HTTP_403_FORBIDDEN, error_msg)
-        
 
-        # The face_recognition view is unique for a repo, cannot be added repeatly.
+
+        # Face recognition is no longer available.
         if view_type == 'face_recognition':
-            view = RepoMetadataViews.objects.get_view(repo_id, FACE_RECOGNITION_VIEW_ID)
-            if view:
-                error_msg = 'The face recognition view already exists.'
-                return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
+            error_msg = 'The face recognition view is no longer available.'
+            return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
 
         try:
             new_view = RepoMetadataViews.objects.add_view(repo_id, view_name, view_type, view_data, folder_id)
@@ -1196,6 +1216,8 @@ class MetadataViews(APIView):
 
         try:
             result = RepoMetadataViews.objects.update_view(repo_id, view_id, view_data)
+            if result is None:
+                return api_error(status.HTTP_400_BAD_REQUEST, 'update view failed')
         except Exception as e:
             logger.exception(e)
             error_msg = 'Internal Server Error'
@@ -1332,6 +1354,10 @@ class MetadataViewsDetailView(APIView):
             logger.exception(e)
             error_msg = 'Internal Server Error'
             return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
+
+        if not view:
+            error_msg = 'Metadata view %s not found.' % view_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
 
         return Response({'view': view})
 
@@ -1955,6 +1981,181 @@ class FaceRecognitionManage(APIView):
         return Response({'success': True})
 
 
+class MetadataAISummaryStatusManage(APIView):
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = (UserRateThrottle,)
+
+    def get(self, request, repo_id):
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        metadata = RepoMetadata.objects.filter(repo_id=repo_id).first()
+        if not metadata or not metadata.enabled:
+            error_msg = f'The metadata module is not enabled for repo {repo_id}.'
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        if not can_read_metadata(request, repo_id):
+            error_msg = 'Permission denied.'
+            return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+
+        if not metadata.summary_enabled:
+            error_msg = 'The AI summary feature is not enabled for this library.'
+            return api_error(status.HTTP_409_CONFLICT, error_msg)
+
+        index_enabled = HAS_FILE_SEASEARCH and EMBEDDING_MODEL_CONFIGURED
+        indexed_at = metadata.ai_summary_indexed_at if index_enabled else None
+        if indexed_at and indexed_at.tzinfo is None:
+            indexed_at = indexed_at.replace(tzinfo=timezone.utc)
+
+        from seafevents.repo_metadata.constants import METADATA_TABLE, SUMMARY_SUPPORTED_FILE_EXTENSIONS
+
+        supported_suffixes = set(SUMMARY_SUPPORTED_FILE_EXTENSIONS)
+        base_sql = f'''
+            SELECT `{METADATA_TABLE.columns.suffix.name}`, COUNT(*) AS count
+            FROM `{METADATA_TABLE.name}`
+            WHERE `{METADATA_TABLE.columns.is_dir.name}` = false
+                AND `{METADATA_TABLE.columns.file_type.name}` = "_document"
+        '''
+
+        metadata_server_api = MetadataServerAPI(repo_id, request.user.username)
+
+        def query_count(condition='', condition_params=None):
+            sql = base_sql + condition + f' GROUP BY `{METADATA_TABLE.columns.suffix.name}`'
+            results = metadata_server_api.query_rows(sql, condition_params or []).get('results', [])
+            return sum(
+                row.get('count') or 0
+                for row in results
+                if (row.get(METADATA_TABLE.columns.suffix.name) or '').lower() in supported_suffixes
+            )
+
+        try:
+            total_files = query_count()
+            processed_count = query_count(
+                f''' AND `{METADATA_TABLE.columns.ai_summary_mtime.name}` IS NOT NULL
+                    AND (`{METADATA_TABLE.columns.file_mtime.name}` IS NULL
+                        OR `{METADATA_TABLE.columns.ai_summary_mtime.name}` >= `{METADATA_TABLE.columns.file_mtime.name}`)'''
+            )
+            indexed_count = 0
+            if indexed_at:
+                indexed_count = query_count(
+                    f''' AND `{METADATA_TABLE.columns.ai_summary.name}` IS NOT NULL
+                        AND `{METADATA_TABLE.columns.ai_summary.name}` != ''
+                        AND `{METADATA_TABLE.columns.ai_summary_mtime.name}` <= ?''',
+                    [indexed_at.isoformat()]
+                )
+        except Exception as e:
+            logger.exception(e)
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, 'Internal Server Error')
+
+        summary_status = 'completed' if total_files == processed_count else 'pending'
+        index_status = 'completed' if indexed_at else 'pending'
+        if metadata.ai_processing_status == 'in_summary':
+            summary_status = 'crawling'
+            index_status = 'pending'
+        elif index_enabled and metadata.ai_processing_status == 'indexing':
+            summary_status = 'completed'
+            index_status = 'crawling'
+        elif metadata.ai_processing_status == 'summary_failed':
+            summary_status = 'failed'
+            index_status = 'pending'
+        elif index_enabled and metadata.ai_processing_status == 'index_failed':
+            summary_status = 'completed'
+            index_status = 'failed'
+
+        response = {
+            'enabled': bool(metadata.summary_enabled),
+            'index_enabled': index_enabled,
+            'total_files': total_files,
+            'latest_index_time': indexed_at,
+            'summary': {
+                'status': summary_status,
+                'processed_count': processed_count,
+            },
+        }
+        if index_enabled:
+            response['index'] = {
+                'status': index_status,
+                'indexed_count': indexed_count,
+            }
+
+        return Response(response)
+
+    def post(self, request, repo_id):
+        if not verify_chat_ai_config():
+            return api_error(status.HTTP_400_BAD_REQUEST, 'AI Chat and Search is not configured')
+
+        metadata = RepoMetadata.objects.filter(repo_id=repo_id).first()
+        if not metadata or not metadata.enabled:
+            error_msg = f'The metadata module is not enabled for repo {repo_id}.'
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        if metadata.summary_enabled:
+            error_msg = 'The AI summary feature is already enabled.'
+            return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
+
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        if not is_repo_admin(request.user.username, repo_id):
+            error_msg = 'Permission denied.'
+            return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+
+        metadata_server_api = MetadataServerAPI(repo_id, request.user.username)
+        try:
+            init_ai_summary(metadata_server_api)
+            metadata.summary_enabled = True
+            metadata.ai_summary_indexed_at = None
+            metadata.ai_processing_status = ''
+            metadata.save()
+            add_init_ai_summary_task({
+                'repo_id': repo_id,
+                'username': request.user.username,
+            })
+        except Exception as e:
+            logger.exception(e)
+            metadata.summary_enabled = False
+            metadata.ai_summary_indexed_at = None
+            metadata.ai_processing_status = ''
+            metadata.save()
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, 'Internal Server Error')
+
+        return Response({'success': True})
+
+    def delete(self, request, repo_id):
+        repo = seafile_api.get_repo(repo_id)
+        if not repo:
+            error_msg = 'Library %s not found.' % repo_id
+            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+
+        if not is_repo_admin(request.user.username, repo_id):
+            error_msg = 'Permission denied.'
+            return api_error(status.HTTP_403_FORBIDDEN, error_msg)
+
+        metadata = RepoMetadata.objects.filter(repo_id=repo_id).first()
+        if not metadata or not metadata.enabled or not metadata.summary_enabled:
+            error_msg = f'The repo {repo_id} has disabled the AI summary feature.'
+            return api_error(status.HTTP_409_CONFLICT, error_msg)
+
+        metadata_server_api = MetadataServerAPI(repo_id, request.user.username)
+        try:
+            delete_summary_vector_index({'repo_id': repo_id})
+            remove_ai_summary(metadata_server_api)
+            metadata.summary_enabled = False
+            metadata.ai_summary_indexed_at = None
+            metadata.ai_processing_status = ''
+            metadata.save()
+        except Exception as e:
+            logger.exception(e)
+            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, 'Internal Server Error')
+
+        return Response({'success': True})
+
+
 class MetadataExtractFileDetails(APIView):
     authentication_classes = (TokenAuthentication, SessionAuthentication)
     permission_classes = (IsAuthenticated,)
@@ -2041,11 +2242,6 @@ class MetadataTagsStatusManage(APIView):
     throttle_classes = (UserRateThrottle,)
 
     def put(self, request, repo_id):
-        lang = request.data.get('lang')
-        if not lang:
-            error_msg = 'lang invalid.'
-            return api_error(status.HTTP_400_BAD_REQUEST, error_msg)
-
         # resource check
         repo = seafile_api.get_repo(repo_id)
         if not repo:
@@ -2065,7 +2261,6 @@ class MetadataTagsStatusManage(APIView):
 
         try:
             metadata.tags_enabled = True
-            metadata.tags_lang = lang
             metadata.save()
         except Exception as e:
             logger.exception(e)
@@ -2105,7 +2300,6 @@ class MetadataTagsStatusManage(APIView):
 
         try:
             record.tags_enabled = False
-            record.tags_lang = None
             record.save()
         except Exception as e:
             logger.error(e)
@@ -2141,8 +2335,8 @@ class MetadataTags(APIView):
 
         metadata = RepoMetadata.objects.filter(repo_id=repo_id).first()
         if not metadata or not metadata.enabled or not metadata.tags_enabled:
-            error_msg = f'The tags is disabled for repo {repo_id}.'
-            return api_error(status.HTTP_404_NOT_FOUND, error_msg)
+            return Response({'results': [], 'metadata': []})
+            
 
         repo = seafile_api.get_repo(repo_id)
         if not repo:
@@ -2952,20 +3146,11 @@ class PeopleCoverPhoto(APIView):
 
         row = query_result[0]
         obj_id = row.get(METADATA_TABLE.columns.obj_id.name)
-        parent_dir = row.get(METADATA_TABLE.columns.parent_dir.name)
-        file_name = row.get(METADATA_TABLE.columns.file_name.name)
-        path = os.path.join(parent_dir, file_name)
-
-        token = seafile_api.get_fileserver_access_token(repo_id, obj_id, 'download', request.user.username, use_onetime=True)
-        if not token:
-            error_msg = 'Internal Server Error'
-            return api_error(status.HTTP_500_INTERNAL_SERVER_ERROR, error_msg)
-
+        
         params = {
             'repo_id': repo_id,
-            'path': path,
-            'download_token': token,
             'people_id': people_id,
+            'obj_id': obj_id,
         }
 
         try:
@@ -3063,10 +3248,10 @@ class MetadataMigrateTags(APIView):
 
             where_clause = " OR ".join(where_conditions)
             sql = f'''
-                SELECT `{METADATA_TABLE.columns.id.name}`, 
-                `{METADATA_TABLE.columns.file_name.name}`, 
-                `{METADATA_TABLE.columns.parent_dir.name}` 
-                FROM `{METADATA_TABLE.name}` 
+                SELECT `{METADATA_TABLE.columns.id.name}`,
+                `{METADATA_TABLE.columns.file_name.name}`,
+                `{METADATA_TABLE.columns.parent_dir.name}`
+                FROM `{METADATA_TABLE.name}`
                 WHERE `{METADATA_TABLE.columns.is_dir.name}` = FALSE
                 AND ({where_clause})
                 '''
@@ -3117,7 +3302,6 @@ class MetadataMigrateTags(APIView):
         metadata_server_api = MetadataServerAPI(repo_id, request.user.username)
         if not tags_enabled:
             metadata.tags_enabled = True
-            metadata.tags_lang = 'en'
             metadata.save()
             init_tags(metadata_server_api)
 
@@ -3230,6 +3414,26 @@ class MetadataImportTags(APIView):
     permission_classes = (IsAuthenticated,)
     throttle_classes = (UserRateThrottle,)
 
+    def _is_valid_file_content(self, file_content, tags_table):
+        if not isinstance(file_content, list):
+            return False
+
+        for tag_data in file_content:
+            if not isinstance(tag_data, dict):
+                return False
+
+            tag_name = tag_data.get(tags_table.columns.name.name, '')
+            tag_color = tag_data.get(tags_table.columns.color.name, '')
+            if not tag_name or not tag_color:
+                return False
+
+            tag_sub_links = tag_data.get(tags_table.columns.sub_links.key, [])
+            tag_parent_links = tag_data.get(tags_table.columns.parent_links.key, [])
+            if not isinstance(tag_sub_links, list) or not isinstance(tag_parent_links, list):
+                return False
+
+        return True
+
     def _handle_tag_links(self, new_tags, existing_tags, exist_tags_id_map, imported_existing_tags, resp, tags_table):
         exist_tags_ids = [tag.get(tags_table.columns.id.name, '') for tag in existing_tags]
         all_tags = new_tags + imported_existing_tags
@@ -3332,12 +3536,19 @@ class MetadataImportTags(APIView):
 
         metadata_server_api = MetadataServerAPI(repo_id, request.user.username)
         from seafevents.repo_metadata.constants import TAGS_TABLE
+        
+        try:
+            file_content = json.loads(file.read().decode('utf-8'))
+        except:
+            return api_error(status.HTTP_400_BAD_REQUEST, 'Invalid JSON file')
+        
         try:
             tags_table = get_table_by_name(metadata_server_api, TAGS_TABLE.name)
             if not tags_table:
                 return api_error(status.HTTP_404_NOT_FOUND, 'tags table not found')
             tags_table_id = tags_table['id']
-            file_content = json.loads(file.read().decode('utf-8'))
+            if not self._is_valid_file_content(file_content, TAGS_TABLE):
+                return api_error(status.HTTP_400_BAD_REQUEST, 'The imported tags are invalid')
             tag_names = [tag.get(TAGS_TABLE.columns.name.name, '') for tag in file_content]
             if not tag_names:
                 return Response({'success': True})
@@ -3449,7 +3660,7 @@ class MetadataStatistics(APIView):
 
     def _get_file_type_stats_sql(self, metadata_server_api, METADATA_TABLE):
         sql = f'''
-            SELECT 
+            SELECT
                 `{METADATA_TABLE.columns.file_type.name}` as file_type,
                 COUNT(*) as count
             FROM `{METADATA_TABLE.name}`
@@ -3473,7 +3684,7 @@ class MetadataStatistics(APIView):
 
     def _get_creator_stats_sql(self, metadata_server_api, METADATA_TABLE):
         sql = f'''
-            SELECT 
+            SELECT
                 `{METADATA_TABLE.columns.file_creator.name}` as creator,
                 COUNT(*) as count
             FROM `{METADATA_TABLE.name}`
@@ -3495,7 +3706,7 @@ class MetadataStatistics(APIView):
 
     def _get_summary_stats_sql(self, metadata_server_api, METADATA_TABLE):
         sql = f'''
-            SELECT 
+            SELECT
                 COUNT(*) as total_files
             FROM `{METADATA_TABLE.name}`
             WHERE `{METADATA_TABLE.columns.is_dir.name}` = false
@@ -3542,7 +3753,7 @@ class MetadataStatistics(APIView):
 
     def _get_time_stats_sql(self, metadata_server_api, METADATA_TABLE):
         date_range_sql = f'''
-            SELECT 
+            SELECT
                 MIN(`{METADATA_TABLE.columns.file_ctime.name}`) as min_ctime,
                 MAX(`{METADATA_TABLE.columns.file_ctime.name}`) as max_ctime,
                 MIN(`{METADATA_TABLE.columns.file_mtime.name}`) as min_mtime,
@@ -3550,7 +3761,7 @@ class MetadataStatistics(APIView):
                 COUNT(*) as total_files
             FROM `{METADATA_TABLE.name}`
             WHERE `{METADATA_TABLE.columns.is_dir.name}` = false
-                AND (`{METADATA_TABLE.columns.file_ctime.name}` IS NOT NULL 
+                AND (`{METADATA_TABLE.columns.file_ctime.name}` IS NOT NULL
                     OR `{METADATA_TABLE.columns.file_mtime.name}` IS NOT NULL)
         '''
 
@@ -3597,7 +3808,7 @@ class MetadataStatistics(APIView):
 
         if years_span >= 3:
             sql = f'''
-                SELECT 
+                SELECT
                     `{date_column}` as date_value,
                     COUNT(*) as count
                 FROM `{METADATA_TABLE.name}`
@@ -3633,7 +3844,7 @@ class MetadataStatistics(APIView):
 
         elif months_span >= 6:
             sql = f'''
-                SELECT 
+                SELECT
                     `{date_column}` as date_value,
                     COUNT(*) as count
                 FROM `{METADATA_TABLE.name}`
@@ -3675,7 +3886,7 @@ class MetadataStatistics(APIView):
 
         else:
             sql = f'''
-                SELECT 
+                SELECT
                     `{date_column}` as date_value,
                     COUNT(*) as count
                 FROM `{METADATA_TABLE.name}`

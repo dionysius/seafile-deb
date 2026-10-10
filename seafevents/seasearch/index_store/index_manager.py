@@ -2,6 +2,8 @@ import logging
 import time
 from datetime import datetime
 
+from requests.exceptions import RequestException
+
 from seafevents.seasearch.utils import need_index_metadata_info
 from seafevents.db import init_db_session_class
 from seafevents.seasearch.utils.constants import ZERO_OBJ_ID, REPO_FILE_INDEX_PREFIX, \
@@ -69,6 +71,9 @@ class IndexManager(object):
 
             logger.info('repo: %s, update repo file index success', repo_id)
 
+        except RequestException:
+            # Let the periodic updater stop this pass when SeaSearch is unavailable.
+            raise
         except Exception as e:
             logger.exception('repo_id: %s, update repo file index error: %s.', repo_id, e)
 
@@ -87,8 +92,8 @@ class IndexManager(object):
         wiki_index.delete_index_by_index_name(wiki_index_name)
         wiki_status_index.delete_documents_by_repo(wiki_id)
 
-    def wiki_search(self, query, wiki, wiki_index, count):
-        return wiki_index.search_wiki(wiki, query, 0, count)
+    def search_wikis(self, query, wiki_ids, wiki_index, count):
+        return wiki_index.search_wikis(wiki_ids, query, 0, count)
 
     def update_wiki_index(self, wiki_id, commit_id, wiki_index, wiki_status_index):
         try:
@@ -120,5 +125,8 @@ class IndexManager(object):
 
             logger.info('wiki: %s, update wiki index success', wiki_id)
 
+        except RequestException:
+            # Let the periodic updater stop this pass when SeaSearch is unavailable.
+            raise
         except Exception as e:
             logger.exception('wiki_id: %s, update wiki index error: %s.', wiki_id, e)

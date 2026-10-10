@@ -1,0 +1,9 @@
+.ask-main-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  padding-right: 16px;
+  color: var(--bs-body-color);
+  background-color: var(--bs-body-bg);
+}

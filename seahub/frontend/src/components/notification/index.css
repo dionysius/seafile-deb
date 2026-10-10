@@ -1,0 +1,107 @@
+#notifications {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 12px;
+}
+
+.notification-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  color: var(--bs-icon-color);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 4px;
+}
+
+.notification-icon-btn:hover {
+  background-color: var(--bs-icon-btn-hover-bg-color);
+}
+
+@media (max-width: 390px) {
+  #notifications {
+    margin-left: 8px;
+  }
+}
+
+#notifications .title {
+  line-height: 1.5;
+  font-size: 1rem;
+  color: var(--bs-body-color);
+  font-weight: normal;
+}
+
+#notifications .sf-icon-bell {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--bs-icon-color);
+  vertical-align: middle;
+  border-radius: 4px;
+}
+
+#notifications .num {
+  position: absolute;
+  left: 18px;
+  top: -4px;
+  padding: 0 2px;
+  min-width: 14px;
+  height: 14px;
+  color: #fff;
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
+  background: #fc6440;
+  border-radius: 7px;
+  z-index: 1;
+}
+
+#notice-popover {
+  top: 38px;
+  right: -12px;
+}
+
+#notice-popover a {
+  font-weight: normal;
+}
+
+#notice-popover .avatar {
+  border-radius: 1000px;
+  float: left;
+}
+
+#notice-popover .time {
+  margin: 0;
+  color: var(--bs-body-secondary-color);
+  text-align: right;
+  font-size: 0.8125rem;
+  line-height: 1.5rem;
+  clear: both;
+}
+
+#notice-popover .view-all {
+  display: block;
+  padding: 7px 0;
+  text-align: center;
+  color: var(--bs-body-secondary-color);
+}
+
+#notice-popover .sf-popover-close {
+  position: absolute;
+  right: 10px;
+  top: 17px;
+}
+
+#notice-popover .sf-popover-hd {
+  border-bottom: 1px solid var(--bs-border-secondary-color);
+  margin: 0 10px;
+}
+
+#notice-popover .sf-popover-con {
+  max-height: 25rem;
+}

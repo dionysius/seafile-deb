@@ -1,0 +1,47 @@
+.sea-ai-ask-message-content:has(.sea-ai-thought-process-btn) {
+  padding-top: 0;
+}
+
+.sea-ai-thought-process-btn {
+  max-width: 100%;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  overflow: hidden;
+  color: var(--bs-body-secondary-color);
+}
+
+.sea-ai-thought-process-btn,
+.sea-ai-thought-process-btn:active {
+  border: 0;
+  outline: none;
+}
+
+.sea-ai-thought-process-btn:hover {
+  cursor: pointer;
+  color: var(--bs-body-color);
+}
+
+.sea-ai-thought-process-btn:disabled {
+  opacity: 1;
+}
+
+.sea-ai-thought-process-btn .sea-ai-icon-svg-open-in-new-tab {
+  height: 12px;
+  width: 12px;
+}
+
+.sea-ai-thought-process-btn:hover .sea-ai-icon-svg-open-in-new-tab {
+  cursor: pointer;
+  color: var(--bs-body-color);
+}
+
+.sea-ai-thought-process-value {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--bs-body-secondary-color);
+}

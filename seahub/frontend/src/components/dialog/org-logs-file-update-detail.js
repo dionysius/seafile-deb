@@ -1,10 +1,10 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Modal, ModalBody } from 'reactstrap';
-import SeahubModalHeader from '@/components/common/seahub-modal-header';
-import { orgAdminAPI } from '../../utils/org-admin-api';
-import { gettext } from '../../utils/constants';
-import { Utils } from '../../utils/utils';
+import PropTypes from 'prop-types';
+import { orgAdminAPI } from '@/api/org-admin-api';
+import SeahubModalHeader from '@/components/seahub-modal-header';
+import { gettext } from '@/utils/constants';
+import { Utils } from '@/utils/utils';
 import toaster from '../toast';
 
 const propTypes = {
@@ -47,9 +47,9 @@ class FileUpdateDetailDialog extends React.Component {
 
   renderContentItem = (items) => {
     let con = '';
-    con += '<ul class="list-group list-group-flush">';
+    con += '<ul class="list-unstyled">';
     for (var i = 0, len = items.length; i < len; i++) {
-      con += '<li class="list-group-item">' + items[i] + '</li>';
+      con += '<li class="text-truncate">' + items[i] + '</li>';
     }
     con += '</ul>';
     return { __html: con };

@@ -1,0 +1,69 @@
+.seafile-btn-view-review {
+  display: flex;
+  align-items: center;
+}
+
+.seafile-btn-view-review .tag:hover {
+  cursor: pointer;
+  background-color: #EFEFEF;
+}
+
+.topbar-btn-container {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.seafile-btn-add-review {
+  margin-right: 10px;
+}
+
+.btn-new-draft {
+  margin-right: 10px;
+}
+
+.sf-md-viewer-topbar {
+  z-index: 103;
+}
+
+.sf-md-viewer-topbar .btn .seafile-multicolor-icon {
+  color: #666;
+  height: 16px;
+  width: 16px;
+}
+
+.sf-md-viewer-topbar .comment-tip {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  z-index: 100;
+  background: red;
+}
+
+.collab-users-dropdown.dropdown {
+  margin-right: 6px;
+}
+
+.btn[data-active=true]#saveButton .seafile-multicolor-icon {
+  color: #ED7109;
+}
+
+.btn-active[data-active=false]#saveButton:hover {
+  background-color: #fff;
+  cursor: default;
+}
+
+.sf-md-viewer-topbar .sf-operator-folder-divider {
+  margin: 8px 0;
+  border-top: 1px solid #e6e9ed;
+  height: 1px;
+  width: 100%;
+}
+
+.sf-md-viewer-topbar .dropdown .more-dropdown-toggle {
+  width: 28px;
+  height: 28px;
+}

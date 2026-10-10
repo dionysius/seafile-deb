@@ -198,6 +198,7 @@ func RepoToCommit(repo *Repo, commit *commitmgr.Commit) {
 
 // GetEx return repo object even if it's corrupted.
 func GetEx(id string) *Repo {
+	repo := new(Repo)
 	query := `SELECT r.repo_id, b.commit_id, v.origin_repo, v.path, v.base_commit FROM ` +
 		`Repo r LEFT JOIN Branch b ON r.repo_id = b.repo_id ` +
 		`LEFT JOIN VirtualRepo v ON r.repo_id = v.repo_id ` +
@@ -207,19 +208,17 @@ func GetEx(id string) *Repo {
 	defer cancel()
 	stmt, err := seafileDB.PrepareContext(ctx, query)
 	if err != nil {
-		log.Errorf("failed to prepare sql : %s ：%v", query, err)
-		return nil
+		repo.IsCorrupted = true
+		return repo
 	}
 	defer stmt.Close()
 
 	rows, err := stmt.QueryContext(ctx, id)
 	if err != nil {
-		log.Errorf("failed to query sql : %v", err)
-		return nil
+		repo.IsCorrupted = true
+		return repo
 	}
 	defer rows.Close()
-
-	repo := new(Repo)
 
 	var originRepoID sql.NullString
 	var path sql.NullString
@@ -227,9 +226,13 @@ func GetEx(id string) *Repo {
 	if rows.Next() {
 		err := rows.Scan(&repo.ID, &repo.HeadCommitID, &originRepoID, &path, &baseCommitID)
 		if err != nil {
-			log.Errorf("failed to scan sql rows : %v", err)
-			return nil
+			repo.IsCorrupted = true
+			return repo
+
 		}
+	} else if rows.Err() != nil {
+		repo.IsCorrupted = true
+		return repo
 	} else {
 		return nil
 	}
@@ -259,7 +262,7 @@ func GetEx(id string) *Repo {
 	if err != nil {
 		log.Errorf("failed to load commit %s/%s : %v", repo.ID, repo.HeadCommitID, err)
 		repo.IsCorrupted = true
-		return nil
+		return repo
 	}
 
 	repo.Name = commit.RepoName
@@ -354,12 +357,30 @@ func GetEmailByToken(repoID string, token string) (string, error) {
 
 // GetRepoStatus return repo status by repo id.
 func GetRepoStatus(repoID string) (int, error) {
-	var status int
-	sqlStr := "SELECT status FROM RepoInfo WHERE repo_id=?"
+	var status int = -1
+
+	// First, check origin repo's status.
+	sqlStr := "SELECT i.status FROM VirtualRepo v LEFT JOIN RepoInfo i " +
+		"ON i.repo_id=v.origin_repo WHERE v.repo_id=? " +
+		"AND i.repo_id IS NOT NULL"
 
 	ctx, cancel := context.WithTimeout(context.Background(), option.DBOpTimeout)
 	defer cancel()
 	row := seafileDB.QueryRowContext(ctx, sqlStr, repoID)
+	if err := row.Scan(&status); err != nil {
+		if err != sql.ErrNoRows {
+			return status, err
+		} else {
+			status = -1
+		}
+	}
+	if status >= 0 {
+		return status, nil
+	}
+
+	// Then, check repo's own status.
+	sqlStr = "SELECT status FROM RepoInfo WHERE repo_id=?"
+	row = seafileDB.QueryRowContext(ctx, sqlStr, repoID)
 	if err := row.Scan(&status); err != nil {
 		if err != sql.ErrNoRows {
 			return status, err

@@ -1,19 +1,22 @@
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { Popover } from 'reactstrap';
-import Editor from '../../../metadata/components/cell-editors/tags-editor';
-import DeleteTag from '../../../metadata/components/cell-editors/tags-editor/delete-tags';
+import PropTypes from 'prop-types';
+import { KeyCodes } from '@/constants';
+import Editor from '@/features/metadata/components/cell-editors/tags-editor';
+import DeleteTag from '@/features/metadata/components/cell-editors/tags-editor/delete-tags';
+import { PRIVATE_COLUMN_KEY, EVENT_BUS_TYPE } from '@/features/metadata/constants';
+import { getCellValueByColumn } from '@/features/metadata/utils/cell';
+import tagsAPI from '@/features/tag/api';
+import { useTags } from '@/features/tag/hooks';
+import { getTagId, getTagName } from '@/features/tag/utils/cell';
+import { gettext } from '@/utils/constants';
+import { getEventClassName } from '@/utils/dom';
+import { Utils } from '@/utils/utils';
 import { getRowById } from '../../sf-table/utils/table';
-import { gettext } from '../../../utils/constants';
-import { KeyCodes } from '../../../constants';
-import { getEventClassName } from '../../../utils/dom';
-import { PRIVATE_COLUMN_KEY, EVENT_BUS_TYPE } from '../../../metadata/constants';
-import { useTags } from '../../../tag/hooks';
-import tagsAPI from '../../../tag/api';
-import { Utils } from '../../../utils/utils';
 import toaster from '../../toast';
-import { getCellValueByColumn } from '../../../metadata/utils/cell';
-import { getTagId, getTagName } from '../../../tag/utils/cell';
+
+const TAGS_EDITOR_WIDTH = 400;
+const EDITOR_VIEWPORT_MARGIN = 8;
 
 const DirentsTagsEditor = ({
   records,
@@ -140,15 +143,21 @@ const DirentsTagsEditor = ({
 
   const renderEditor = useCallback(() => {
     if (!showEditor) return null;
-    const { width, top, bottom } = ref.current.getBoundingClientRect();
+    const { width, top, bottom, left } = ref.current.getBoundingClientRect();
     const editorHeight = 400;
+    const editorWidth = Math.max(width - 2, TAGS_EDITOR_WIDTH);
     const viewportHeight = window.innerHeight;
-    let placement = 'bottom-end';
-    if (viewportHeight - bottom < editorHeight && top > editorHeight) {
-      placement = 'top-end';
-    } else if (viewportHeight - bottom < editorHeight && top < editorHeight) {
-      placement = 'left-start';
-    }
+    const viewportWidth = window.innerWidth;
+    const spaceBelow = viewportHeight - bottom;
+    const shouldPlaceBelow = spaceBelow >= editorHeight || spaceBelow >= top;
+    const placement = shouldPlaceBelow ? 'bottom-start' : 'top-start';
+    const overflowRight = left + editorWidth - viewportWidth + EDITOR_VIEWPORT_MARGIN;
+    const editorCustomStyle = {
+      top: shouldPlaceBelow ? '-1px' : 'auto',
+      bottom: shouldPlaceBelow ? 'auto' : '5px',
+      left: overflowRight > 0 ? `${-overflowRight - 1}px` : '-1px',
+      right: 'auto',
+    };
 
     return (
       <Popover
@@ -163,7 +172,8 @@ const DirentsTagsEditor = ({
         <Editor
           saveImmediately={true}
           value={displayTags}
-          column={{ ...field, width: Math.max(width - 2, 400) }}
+          column={{ ...field, width: editorWidth }}
+          customStyle={editorCustomStyle}
           onSelect={onSelectTag}
           onDeselect={onDeselectTag}
           canEditData={canEditData}

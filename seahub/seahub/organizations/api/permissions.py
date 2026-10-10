@@ -6,7 +6,7 @@ class IsOrgAdmin(BasePermission):
     """
 
     def has_permission(self, request, *args, **kwargs):
-        org = request.user.org
+        org = getattr(request.user, 'org', None)
         if org and org.is_staff:
             return True
         return False

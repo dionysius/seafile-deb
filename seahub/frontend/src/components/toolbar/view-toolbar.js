@@ -1,30 +1,35 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { TAGS_MODE } from '../dir-view-mode/constants';
-import { ALL_TAGS_ID } from '../../tag/constants';
-import { useMetadata } from '../../metadata/hooks';
-import { VIEW_TYPE } from '../../metadata/constants';
+import { TAGS_MODE, TRASH_MODE, CHAT_MODE } from '@/constants/view-mode';
+import { VIEW_TYPE } from '@/features/metadata/constants';
+import { useMetadata } from '@/features/metadata/hooks';
+import { ALL_TAGS_ID } from '@/features/tag/constants';
 import AllTagsToolbar from './all-tags-toolbar';
-import TagFilesToolbar from './tag-files-toolbar';
-import TableFilesToolbar from './table-files-toolbar';
-import GalleryFilesToolbar from './gallery-files-toolbar';
-import FaceRecognitionFilesToolbar from './face-recognition-files-toolbar';
-import KanbanFilesToolbar from './kanban-files-toolbar';
 import CardFilesToolbar from './card-files-toolbar';
+import ChatToolbar from './chat-toolbar';
+import GalleryFilesToolbar from './gallery-files-toolbar';
+import KanbanFilesToolbar from './kanban-files-toolbar';
+import TableFilesToolbar from './table-files-toolbar';
+import TagFilesToolbar from './tag-files-toolbar';
+import TrashToolbar from './trash-toolbar';
 
 const ViewToolbar = ({ repoID, repoInfo, mode, path, viewId, updateCurrentDirent }) => {
   const { idViewMap } = useMetadata();
   const view = useMemo(() => idViewMap[viewId], [viewId, idViewMap]);
   const type = view?.type;
 
+  if (mode === CHAT_MODE) {
+    return <ChatToolbar />;
+  }
+
+  if (mode === TRASH_MODE) {
+    return <TrashToolbar />;
+  }
+
   if (type === VIEW_TYPE.GALLERY) {
     return (
       <GalleryFilesToolbar updateCurrentDirent={updateCurrentDirent} />
     );
-  }
-
-  if (type === VIEW_TYPE.FACE_RECOGNITION) {
-    return <FaceRecognitionFilesToolbar repoID={repoID} />;
   }
 
   if (type === VIEW_TYPE.TABLE) {
