@@ -4,7 +4,7 @@ Description: seafdav: reject deactivated users
  authenticates over WebDAV.
 Author: dionysius <dragon.dionysius@gmail.com>
 Origin: upstream, https://github.com/haiwen/seafdav/commit/9e86f0bac2762ea50c386f6a8f35f6c85505bfc3
-Forwarded: no
+Forwarded: https://github.com/haiwen/seafdav/pull/103
 Comment: upstream merged this into the 13.0 branch only; master and 14.0 lack it.
 --- a/seafdav/wsgidav/dc/domain_controller.py
 +++ b/seafdav/wsgidav/dc/domain_controller.py
