@@ -21,8 +21,8 @@ SyslogIdentifier=seafdav
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-Environment=SEAFDAV_CONF=%E/seafile/seafdav.conf
 Type=exec
+ExecCondition=/bin/sh -ec '[ "$ENABLE_SEAFDAV" = true ]'
 # --root only satisfies the cli's provider check: the seafile provider replaces
 # that mapping, the unit's private /var/tmp stays empty. --no-config skips a
 # wsgidav.yaml in the working directory.

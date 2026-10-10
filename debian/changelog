@@ -1,3 +1,17 @@
+seafile-server (14.0.8-1) unstable; urgency=medium
+
+  * README: drop the development warning, the packaging is stable
+  * Revert "watch: track the 13.0 line, list tags via the GitHub API"
+  * Patches for 14.0.8: drop the fsck include fix, upstream has it; refresh seaf-gc, seahub-media and createsuperuser
+  * seafdav: reject deactivated users, upstream's check only landed on the 13.0 branch
+  * seafdav: ENABLE_SEAFDAV in seafile.env toggles it like the other optional servers and shows the WebDAV password option; seafdav.conf only carries share_name for seahub, library names always carry the id suffix; CI checks that a deactivated user is rejected
+  * Configuration for 14.0: drop [SEAF-EVENT-SERVER] and ENABLE_CHANGE_PASSWORD, which upstream removed; add max_indexing_files; references point to the 14.0 manual and build recipe
+  * rules: drop the pillow-heif floor and the scikit-learn filter, upstream's 14.0 requirements need neither
+  * NEWS: 14.0 changes many configuration options, WebDAV needs ENABLE_SEAFDAV
+  * update to [14.0.8](https://github.com/haiwen/seafile-server/releases/tag/v14.0.8-server)
+
+ -- dionysius <dragon.dionysius@gmail.com>  Sat, 10 Oct 2026 17:47:40 +0200
+
 seafile-server (13.0.28-3) unstable; urgency=medium
 
   * Update licenses: list the bundled third-party code under its own licenses, filter out code without a license to redistribute on import

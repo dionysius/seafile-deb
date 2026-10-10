@@ -1,0 +1,10 @@
+seafile-server (14.0.8-1) unstable; urgency=medium
+
+  Seafile 14.0 removes, renames and moves many configuration options. Read the
+  changes offered for the files in /etc/seafile carefully instead of keeping
+  the old versions, and check your own settings against
+  https://github.com/dionysius/seafile-deb/wiki/Upgrading#upgrading-to-140
+
+  WebDAV now only runs with ENABLE_SEAFDAV=true in seafile.env.
+
+ -- dionysius <dragon.dionysius@gmail.com>  Sat, 10 Oct 2026 17:05:37 +0200

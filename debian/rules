@@ -24,7 +24,7 @@ VENV = $(HUBDEST)/venv
 VENVSITE = $(VENV)/lib/python3*/site-packages
 
 # steps imitate upstream's community build recipe:
-# https://github.com/haiwen/seafile-docker/tree/master/build/seafile_13.0
+# https://github.com/haiwen/seafile-docker/tree/master/build/seafile_14.0
 
 # uv (not packaged in debian) builds seahub's python deps
 UV_VERSION = 0.11.26
@@ -61,8 +61,8 @@ JOBS = $(or $(DEB_BUILD_OPTION_PARALLEL),1)
 SYSTEMD_MAJOR := $(shell pkgconf --modversion systemd)
 
 # units generated from debian/*.service.fypp; the bundle's members are wanted by seafile.target
-BUNDLE_UNITS = seaf-server seaf-fileserver seaf-notification-server seahub seafevents
-SERVER_UNITS = seafile-migrate $(BUNDLE_UNITS) seafdav
+BUNDLE_UNITS = seaf-server seaf-fileserver seaf-notification-server seahub seafevents seafdav
+SERVER_UNITS = seafile-migrate $(BUNDLE_UNITS)
 
 # python install dir: upstream expects the versionless lib/python3/site-packages layout
 PYSEAF = $(SEAFPREFIX)/lib/python3/site-packages
@@ -177,15 +177,11 @@ override_dh_auto_install-arch:
 	{ echo '[project]'; echo 'name = "seahub-deps"'; echo 'version = "0"'; \
 	  echo 'requires-python = ">=3.11"'; echo 'dependencies = ['; \
 	  cat seahub/requirements.txt seafevents/requirements.txt seafdav/requirements.txt \
-	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|pillow-heif|scikit-learn|$$)' | sed 's/.*/  "&",/'; \
+	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|$$)' | sed 's/.*/  "&",/'; \
 	  echo '  "pyOpenSSL>=24",'; \
-	  echo '  "pillow-heif>=1.1",'; \
 	  echo '  "django-pylibmc>=0.6",'; \
 	  echo ']'; } > $(HUBDEST)/pyproject.toml
 # pyOpenSSL floor: uv otherwise resolves a 22.x incompatible with current cryptography
-# pillow-heif floor: upstream's ==1.0.* pin neither ships wheels nor builds for current pythons
-# scikit-learn left out: only face recognition's clustering uses it, which needs the separate
-# metadata and Seafile AI servers
 # django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend, declared as a
 # dependency in none of the three requirements.txt above
 # libmemcached-dev (Build-Depends) is only for this step: uv still builds django-pylibmc's
@@ -300,8 +296,6 @@ override_dh_installsystemd-arch:
 	dh_installsystemd -pseafile-server --name=seafile --no-enable --no-start --restart-after-upgrade seafile.target
 	for u in $(BUNDLE_UNITS); do \
 		dh_installsystemd -pseafile-server --name=$$u --no-start --no-stop-on-upgrade --no-restart-after-upgrade $$u.service || exit 1; done
-# optional member of seafile.target, installed disabled
-	dh_installsystemd -pseafile-server --name=seafdav --no-enable --no-start --no-stop-on-upgrade --no-restart-after-upgrade seafdav.service
 # independent of seafile.target, so stopping or restarting it never unmounts
 	dh_installsystemd -pseafile-fuse --name=seaf-fuse --no-enable --no-start --restart-after-upgrade seaf-fuse.service
 

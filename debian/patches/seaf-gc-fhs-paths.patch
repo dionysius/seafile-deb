@@ -1,13 +1,11 @@
-Description: seaf-gc.sh: use this packaging's fixed FHS paths, drop pro/sqlite
- branches, check systemd units instead of process names, require the seafile
- identity
+Description: seaf-gc.sh: use this packaging's fixed FHS paths, check systemd
+ units instead of process names, require the seafile identity
  Same TOPDIR-detection problem as reset-admin.sh (see reset-admin-fhs-paths.patch);
  sources /etc/seafile/seafile.env instead. validate_already_running now checks
  systemctl unit state (seaf-server.service, seaf-fileserver.service,
  seahub.service, seaf-fuse.service, seafdav.service) instead of pgrep'ing
  process names, since systemd already tracks exactly these units here. Drops
- check_python_executable (nothing here is python) and the IS_PRO_VERSION branch
- (community edition only).
+ check_python_executable (nothing here is python).
  Re-execs as the seafile user via runuser when invoked as anyone else, before
  doing anything: this writes into the object store, and running as root would
  leave files owned by root that seaf-server.service can no longer manage.
@@ -16,7 +14,7 @@ Forwarded: not-needed
 Comment: install-layout specific, not something upstream's own tar.gz/docker install needs.
 --- a/seahub/scripts/seaf-gc.sh
 +++ b/seahub/scripts/seaf-gc.sh
-@@ -1,140 +1,70 @@
+@@ -1,20 +1,17 @@
  #!/bin/bash
  
 +if [ "$(id -un)" != "seafile" ]; then
@@ -45,13 +43,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  
  script_name=$0
  function usage () {
-     echo "usage : "
--    if [[ $IS_PRO_VERSION = "true" ]]; then
--        echo "$(basename ${script_name}) [--dry-run | -D] [--rm-deleted | -r] [--rm-fs | -R] [repo-id1] [repo-id2]"
--    else
--        echo "$(basename ${script_name}) [--dry-run | -D] [--rm-deleted | -r] [repo-id1] [repo-id2]"
--    fi 
-+    echo "$(basename ${script_name}) [--dry-run | -D] [--rm-deleted | -r] [--rm-fs | -R] [repo-id1] [repo-id2]"
+@@ -31,114 +28,51 @@
      echo ""
  }
  

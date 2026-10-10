@@ -87,7 +87,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
              error_msg = 'Internal Server Error'
 --- a/seahub/seahub/base/context_processors.py
 +++ b/seahub/seahub/base/context_processors.py
-@@ -21,7 +21,7 @@
+@@ -22,7 +22,7 @@
      MAX_FILE_NAME, LOGO_PATH, BRANDING_CSS, LOGO_WIDTH, LOGO_HEIGHT, \
      SHOW_REPO_DOWNLOAD_BUTTON, SITE_ROOT, ENABLE_GUEST_INVITATION, \
      FAVICON_PATH, APPLE_TOUCH_ICON_PATH, THUMBNAIL_SIZE_FOR_ORIGINAL, \
@@ -96,7 +96,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
      LOGIN_BG_IMAGE_PATH, THUMBNAIL_DEFAULT_SIZE, \
      CUSTOM_LOGIN_BG_PATH, ENABLE_SHARE_LINK_REPORT_ABUSE, \
      PRIVACY_POLICY_LINK, TERMS_OF_SERVICE_LINK, ENABLE_SEADOC, THUMBNAIL_SIZE_FOR_GRID, \
-@@ -97,7 +97,7 @@
+@@ -102,7 +102,7 @@
              ("api/v2.1/" not in request.path):
  
          # get logo path
@@ -105,7 +105,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
          if os.path.exists(custom_logo_file):
              logo_path = CUSTOM_LOGO_PATH
  
-@@ -110,12 +110,12 @@
+@@ -115,12 +115,12 @@
                      logo_path = "/image-view/" + logo_path
  
          # get favicon path
@@ -122,7 +122,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  
 --- a/seahub/seahub/settings.py
 +++ b/seahub/seahub/settings.py
-@@ -71,6 +71,9 @@
+@@ -75,6 +75,9 @@
  # Example: "/home/media/media.lawrence.com/media/"
  MEDIA_ROOT = '%s/media/' % PROJECT_ROOT
  
@@ -132,7 +132,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  # URL that handles the media served from MEDIA_ROOT. Make sure to use a
  # trailing slash if there is a path component (optional in other cases).
  # Examples: "http://media.lawrence.com", "http://example.com/media/"
-@@ -106,7 +109,8 @@
+@@ -110,7 +113,8 @@
  
  STORAGES = {
      "default": {
@@ -142,7 +142,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
      },
      "staticfiles": {
          "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
-@@ -164,7 +168,7 @@
+@@ -168,7 +172,7 @@
      {
          'BACKEND': 'django.template.backends.django.DjangoTemplates',
          'DIRS': [
@@ -151,7 +151,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
              os.path.join(PROJECT_ROOT, 'seahub/templates'),
          ],
          'APP_DIRS': True,
-@@ -879,11 +883,7 @@
+@@ -880,11 +884,7 @@
  ###################
  
  # Absolute filesystem path to the directory that will hold thumbnail files.
@@ -166,7 +166,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  
 --- a/seahub/seahub/urls.py
 +++ b/seahub/seahub/urls.py
-@@ -981,6 +981,11 @@
+@@ -1023,6 +1023,11 @@
      from django.views.static import serve as static_view
      media_url = settings.MEDIA_URL.strip('/')
      urlpatterns += [
@@ -178,29 +178,9 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
          re_path(r'^%s/(?P<path>.*)$' % (media_url), static_view,
              {'document_root': settings.MEDIA_ROOT}),
      ]
---- a/seahub/seahub/utils/auth.py
-+++ b/seahub/seahub/utils/auth.py
-@@ -1,7 +1,7 @@
- import os
- 
- 
--from seahub.settings import LOGIN_BG_IMAGE_PATH, MEDIA_ROOT, ENABLE_OAUTH, ENABLE_ADFS_LOGIN, \
-+from seahub.settings import LOGIN_BG_IMAGE_PATH, MEDIA_ROOT, SEAHUB_DATA_ROOT, ENABLE_OAUTH, ENABLE_ADFS_LOGIN, \
-     ENABLE_MULTI_ADFS, DISABLE_ADFS_USER_PWD_LOGIN, ENABLE_CHANGE_PASSWORD
- from seahub.auth.models import SocialAuthUser
- import seahub.settings as settings
-@@ -41,7 +41,7 @@
-     
-     # get path that background image of login page
-     custom_login_bg_image_path = get_custom_login_bg_image_path()
--    if os.path.exists(os.path.join(MEDIA_ROOT, custom_login_bg_image_path)):
-+    if os.path.exists(os.path.join(SEAHUB_DATA_ROOT, custom_login_bg_image_path)):
-         login_bg_image_path = custom_login_bg_image_path
-     return login_bg_image_path
- 
 --- a/seahub/seahub/utils/__init__.py
 +++ b/seahub/seahub/utils/__init__.py
-@@ -34,7 +34,7 @@
+@@ -38,7 +38,7 @@
  from seahub.api2.models import Token, TokenV2
  import seahub.settings
  from seahub.settings import MEDIA_URL, LOGO_PATH, \
@@ -209,7 +189,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  from seahub.constants import PERMISSION_READ_WRITE
  from seahub.utils.db_api import SeafileDB
  from seahub.onlyoffice.settings import ENABLE_ONLYOFFICE, ONLYOFFICE_FILE_EXTENSION
-@@ -966,7 +966,7 @@
+@@ -1003,7 +1003,7 @@
      # get logo path
      from seahub.utils.mail import SmimeEmailMessage
      logo_path = LOGO_PATH
@@ -218,7 +198,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
      if os.path.exists(custom_logo_file):
          logo_path = CUSTOM_LOGO_PATH
  
-@@ -1388,7 +1388,7 @@
+@@ -1425,7 +1425,7 @@
      logo_path = LOGO_PATH
  
      # custom logo
@@ -226,6 +206,26 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
 +    custom_logo_file = os.path.join(SEAHUB_DATA_ROOT, CUSTOM_LOGO_PATH)
      if os.path.exists(custom_logo_file):
          logo_path = CUSTOM_LOGO_PATH
+ 
+--- a/seahub/seahub/utils/auth.py
++++ b/seahub/seahub/utils/auth.py
+@@ -1,7 +1,7 @@
+ import os
+ 
+ 
+-from seahub.settings import LOGIN_BG_IMAGE_PATH, MEDIA_ROOT, ENABLE_OAUTH, ENABLE_ADFS_LOGIN, \
++from seahub.settings import LOGIN_BG_IMAGE_PATH, MEDIA_ROOT, SEAHUB_DATA_ROOT, ENABLE_OAUTH, ENABLE_ADFS_LOGIN, \
+     ENABLE_MULTI_ADFS, DISABLE_SSO_USER_LOCAL_PWD_LOGIN
+ from seahub.auth.models import SocialAuthUser
+ import seahub.settings as settings
+@@ -42,7 +42,7 @@
+ 
+     # get path that background image of login page
+     custom_login_bg_image_path = get_custom_login_bg_image_path()
+-    if os.path.exists(os.path.join(MEDIA_ROOT, custom_login_bg_image_path)):
++    if os.path.exists(os.path.join(SEAHUB_DATA_ROOT, custom_login_bg_image_path)):
+         login_bg_image_path = custom_login_bg_image_path
+     return login_bg_image_path
  
 --- a/seahub/seahub/utils/mail.py
 +++ b/seahub/seahub/utils/mail.py

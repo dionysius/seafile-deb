@@ -18,7 +18,7 @@ SyslogIdentifier=seafevents
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-# logs to the console instead of log files (seasearch, face recognition)
+# the per-feature loggers write to the console instead of log files
 Environment=SEAFILE_LOG_TO_STDOUT=true
 Type=exec
 ExecStart=/usr/lib/seahub/venv/bin/python -m seafevents.main --config-file %E/seafile/seafevents.conf

@@ -1,38 +1,30 @@
 version=4
 
-# main upstream; only v13.Y.Z-server tags (vX.Y.Z-pro is the proprietary edition),
-# bump the major in all five patterns together. The API lists more tags than the
-# tags page, which shows only the newest ten.
-opts="searchmode=plain, \
-downloadurlmangle=s%api\.github\.com/repos/([^/]+/[^/]+)/tarball/refs/tags/(.*)%github.com/$1/archive/refs/tags/$2.tar.gz%, \
-filenamemangle=s%.*/v(\d[\d.]+)-server.*%@PACKAGE@_$1.orig.tar.gz%" \
-  https://api.github.com/repos/haiwen/seafile-server/tags?per_page=100 \
-  https://api.github.com/repos/haiwen/seafile-server/tarball/refs/tags/v(13\.[\d.]+)-server
+# main upstream; only vX.Y.Z-server tags (vX.Y.Z-pro is the proprietary edition)
+opts="filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%@PACKAGE@_\$1.orig.tar.gz%" \
+  https://github.com/haiwen/seafile-server/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
 
 # components on the same vX.Y.Z-server tag
-opts="searchmode=plain, component=seahub, \
-downloadurlmangle=s%api\.github\.com/repos/([^/]+/[^/]+)/tarball/refs/tags/(.*)%github.com/$1/archive/refs/tags/$2.tar.gz%, \
-filenamemangle=s%.*/v(\d[\d.]+)-server.*%seahub-$1.tar.gz%" \
-  https://api.github.com/repos/haiwen/seahub/tags?per_page=100 \
-  https://api.github.com/repos/haiwen/seahub/tarball/refs/tags/v(13\.[\d.]+)-server
+opts="component=seahub, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seahub-\$1.tar.gz%" \
+  https://github.com/haiwen/seahub/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
 
-opts="searchmode=plain, component=seafobj, \
-downloadurlmangle=s%api\.github\.com/repos/([^/]+/[^/]+)/tarball/refs/tags/(.*)%github.com/$1/archive/refs/tags/$2.tar.gz%, \
-filenamemangle=s%.*/v(\d[\d.]+)-server.*%seafobj-$1.tar.gz%" \
-  https://api.github.com/repos/haiwen/seafobj/tags?per_page=100 \
-  https://api.github.com/repos/haiwen/seafobj/tarball/refs/tags/v(13\.[\d.]+)-server
+opts="component=seafobj, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seafobj-\$1.tar.gz%" \
+  https://github.com/haiwen/seafobj/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
 
-opts="searchmode=plain, component=seafdav, \
-downloadurlmangle=s%api\.github\.com/repos/([^/]+/[^/]+)/tarball/refs/tags/(.*)%github.com/$1/archive/refs/tags/$2.tar.gz%, \
-filenamemangle=s%.*/v(\d[\d.]+)-server.*%seafdav-$1.tar.gz%" \
-  https://api.github.com/repos/haiwen/seafdav/tags?per_page=100 \
-  https://api.github.com/repos/haiwen/seafdav/tarball/refs/tags/v(13\.[\d.]+)-server
+opts="component=seafdav, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seafdav-\$1.tar.gz%" \
+  https://github.com/haiwen/seafdav/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
 
-opts="searchmode=plain, component=seafevents, \
-downloadurlmangle=s%api\.github\.com/repos/([^/]+/[^/]+)/tarball/refs/tags/(.*)%github.com/$1/archive/refs/tags/$2.tar.gz%, \
-filenamemangle=s%.*/v(\d[\d.]+)-server.*%seafevents-$1.tar.gz%" \
-  https://api.github.com/repos/haiwen/seafevents/tags?per_page=100 \
-  https://api.github.com/repos/haiwen/seafevents/tarball/refs/tags/v(13\.[\d.]+)-server
+opts="component=seafevents, \
+filenamemangle=s%.*/v(\d[\d.]+)-server\.tar\.gz%seafevents-\$1.tar.gz%" \
+  https://github.com/haiwen/seafevents/tags \
+  (?:.*/)?v(\d[\d.]+)-server\.tar\.gz
 
 # libevhtp: pinned to haiwen's fork tag (the distro 1.2.x has an incompatible API);
 # "ignore" exempts it from the newer-than-main check. Bump the pin in the pattern.
