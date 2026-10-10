@@ -1,5 +1,5 @@
 # Seahub Django settings. Reference:
-# https://manual.seafile.com/13.0/config/seahub_settings_py/
+# https://manual.seafile.com/14.0/config/seahub_settings_py/
 #
 # Database, cache and the public address (SERVICE_URL/FILE_SERVER_ROOT) are taken
 # from the environment via seafile.env; avoid duplicating them here.
@@ -35,7 +35,6 @@ SECRET_KEY = ""
 #ACTIVATE_AFTER_REGISTRATION = True
 # Notify admins by mail when a user registers (used with admin activation).
 #REGISTRATION_SEND_MAIL = False
-#ENABLE_CHANGE_PASSWORD = True
 #ENABLE_UPDATE_USER_INFO = True
 #ENABLE_DELETE_ACCOUNT = True
 # Force a password change after an admin adds or resets a user.

@@ -49,9 +49,9 @@ simulate() {
   fi
 }
 
-# minor: same major.minor, patch 0 (13.0.25 -> stamp 13.0.0)
+# minor: same major.minor, patch 0 (14.0.8 -> stamp 14.0.0)
 simulate "minor" "${installed%.*}.0"
-# major: previous major (13.0.25 -> stamp 12.0.0), exercises the schema-delta path
+# major: previous major (14.0.8 -> stamp 13.0.0), exercises the schema-delta path
 [ "$major" -gt 1 ] && simulate "major" "$((major - 1)).0.0"
 
 info "Summary"

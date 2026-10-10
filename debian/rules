@@ -24,7 +24,7 @@ VENV = $(HUBDEST)/venv
 VENVSITE = $(VENV)/lib/python3*/site-packages
 
 # steps imitate upstream's community build recipe:
-# https://github.com/haiwen/seafile-docker/tree/master/build/seafile_13.0
+# https://github.com/haiwen/seafile-docker/tree/master/build/seafile_14.0
 
 # uv (not packaged in debian) builds seahub's python deps
 UV_VERSION = 0.11.26

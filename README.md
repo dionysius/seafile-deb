@@ -28,7 +28,7 @@ For advanced topics:
 - [Upgrading](https://github.com/dionysius/seafile-deb/wiki/Upgrading) - What happens automatically on a package upgrade
 - [Migrating from Docker](https://github.com/dionysius/seafile-deb/wiki/Migrating-from-Docker) - Moving an existing docker deployment to the packages
 
-See also the [Official Seafile Manual](https://manual.seafile.com/13.0/) for user guides and features.
+See also the [Official Seafile Manual](https://manual.seafile.com/14.0/) for user guides and features.
 
 ## Issues
 
@@ -49,7 +49,7 @@ This project aims to closely match the releases of upstream. The first release i
 
 ## Build source package
 
-This debian source package builds [Seafile server](https://github.com/haiwen/seafile-server) natively on your build environment. No annoying docker! It is managed with [git-buildpackage](https://wiki.debian.org/PackagingWithGit) and follows upstream's own community build recipe from [seafile-docker](https://github.com/haiwen/seafile-docker/tree/master/build/seafile_13.0). You can find the maintaining command summary in [debian/gbp.conf](debian/gbp.conf).
+This debian source package builds [Seafile server](https://github.com/haiwen/seafile-server) natively on your build environment. No annoying docker! It is managed with [git-buildpackage](https://wiki.debian.org/PackagingWithGit) and follows upstream's own community build recipe from [seafile-docker](https://github.com/haiwen/seafile-docker/tree/master/build/seafile_14.0). You can find the maintaining command summary in [debian/gbp.conf](debian/gbp.conf).
 
 ### Requirements
 
@@ -80,5 +80,5 @@ On successful build packages can now be found in the parent directory `ls ../*.d
 
 ## Inspirations and Alternatives
 
-- [Seafile manual: build from source](https://manual.seafile.com/13.0/develop/server/)
+- [Seafile manual: build from source](https://manual.seafile.com/14.0/develop/server/)
 - [haiwen/seafile-docker build scripts](https://github.com/haiwen/seafile-docker/tree/master/build)
