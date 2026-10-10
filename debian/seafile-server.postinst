@@ -23,10 +23,19 @@ if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.
   done
 fi
 
-# Upgrade from < 14.0.8-1~: seafdav.service is enabled like the other members and
-# gates itself on ENABLE_SEAFDAV in seafile.env.
+# Upgrade from < 14.0.8-1~: seafdav.service is enabled like the other members and gates
+# itself on ENABLE_SEAFDAV in seafile.env; a seafile.env kept from before gets the value
+# matching whether seafdav was enabled. The state left from installing it disabled stops
+# enable from creating the links, so it is purged first. Thumbnails are cached under new
+# names, the old ones would never be used or removed again.
 if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "14.0.8-1~"; then
+  if ! grep -q '^ENABLE_SEAFDAV=' /etc/seafile/seafile.env; then
+    if deb-systemd-helper --quiet was-enabled seafdav.service; then dav=true; else dav=false; fi
+    printf '\n### WebDAV ###\nENABLE_SEAFDAV=%s\n' "$dav" >> /etc/seafile/seafile.env
+  fi
+  deb-systemd-helper purge seafdav.service >/dev/null || true
   deb-systemd-helper enable seafdav.service >/dev/null || true
+  rm -rf /var/cache/seafile/thumbnail
 fi
 
 #DEBHELPER#
