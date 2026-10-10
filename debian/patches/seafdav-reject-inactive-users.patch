@@ -1,0 +1,21 @@
+Description: seafdav: reject deactivated users
+ basic_auth_user only validates the password, so an account deactivated by an
+ admin, or frozen after failed logins (FREEZE_USER_ON_LOGIN_FAILED), still
+ authenticates over WebDAV.
+Author: dionysius <dragon.dionysius@gmail.com>
+Origin: upstream, https://github.com/haiwen/seafdav/commit/9e86f0bac2762ea50c386f6a8f35f6c85505bfc3
+Forwarded: no
+Comment: upstream merged this into the 13.0 branch only; master and 14.0 lack it.
+--- a/seafdav/wsgidav/dc/domain_controller.py
++++ b/seafdav/wsgidav/dc/domain_controller.py
+@@ -116,6 +116,10 @@
+             if session:
+                 session.close()
+ 
++        if not user.is_active:
++            _logger.warning('User %s is deactivated', ccnet_email)
++            return False
++
+         if user.role == 'guest':
+             environ['seafile.is_guest'] = True
+         else:
