@@ -1,0 +1,2 @@
+# Only present because seahub logs a warning on every start when this file is
+# missing. Seafile AI is not part of these packages; this file enables nothing.

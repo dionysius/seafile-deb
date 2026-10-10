@@ -14,4 +14,5 @@ debian/install/system/seahub_settings.py usr/share/seafile-server
 debian/install/system/gunicorn.conf.py usr/share/seafile-server
 debian/install/system/seafevents.conf usr/share/seafile-server
 debian/install/system/seafdav.conf usr/share/seafile-server
+debian/install/system/seafile_ai_config.yaml usr/share/seafile-server
 usr/share/doc/seafile-server/THIRD-PARTY-LICENSES.txt.gz
