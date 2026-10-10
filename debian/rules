@@ -61,8 +61,8 @@ JOBS = $(or $(DEB_BUILD_OPTION_PARALLEL),1)
 SYSTEMD_MAJOR := $(shell pkgconf --modversion systemd)
 
 # units generated from debian/*.service.fypp; the bundle's members are wanted by seafile.target
-BUNDLE_UNITS = seaf-server seaf-fileserver seaf-notification-server seahub seafevents
-SERVER_UNITS = seafile-migrate $(BUNDLE_UNITS) seafdav
+BUNDLE_UNITS = seaf-server seaf-fileserver seaf-notification-server seahub seafevents seafdav
+SERVER_UNITS = seafile-migrate $(BUNDLE_UNITS)
 
 # python install dir: upstream expects the versionless lib/python3/site-packages layout
 PYSEAF = $(SEAFPREFIX)/lib/python3/site-packages
@@ -300,8 +300,6 @@ override_dh_installsystemd-arch:
 	dh_installsystemd -pseafile-server --name=seafile --no-enable --no-start --restart-after-upgrade seafile.target
 	for u in $(BUNDLE_UNITS); do \
 		dh_installsystemd -pseafile-server --name=$$u --no-start --no-stop-on-upgrade --no-restart-after-upgrade $$u.service || exit 1; done
-# optional member of seafile.target, installed disabled
-	dh_installsystemd -pseafile-server --name=seafdav --no-enable --no-start --no-stop-on-upgrade --no-restart-after-upgrade seafdav.service
 # independent of seafile.target, so stopping or restarting it never unmounts
 	dh_installsystemd -pseafile-fuse --name=seaf-fuse --no-enable --no-start --restart-after-upgrade seaf-fuse.service
 

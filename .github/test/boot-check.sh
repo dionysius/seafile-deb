@@ -49,9 +49,9 @@ info "Service active state"
 if systemctl is-enabled --quiet seafile.target && systemctl is-active --quiet seafile.target; then mark="✅"; echo "SVC OK seafile.target enabled and active"
 else mark="❌"; echo "SVC FAIL seafile.target enabled and active"; rc=1; fi
 rows+=("| \`seafile.target\` | enabled, active | $mark |")
-for s in seaf-server seaf-fileserver seaf-notification-server seahub seafevents; do
+for s in seaf-server seaf-fileserver seaf-notification-server seahub seafevents seafdav; do
   if systemctl is-active --quiet "$s.service"; then mark="✅"; state=active; echo "SVC OK $s active"
-  # seaf-fileserver and seaf-notification-server skip themselves when their ENABLE_* toggle is false
+  # seaf-fileserver, seaf-notification-server and seafdav skip themselves when their ENABLE_* toggle is false
   elif [ "$(systemctl show -p Result --value "$s.service")" = exec-condition ]; then mark="✅"; state="skipped by its toggle"; echo "SVC OK $s skipped by its toggle"
   else mark="❌"; state=active; echo "SVC FAIL $s active"; rc=1; fi
   rows+=("| \`$s\` | $state | $mark |")

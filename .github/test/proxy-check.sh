@@ -3,8 +3,8 @@
 # with a self-signed certificate under a local hostname: browser-style login (CSRF needs Host
 # and X-Forwarded-Proto), every asset of the login and library pages, an upload and download
 # through /seafhttp, a thumbnail, the notification websocket and ping, and WebDAV through
-# /seafdav (enabling seafdav.service). Run after boot-check.sh; sets the public address in
-# seafile.env and restarts the stack.
+# /seafdav (ENABLE_SEAFDAV), which refuses a deactivated user. Run after boot-check.sh; sets
+# the public address in seafile.env and restarts the stack.
 #
 # Runs IN PLACE as root, requires systemd - ephemeral testbed only.
 #
@@ -95,15 +95,16 @@ code=$(curl -sSk -o /dev/null -w '%{http_code}' --max-time 3 --http1.1 -H "Conne
 code=$(http "$B/notification/ping")
 [ "$code" = 200 ] && ok "notification ping via /notification/ping" || fail "notification ping via /notification/ping" "HTTP $code"
 
-info "WebDAV through /seafdav (seafdav.service, disabled by default)"
-systemctl enable --now seafdav.service
+info "WebDAV through /seafdav (seafdav.service, off by default)"
+sed -i 's|^ENABLE_SEAFDAV=.*|ENABLE_SEAFDAV=true|' /etc/seafile/seafile.env
+systemctl restart seafdav.service
 for i in $(seq 1 30); do [ "$(http "$B/seafdav/")" = 401 ] && break; sleep 2; done
 D=(-u proxytest@example.com:proxytest-password-123)
 code=$(http -X PROPFIND -H "Depth: 0" "$B/seafdav/")
 [ "$code" = 401 ] && ok "webdav requires authentication" || fail "webdav requires authentication" "HTTP $code"
 code=$(curl -sSk -o /tmp/propfind.xml -w '%{http_code}' "${D[@]}" -X PROPFIND -H "Depth: 1" "$B/seafdav/")
-# equally named libraries (a rerun creates another proxytest) are told apart by an id suffix
-L=proxytest; grep -q "/seafdav/proxytest-${RID:0:6}/" /tmp/propfind.xml && L=proxytest-${RID:0:6}
+# library names carry an id suffix
+L=proxytest-${RID:0:6}
 [ "$code" = 207 ] && grep -q "/seafdav/$L/" /tmp/propfind.xml && ok "webdav lists the libraries" || fail "webdav lists the libraries" "HTTP $code"
 code=$(http "${D[@]}" -T /tmp/proxytest.bin "$B/seafdav/$L/dav.bin")
 curl -sSk "${D[@]}" -o /tmp/dav.out "$B/seafdav/$L/dav.bin"
@@ -119,6 +120,15 @@ for u in $(grep -oE '(src|href)="/:dir_browser/[^"]+"' /tmp/davlist.html | sed -
   n=$((n+1)); c=$(http "${D[@]}" "$B$u"); [ "$c" = 200 ] || { bad=$((bad+1)); echo "  $c $u"; }
 done
 [ "$n" -gt 0 ] && [ "$bad" = 0 ] && ok "webdav directory listing ($n assets)" || fail "webdav directory listing" "$bad of $n assets failing"
+# a second account, active on a rerun as well, loses webdav access once deactivated
+U=davuser@example.com; UD=(-u "$U:davuser-password-123")
+http -H "Authorization: Token $T" -d "email=$U&password=davuser-password-123" "$B/api/v2.1/admin/users/" >/dev/null
+http -X PUT -H "Authorization: Token $T" -d "is_active=true" "$B/api/v2.1/admin/users/$U/" >/dev/null
+code=$(http "${UD[@]}" -X PROPFIND -H "Depth: 0" "$B/seafdav/")
+[ "$code" = 207 ] && ok "webdav admits an active user" || fail "webdav admits an active user" "HTTP $code"
+http -X PUT -H "Authorization: Token $T" -d "is_active=false" "$B/api/v2.1/admin/users/$U/" >/dev/null
+code=$(http "${UD[@]}" -X PROPFIND -H "Depth: 0" "$B/seafdav/")
+[ "$code" = 401 ] && ok "webdav rejects a deactivated user" || fail "webdav rejects a deactivated user" "HTTP $code"
 
 if [ "$rc" != 0 ]; then
   echo "--- nginx error log ---"; tail -n 30 /var/log/nginx/error.log 2>/dev/null || true

@@ -22,4 +22,10 @@ if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "13.
   done
 fi
 
+# Upgrade from < 14.0.8-1~: seafdav.service is enabled like the other members and
+# gates itself on ENABLE_SEAFDAV in seafile.env.
+if [ "$1" = "configure" ] && [ -n "$2" ] && dpkg --compare-versions "$2" lt "14.0.8-1~"; then
+  deb-systemd-helper enable seafdav.service >/dev/null || true
+fi
+
 #DEBHELPER#
