@@ -1,10 +1,5 @@
 # Seafile server deb packages
 
-> [!WARNING]
-> These packages are under heavy development. The packaging slicing may still
-> change and the package architecture is not fixed yet — package names, splits
-> and layout can change without notice between releases.
-
 Easy to install and highly configurable debian packages for running [Seafile Community Edition](https://www.seafile.com) on your system natively without docker. Out of the box it can be installed and built on Debian stable and latest Ubuntu LTS.
 
 ## Installation
