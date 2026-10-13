@@ -31,6 +31,12 @@ seafile.example.com {
 		reverse_proxy 127.0.0.1:8080
 	}
 
+	# Optional: thumbnail server (package seafile-thumbnail-server), together with
+	# ENABLE_THUMBNAIL_SERVER in seahub_settings.py; without it seahub serves /thumbnail/ itself
+	#handle /thumbnail/* {
+	#	reverse_proxy 127.0.0.1:8088
+	#}
+
 	# seahub
 	handle {
 		reverse_proxy 127.0.0.1:8000

@@ -104,6 +104,11 @@ SECRET_KEY = ""
 # Largest file opened online, in bytes.
 #OFFICE_PREVIEW_MAX_SIZE = 30 * 1024 * 1024
 
+### Thumbnail server (package seafile-thumbnail-server) ###
+# Enable together with the reverse proxy's /thumbnail/ route to it (commented in the
+# examples); adds thumbnails for more file types.
+#ENABLE_THUMBNAIL_SERVER = False
+
 ### Other options ###
 # Terms shown and required on first login.
 #ENABLE_TERMS_AND_CONDITIONS = False
