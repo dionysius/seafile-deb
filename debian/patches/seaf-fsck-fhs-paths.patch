@@ -42,7 +42,7 @@ Comment: install-layout specific, not something upstream's own tar.gz/docker ins
  
  script_name=$0
  function usage () {
-@@ -21,55 +19,45 @@
+@@ -29,55 +27,45 @@
      echo ""
  }
  
