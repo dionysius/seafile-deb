@@ -79,10 +79,11 @@ SECRET_KEY = ""
 
 ### Online office (separate service, not part of this packaging) ###
 # OnlyOffice and Collabora Online publish their own Debian packages and docker images.
-# Enable only one of the two below. SeaDoc is set up in seafile.env.
+# Enable only one of the two below. SeaDoc is set up in seafile.env. URLs, server type
+# and extension lists are examples.
 #
 # OnlyOffice document server.
-#ENABLE_ONLYOFFICE = True
+#ENABLE_ONLYOFFICE = False
 #ONLYOFFICE_APIJS_URL = 'https://office.example.com/web-apps/apps/api/documents/api.js'
 # The document server's JWT secret.
 #ONLYOFFICE_JWT_SECRET = ''
@@ -90,16 +91,16 @@ SECRET_KEY = ""
 #VERIFY_ONLYOFFICE_CERTIFICATE = True
 #
 # Collabora Online or Microsoft Office Online Server (WOPI).
-#ENABLE_OFFICE_WEB_APP = True
+#ENABLE_OFFICE_WEB_APP = False
 # CollaboraOffice or OfficeOnlineServer.
 #OFFICE_SERVER_TYPE = 'CollaboraOffice'
 #OFFICE_WEB_APP_BASE_URL = 'https://office.example.com/hosting/discovery'
 # Extensions to open with the server; nothing opens while these are empty.
-#OFFICE_WEB_APP_FILE_EXTENSION = ('odt', 'ods', 'odp', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx')
-#ENABLE_OFFICE_WEB_APP_EDIT = True
-#OFFICE_WEB_APP_EDIT_FILE_EXTENSION = ('odt', 'ods', 'odp', 'docx', 'xlsx', 'pptx')
+#OFFICE_WEB_APP_FILE_EXTENSION = ('odp', 'ods', 'odt', 'xls', 'xlsb', 'xlsm', 'xlsx', 'ppsx', 'ppt', 'pptm', 'pptx', 'doc', 'docm', 'docx')
+#ENABLE_OFFICE_WEB_APP_EDIT = False
+#OFFICE_WEB_APP_EDIT_FILE_EXTENSION = ('odp', 'ods', 'odt', 'xls', 'xlsb', 'xlsm', 'xlsx', 'ppsx', 'ppt', 'pptm', 'pptx', 'doc', 'docm', 'docx')
 # Lifetime of the access token the server uses, in seconds.
-#WOPI_ACCESS_TOKEN_EXPIRATION = 30 * 60
+#WOPI_ACCESS_TOKEN_EXPIRATION = 12 * 60 * 60
 #
 # Largest file opened online, in bytes.
 #OFFICE_PREVIEW_MAX_SIZE = 30 * 1024 * 1024
