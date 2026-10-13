@@ -1,3 +1,17 @@
+seafile-server (14.0.9-1) unstable; urgency=medium
+
+  An optional seafile-thumbnail-server package is now available. It
+  generates thumbnails for more file types in the web interface. Install
+  it, set ENABLE_THUMBNAIL_SERVER in /etc/seafile/seahub_settings.py,
+  enable the /thumbnail/ route in the proxy and restart seafile.target:
+  https://github.com/dionysius/seafile-deb/wiki/Configuration#thumbnail-server
+
+  On Ubuntu its Chromium dependency is only available as a snap. Add the
+  xtradeb PPA, pinned to Chromium, before installing it:
+  https://github.com/dionysius/seafile-deb/wiki/Installation
+
+ -- dionysius <dragon.dionysius@gmail.com>  Thu, 19 Nov 2026 03:24:42 +0100
+
 seafile-server (14.0.8-1) unstable; urgency=medium
 
   Seafile 14.0 removes, renames and moves many configuration options. Review
