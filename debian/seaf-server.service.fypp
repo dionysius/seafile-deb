@@ -20,7 +20,8 @@ After=mariadb.service mysql.service redis-server.service memcached.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-Type=exec
+# Notifies readiness once it listens.
+Type=notify
 ExecStart=/usr/lib/seafile/bin/seaf-server \
   -F %E/seafile \
   -c %S/seafile/ccnet \

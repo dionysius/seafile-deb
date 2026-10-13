@@ -20,7 +20,8 @@ SyslogIdentifier=seafevents
 EnvironmentFile=%E/seafile/seafile.env
 # the per-feature loggers write to the console instead of log files
 Environment=SEAFILE_LOG_TO_STDOUT=true
-Type=exec
+# Notifies readiness once it listens.
+Type=notify
 ExecStart=/usr/lib/seahub/venv/bin/python -m seafevents.main --config-file %E/seafile/seafevents.conf
 WorkingDirectory=/usr/lib/seahub/seahub
 Restart=on-failure

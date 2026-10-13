@@ -21,7 +21,8 @@ SyslogIdentifier=seaf-notification-server
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-Type=exec
+# Notifies readiness once it listens.
+Type=notify
 ExecCondition=/bin/sh -ec '[ "$ENABLE_NOTIFICATION_SERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/notification-server -c %E/seafile -l -
 WorkingDirectory=/var/lib/seafile
