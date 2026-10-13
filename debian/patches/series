@@ -5,3 +5,4 @@ seahub-media-fhs-paths.patch
 createsuperuser-honour-password-option.patch
 seafevents-interval-int-default.patch
 seafdav-reject-inactive-users.patch
+systemd-readiness-notification.patch
