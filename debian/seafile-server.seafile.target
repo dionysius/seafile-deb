@@ -1,15 +1,13 @@
 # Bundles the server's units: seaf-server, seaf-fileserver,
-# seaf-notification-server, seahub, seafevents and seafdav. Starting this target starts
-# the enabled ones; stopping or restarting it reaches all of them. seaf-fuse is
-# independent of this target.
+# seaf-notification-server, seahub, seafevents and seafdav. Starting or restarting this
+# target starts the enabled ones and returns once they report ready; stopping it reaches
+# all of them but returns before they are down, `systemctl stop seafile.target <units>`
+# waits. seaf-fuse is independent of this target.
 
 # Refer to the manpages `systemd.target` and `systemd.unit` for detailed documentation on each option.
 [Unit]
 Description=Seafile server
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
-# The members order themselves after this target instead of the default reverse,
-# so stopping it returns once they are all stopped.
-DefaultDependencies=no
 
 [Install]
 WantedBy=multi-user.target

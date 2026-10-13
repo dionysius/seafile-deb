@@ -40,7 +40,8 @@ check_refuses_while_active seaf-gc
 check_refuses_while_active seaf-fsck
 
 info "Stop the stack, run seaf-gc and seaf-fsck for real"
-systemctl stop seafile.target
+# stopping the target returns before its members are down; listing them waits
+systemctl stop seafile.target $(systemctl show -p Wants --value seafile.target)
 
 out=$(seaf-gc 2>&1)
 if grep -q "GC is finished" <<<"$out"; then
@@ -67,7 +68,6 @@ fi
 
 info "seahub-reset-admin creates an account non-interactively"
 systemctl start seaf-server.service
-sleep 3
 out=$(seahub-reset-admin --noinput --username=citest --email=citest@example.com --password=citest-password-123 2>&1)
 if grep -q "Superuser created successfully" <<<"$out"; then
   echo "OK: account created"; rows+=("| \`seahub-reset-admin\` creates an account | ✅ |")
