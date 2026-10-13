@@ -32,12 +32,12 @@ rc=0; rows=()
 simulate() {
   local label="$1" fake="$2"
   info "Upgrade path: $label ($fake -> $installed)"
-  systemctl stop seafile.target 2>/dev/null
+  # stopping the target returns before its members are down; listing them waits
+  systemctl stop seafile.target $(systemctl show -p Wants --value seafile.target) 2>/dev/null
   echo "$fake" > "$STAMP"
   systemctl start seafile.target 2>&1 || true
-  sleep 5
   local ok=1
-  WAIT=90 bash "$HERE/boot-check.sh" >/dev/null 2>&1 || ok=0
+  bash "$HERE/boot-check.sh" >/dev/null 2>&1 || ok=0
   [ "$(cat "$STAMP")" = "$installed" ] || ok=0
   [ "$(systemctl show -p Result --value seafile-migrate.service)" = success ] || ok=0
   if [ "$ok" = 1 ]; then
