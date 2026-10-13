@@ -47,7 +47,6 @@ sed -i -e "s|^SEAFILE_SERVER_PROTOCOL=.*|SEAFILE_SERVER_PROTOCOL=https|" \
 systemctl restart seafile.target
 # on a rerun seafdav is already up, holding an rpc connection to the old seaf-server
 systemctl try-restart seafdav.service
-for i in $(seq 1 30); do [ "$(http "$B/accounts/login/")" = 200 ] && break; sleep 2; done
 
 info "Account for the checks"
 out=$(seahub-reset-admin --noinput --username=proxytest --email=proxytest@example.com --password=proxytest-password-123 2>&1) \
@@ -98,7 +97,6 @@ code=$(http "$B/notification/ping")
 info "WebDAV through /seafdav (seafdav.service, off by default)"
 sed -i 's|^ENABLE_SEAFDAV=.*|ENABLE_SEAFDAV=true|' /etc/seafile/seafile.env
 systemctl restart seafdav.service
-for i in $(seq 1 30); do [ "$(http "$B/seafdav/")" = 401 ] && break; sleep 2; done
 D=(-u proxytest@example.com:proxytest-password-123)
 code=$(http -X PROPFIND -H "Depth: 0" "$B/seafdav/")
 [ "$code" = 401 ] && ok "webdav requires authentication" || fail "webdav requires authentication" "HTTP $code"

@@ -7,7 +7,7 @@
 Description=Seafile file server (HTTP upload/download)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-migrate.service seaf-server.service seafile.target
+After=network.target seafile-migrate.service seaf-server.service
 Requires=seafile-migrate.service seaf-server.service
 # A database or cache on this host starts before and stops after this unit.
 After=mariadb.service mysql.service redis-server.service memcached.service
@@ -21,7 +21,8 @@ SyslogIdentifier=seaf-fileserver
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-Type=exec
+# Notifies readiness once it listens.
+Type=notify
 ExecCondition=/bin/sh -ec '[ "$ENABLE_GO_FILESERVER" = true ]'
 ExecStart=/usr/lib/seafile/bin/fileserver \
   -F %E/seafile \

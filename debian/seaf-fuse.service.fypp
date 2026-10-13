@@ -20,7 +20,8 @@ EnvironmentFile=%E/seafile/seafile.env
 # to expose the mount to users other than seafile.
 Environment=SEAFILE_FUSE_OPTS=
 # Mountpoint %S/seafile/seafile-fuse: change ExecStart, ExecStopPost and StateDirectory together.
-Type=exec
+# Notifies readiness once the mount is set up.
+Type=notify
 ExecStart=/usr/lib/seafile/bin/seaf-fuse -f \
   -F %E/seafile \
   -c %S/seafile/ccnet \

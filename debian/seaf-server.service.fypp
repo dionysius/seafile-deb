@@ -8,7 +8,7 @@ Description=Seafile storage and sync server (seaf-server)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
 # The service requires network interfaces to be configured.
-After=network.target seafile-migrate.service seafile.target
+After=network.target seafile-migrate.service
 Requires=seafile-migrate.service
 # If you want to expose the server to the network directly, you may find the following useful:
 #After=network-online.target
@@ -20,7 +20,8 @@ After=mariadb.service mysql.service redis-server.service memcached.service
 ## Service execution environment
 # Service configuration file.
 EnvironmentFile=%E/seafile/seafile.env
-Type=exec
+# Notifies readiness once it listens.
+Type=notify
 ExecStart=/usr/lib/seafile/bin/seaf-server \
   -F %E/seafile \
   -c %S/seafile/ccnet \

@@ -7,7 +7,7 @@
 Description=Seahub (Seafile web frontend)
 Documentation=https://manual.seafile.com https://github.com/dionysius/seafile-deb
 PartOf=seafile.target
-After=network.target seafile-migrate.service seaf-server.service seafile.target
+After=network.target seafile-migrate.service seaf-server.service
 Requires=seafile-migrate.service seaf-server.service
 # A database or cache on this host starts before and stops after this unit.
 After=mariadb.service mysql.service redis-server.service memcached.service
@@ -24,7 +24,8 @@ EnvironmentFile=%E/seafile/seafile.env
 # django logs to the console instead of log files
 Environment=SEAFILE_LOG_TO_STDOUT=true
 WorkingDirectory=/usr/lib/seahub/seahub
-Type=exec
+# Notifies readiness once it listens.
+Type=notify
 ExecStart=/usr/lib/seahub/venv/bin/gunicorn seahub.wsgi:application -c /etc/seafile/gunicorn.conf.py
 # Restart on failure
 Restart=on-failure

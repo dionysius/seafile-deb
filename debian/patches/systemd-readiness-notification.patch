@@ -1,0 +1,310 @@
+Description: notify systemd once the daemons are ready
+ seaf-server, seaf-fuse, the go fileserver, the notification server and
+ seafevents send READY=1 to $NOTIFY_SOCKET (the sd_notify protocol, without
+ libsystemd) once their sockets are bound or the mount is set up, so Type=notify
+ units become active when they can serve and units ordered after them start
+ then. Without $NOTIFY_SOCKET nothing else changes, except that two listeners
+ bind before their thread starts: seaf-server's built-in http server, and
+ seafevents' http server, whose bind failure now exits seafevents instead of
+ leaving it running without its API.
+Author: dionysius <dragon.dionysius@gmail.com>
+Forwarded: not-yet
+--- a/common/seaf-utils.c
++++ b/common/seaf-utils.c
+@@ -8,10 +8,19 @@
+ #include "utils.h"
+ 
+ #include <stdlib.h>
++#include <stddef.h>
+ #include <string.h>
+ #include <ctype.h>
++#include <errno.h>
++#include <unistd.h>
++#include <sys/socket.h>
++#include <sys/un.h>
+ #include <jwt.h>
+ 
++#ifndef SOCK_CLOEXEC
++#define SOCK_CLOEXEC 0
++#endif
++
+ #define JWT_TOKEN_EXPIRE_TIME 3*24*3600 /* 3 days*/
+ 
+ char *
+@@ -575,3 +584,31 @@ out:
+ 
+     return ret;
+ }
++
++void
++seaf_notify_ready (void)
++{
++    const char *path = g_getenv ("NOTIFY_SOCKET");
++    struct sockaddr_un addr = { .sun_family = AF_UNIX };
++    size_t len;
++    int fd;
++
++    if (!path || !*path)
++        return;
++    len = strlen (path);
++    if ((path[0] != '/' && path[0] != '@') || len >= sizeof (addr.sun_path)) {
++        seaf_warning ("Invalid NOTIFY_SOCKET: %s.\n", path);
++        return;
++    }
++    memcpy (addr.sun_path, path, len);
++    if (path[0] == '@')
++        addr.sun_path[0] = '\0';
++
++    fd = socket (AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0);
++    if (fd < 0)
++        return;
++    if (sendto (fd, "READY=1", 7, 0, (struct sockaddr *) &addr,
++                offsetof (struct sockaddr_un, sun_path) + len) < 0)
++        seaf_warning ("Failed to notify systemd: %s.\n", strerror (errno));
++    close (fd);
++}
+--- a/common/seaf-utils.h
++++ b/common/seaf-utils.h
+@@ -31,4 +31,8 @@ split_filename (const char *filename, char **name, char **ext);
+ int
+ seaf_delete_repo_tokens (SeafRepo *repo);
+ 
++/* Tell systemd the service is ready (sd_notify protocol), if it asked for it. */
++void
++seaf_notify_ready (void);
++
+ #endif
+--- a/fileserver/fileserver.go
++++ b/fileserver/fileserver.go
+@@ -8,6 +8,7 @@ import (
+ 	"flag"
+ 	"fmt"
+ 	"io"
++	"net"
+ 	"net/http"
+ 	"os"
+ 	"os/signal"
+@@ -293,12 +294,33 @@ func main() {
+ 	server.Addr = fmt.Sprintf("%s:%d", option.Host, option.Port)
+ 	server.Handler = router
+ 
+-	err = server.ListenAndServe()
++	ln, err := net.Listen("tcp", server.Addr)
++	if err == nil {
++		notifyReady()
++		err = server.Serve(ln)
++	}
+ 	if err != nil {
+ 		log.Errorf("File server exiting: %v", err)
+ 	}
+ }
+ 
++// notifyReady tells systemd the service is ready (sd_notify protocol), if it asked for it.
++func notifyReady() {
++	addr := os.Getenv("NOTIFY_SOCKET")
++	if addr == "" {
++		return
++	}
++	conn, err := net.Dial("unixgram", addr)
++	if err != nil {
++		log.Warnf("Failed to notify systemd: %v", err)
++		return
++	}
++	defer conn.Close()
++	if _, err := conn.Write([]byte("READY=1")); err != nil {
++		log.Warnf("Failed to notify systemd: %v", err)
++	}
++}
++
+ func handleSignals() {
+ 	signalChan := make(chan os.Signal, 1)
+ 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+--- a/fuse/seaf-fuse.c
++++ b/fuse/seaf-fuse.c
+@@ -16,6 +16,7 @@
+ #include "utils.h"
+ 
+ #include "seaf-fuse.h"
++#include "seaf-utils.h"
+ 
+ SeafileSession *seaf = NULL;
+ 
+@@ -270,7 +271,16 @@ static struct fuse_opt seaf_fuse_opts[] = {
+     FUSE_OPT_END
+ };
+ 
++/* Called once the mount is set up. */
++static void *seaf_fuse_init (struct fuse_conn_info *conn)
++{
++    (void) conn;
++    seaf_notify_ready ();
++    return NULL;
++}
++
+ static struct fuse_operations seaf_fuse_ops = {
++    .init    = seaf_fuse_init,
+     .getattr = seaf_fuse_getattr,
+     .readdir = seaf_fuse_readdir,
+     .open    = seaf_fuse_open,
+--- a/notification-server/server.go
++++ b/notification-server/server.go
+@@ -6,6 +6,7 @@ import (
+ 	"flag"
+ 	"fmt"
+ 	"io"
++	"net"
+ 	"net/http"
+ 	"os"
+ 	"os/signal"
+@@ -214,12 +215,33 @@ func main() {
+ 	server.Addr = fmt.Sprintf("%s:%d", host, port)
+ 	server.Handler = router
+ 
+-	err = server.ListenAndServe()
++	ln, err := net.Listen("tcp", server.Addr)
++	if err == nil {
++		notifyReady()
++		err = server.Serve(ln)
++	}
+ 	if err != nil {
+ 		log.Infof("notificationserver exiting: %v", err)
+ 	}
+ }
+ 
++// notifyReady tells systemd the service is ready (sd_notify protocol), if it asked for it.
++func notifyReady() {
++	addr := os.Getenv("NOTIFY_SOCKET")
++	if addr == "" {
++		return
++	}
++	conn, err := net.Dial("unixgram", addr)
++	if err != nil {
++		log.Warnf("Failed to notify systemd: %v", err)
++		return
++	}
++	defer conn.Close()
++	if _, err := conn.Write([]byte("READY=1")); err != nil {
++		log.Warnf("Failed to notify systemd: %v", err)
++	}
++}
++
+ func loadJwtPrivateKey() error {
+ 	privateKey = os.Getenv("JWT_PRIVATE_KEY")
+ 	if privateKey == "" {
+--- a/seafevents/main.py
++++ b/seafevents/main.py
+@@ -1,5 +1,6 @@
+ # -*- coding: utf-8 -*-
+ import os
++import socket
+ import logging
+ import argparse
+ 
+@@ -12,6 +13,21 @@ from seafevents.app.signal_handler import set_signal
+ 
+ 
+ 
++def notify_ready():
++    """Tell systemd the service is ready (sd_notify protocol), if it asked for it."""
++    addr = os.environ.get('NOTIFY_SOCKET')
++    if not addr:
++        return
++    if addr[0] == '@':
++        addr = '\0' + addr[1:]
++    try:
++        with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as sock:
++            sock.connect(addr)
++            sock.sendall(b'READY=1')
++    except OSError as e:
++        logging.warning('Failed to notify systemd: %s', e)
++
++
+ def main(background_tasks_only=False):
+     parser = argparse.ArgumentParser(description='seafevents main program')
+     parser.add_argument('--config-file', default=os.path.join(os.getcwd(), 'events.conf'), help='config file')
+@@ -74,6 +90,7 @@ def main(background_tasks_only=False):
+               background_tasks_enabled=background_tasks_enabled)
+ 
+     app.serve_forever()
++    notify_ready()
+ 
+ 
+ def run_background_tasks():
+--- a/seafevents/seafevent_server/seafevent_server.py
++++ b/seafevents/seafevent_server/seafevent_server.py
+@@ -1,5 +1,5 @@
+ from threading import Thread
+-from waitress import serve
++from waitress import create_server
+ 
+ from seafevents.seafevent_server.request_handler import app as application
+ from seafevents.seafevent_server.task_manager import task_manager
+@@ -27,6 +27,9 @@ class SeafEventServer(Thread):
+         repo_archive_task_manager.run()
+         # Face recognition is no longer available.
+         # application.face_recognition_manager = FaceRecognitionManager()
++        # bound here, so the port listens once the app is constructed
++        self._server = create_server(application, host=self._host, port=self._port)
+ 
+     def run(self):
+-        serve(application, host=self._host, port=self._port)
++        self._server.print_listen('Serving on http://{}:{}')
++        self._server.run()
+--- a/server/http-server.c
++++ b/server/http-server.c
+@@ -3256,16 +3256,6 @@ http_server_run (void *arg)
+     HttpServerStruct *server = arg;
+     HttpServer *priv = server->priv;
+ 
+-    priv->evbase = event_base_new();
+-    priv->evhtp = evhtp_new(priv->evbase, NULL);
+-
+-    if (evhtp_bind_socket(priv->evhtp,
+-                          server->bind_addr,
+-                          server->bind_port, 128) < 0) {
+-        seaf_warning ("Could not bind socket: %s\n", strerror (errno));
+-        exit(-1);
+-    }
+-
+     http_request_init (server);
+ 
+     evhtp_use_threads (priv->evhtp, NULL, server->worker_threads, NULL);
+@@ -3415,6 +3405,19 @@ cleanup_expired_httptemp_file (void *arg)
+ int
+ seaf_http_server_start (HttpServerStruct *server)
+ {
++   HttpServer *priv = server->priv;
++
++   /* bound before the thread starts, so the port listens once this returns */
++   priv->evbase = event_base_new();
++   priv->evhtp = evhtp_new(priv->evbase, NULL);
++
++   if (evhtp_bind_socket(priv->evhtp,
++                         server->bind_addr,
++                         server->bind_port, 128) < 0) {
++       seaf_warning ("Could not bind socket: %s\n", strerror (errno));
++       exit(-1);
++   }
++
+    int ret = pthread_create (&server->priv->thread_id, NULL, http_server_run, server);
+    if (ret != 0)
+        return -1;
+--- a/server/seaf-server.c
++++ b/server/seaf-server.c
+@@ -22,6 +22,7 @@
+ #include <searpc-client.h>
+ 
+ #include "seafile-session.h"
++#include "seaf-utils.h"
+ #include "seafile-rpc.h"
+ #include "log.h"
+ #include "utils.h"
+@@ -1383,6 +1384,8 @@ main (int argc, char **argv)
+     /* Create a system default repo to contain the tutorial file. */
+     schedule_create_system_default_repo (seaf);
+ 
++    seaf_notify_ready ();
++
+     event_dispatch ();
+ 
+     return 0;

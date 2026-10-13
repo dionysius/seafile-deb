@@ -2,15 +2,12 @@
 # Gate on a functional first boot of the seafile stack: the seafile-migrate one-shot must have
 # succeeded, seafile.target must be enabled and active with all its members, the core units must log
 # their healthy startup line in journald, and seahub must answer HTTP 200 on its login page — which exercises the whole chain
-# (database init/migrate, seaf-server RPC, cache, static manifest). Waits up to WAIT for readiness,
-# prints logs on failure, exits non-zero on failure (the
-# release gate). prepare.sh already started the services; this never starts anything. Runs IN PLACE
-# as root, requires systemd, reads journald — ephemeral testbed only.
+# (database init/migrate, seaf-server RPC, cache, static manifest). Prints logs on failure, exits
+# non-zero on failure (the release gate). prepare.sh already started the services; this never
+# starts anything. Runs IN PLACE as root, requires systemd, reads journald — ephemeral testbed only.
 #
 # Usage:  boot-check.sh [--out FILE]    # --out: append the result table to FILE (default: stdout)
-# Env:    WAIT   seconds to wait for readiness (default 120)
 set -u
-WAIT="${WAIT:-120}"
 OUT="${OUT:-/dev/stdout}"
 URL="http://127.0.0.1:8000/accounts/login/"
 info()  { printf '\n========== %s ==========\n' "$1"; }
@@ -18,26 +15,20 @@ error() { local code="$1"; shift; echo "$*" >&2; exit "$code"; }
 while [ $# -gt 0 ]; do
   case "$1" in
     --out) OUT="$2"; shift 2 ;;
-    -h|--help) sed -n '2,13p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,10p' "$0"; exit 0 ;;
     *) error 2 "unknown option: $1" ;;
   esac
 done
 [ -d /run/systemd/system ] || error 4 "systemd is not running (/run/systemd/system missing)"
 rc=0; rows=()
 
-http_code() { curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$URL" 2>/dev/null || echo 000; }
+# the first request waits for gunicorn's workers to load seahub
+http_code() { curl -sS -o /dev/null -w '%{http_code}' --max-time 60 "$URL" 2>/dev/null || echo 000; }
 has_msg() { journalctl -u "$1" --no-pager 2>/dev/null | grep -qF "$2"; }
 
-info "Wait for seahub to answer at $URL (timeout ${WAIT}s)"
-i=0; code=000
-while [ "$i" -lt "$WAIT" ]; do
-  for s in seafile-migrate seaf-server seahub; do
-    systemctl is-failed --quiet "$s.service" && { echo "  $s entered failed state"; break 2; }
-  done
-  code=$(http_code); [ "$code" = 200 ] && break
-  sleep 2; i=$((i+2))
-done
-echo "  after ~${i}s: HTTP $code"
+info "seahub answers at $URL"
+code=$(http_code)
+echo "  HTTP $code"
 
 info "seafile-migrate one-shot result"
 mig=$(systemctl show -p Result --value seafile-migrate.service 2>/dev/null)
