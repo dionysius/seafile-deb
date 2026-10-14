@@ -170,7 +170,8 @@ override_dh_auto_install-arch:
 		$(TMPDEB)$(SEAFPREFIX)/bin/parse_seahub_db.py
 
 # synthesize a project from the merged upstream requirements (minus the bundled
-# components), lock it and compile a relocatable venv - nothing to resolve at runtime
+# components), lock it and compile a venv - nothing to resolve at runtime; the build
+# path only lands in its bin/ scripts, removed below
 	mkdir -p $(HUBDEST)
 	{ echo '[project]'; echo 'name = "seahub-deps"'; echo 'version = "0"'; \
 	  echo 'requires-python = ">=3.11"'; echo 'dependencies = ['; \
@@ -178,13 +179,15 @@ override_dh_auto_install-arch:
 	    | grep -viE '^[[:space:]]*(#|wsgidav|seafobj|$$)' | sed 's/.*/  "&",/'; \
 	  echo '  "django-pylibmc>=0.6",'; \
 	  echo '  "pytz",'; \
+	  echo '  "setproctitle",'; \
 	  echo ']'; } > $(HUBDEST)/pyproject.toml
 # django-pylibmc: seahub/settings.py's CACHE_PROVIDER=memcached backend; pytz: imported
-# by seafevents; neither is declared in the three requirements.txt above
+# by seafevents; setproctitle: gunicorn names its master and workers with it; none is
+# declared in the three requirements.txt above
 # libmemcached-dev (Build-Depends) is only for this step: uv still builds django-pylibmc's
 # own pylibmc dependency from source here even though it's discarded and replaced below
 	cd $(HUBDEST) && $(UV) lock --python /usr/bin/python3
-	$(UV) venv --relocatable --python /usr/bin/python3 $(VENV)
+	$(UV) venv --python /usr/bin/python3 $(VENV)
 # UV_FROZEN only here: for uv lock it means --check-exists
 	cd $(HUBDEST) && UV_FROZEN=1 UV_PROJECT_ENVIRONMENT=$(VENV) $(UV) sync
 # self-contained venv (system site-packages would leak conflicts); bundle the
@@ -209,8 +212,8 @@ override_dh_auto_install-arch:
 		| gzip -9n > $(TMPDEB)/usr/share/doc/seafile-server/THIRD-PARTY-LICENSES.txt.gz
 
 # build-only leftovers: bytecode, the wheels' test suites, type stubs, Cython and C sources,
-# translation sources, install records, the console scripts nothing calls (the units run
-# python and gunicorn), the synthesized project
+# translation sources, install records, the console scripts nothing calls, the synthesized
+# project
 	find $(VENV) $(TMPDEB)$(PYSEAF) -type d \( -name __pycache__ -o -name tests \) -prune -exec rm -rf {} +
 	find $(VENV)/lib \( -name '*.pyi' -o -name py.typed -o -name '*.pyx' -o -name '*.pxd' -o -name '*.pxi' \
 		-o -name '*.c' -o -name '*.cpp' -o -name '*.h' -o -name '*.hpp' -o -name '*.po' -o -path '*.dist-info/RECORD' \) -delete
@@ -220,7 +223,7 @@ override_dh_auto_install-arch:
 		django/contrib/humanize django/contrib/postgres django/contrib/redirects django/contrib/sitemaps \
 		django/contrib/syndication django/contrib/admin/static django/contrib/admin/templates \
 		rest_framework/static rest_framework/templates Crypto/SelfTest
-	find $(VENV)/bin -mindepth 1 ! -name 'python*' ! -name gunicorn -delete
+	find $(VENV)/bin -mindepth 1 ! -name 'python*' -delete
 	rm -f $(VENV)/.gitignore $(HUBDEST)/pyproject.toml $(HUBDEST)/uv.lock
 
 # seahub tree in upstream's layout: seafdav/seafobj/objwrapper inside thirdpart,

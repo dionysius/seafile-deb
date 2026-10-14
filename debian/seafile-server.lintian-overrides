@@ -8,11 +8,9 @@ no-manual-page [usr/bin/seahub-reset-admin]
 # the server units are bundled in seafile.target
 systemd-service-file-refers-to-unusual-wantedby-target seafile.target [usr/lib/systemd/system/*]
 
-# venv wheels ship as built: their own private shared objects, uv's sh/python
-# entry point trampolines and fonts
+# venv wheels ship as built: their own private shared objects, scripts and fonts
 unstripped-binary-or-object [usr/lib/seahub/venv/*]
 embedded-library * [usr/lib/seahub/venv/*]
-shell-script-fails-syntax-check [usr/lib/seahub/venv/bin/*]
 unusual-interpreter * [usr/lib/seahub/venv/*]
 executable-not-elf-or-script [usr/lib/seahub/venv/*]
 duplicate-font-file * [usr/lib/seahub/venv/*]

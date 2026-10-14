@@ -25,7 +25,7 @@ EnvironmentFile=%E/seafile/seafile.env
 Environment=SEAFILE_LOG_TO_STDOUT=true
 WorkingDirectory=/usr/lib/seahub/seahub
 Type=exec
-ExecStart=/usr/lib/seahub/venv/bin/gunicorn seahub.wsgi:application -c /etc/seafile/gunicorn.conf.py
+ExecStart=/usr/lib/seahub/venv/bin/python -m gunicorn seahub.wsgi:application -c /etc/seafile/gunicorn.conf.py
 # Restart on failure
 Restart=on-failure
 RestartSec=5s
