@@ -36,6 +36,7 @@ UV = $(CURDIR)/debian/.buildbin/uv
 export UV_PYTHON_PREFERENCE = only-system
 export UV_LINK_MODE = copy
 export UV_CACHE_DIR = $(CURDIR)/debian/.uvcache
+export UV_NO_DEV = 1
 
 # keep npm's cache inside the build tree
 export npm_config_cache = $(CURDIR)/debian/.npmcache
@@ -184,8 +185,8 @@ override_dh_auto_install-arch:
 # own pylibmc dependency from source here even though it's discarded and replaced below
 	cd $(HUBDEST) && $(UV) lock --python /usr/bin/python3
 	$(UV) venv --relocatable --python /usr/bin/python3 $(VENV)
-	cd $(HUBDEST) && UV_PROJECT_ENVIRONMENT=$(VENV) \
-		$(UV) sync --frozen --no-dev --inexact
+# UV_FROZEN only here: for uv lock it means --check-exists
+	cd $(HUBDEST) && UV_FROZEN=1 UV_PROJECT_ENVIRONMENT=$(VENV) $(UV) sync
 # self-contained venv (system site-packages would leak conflicts); bundle the
 # pure-python pysearpc, seaserv comes via PYTHONPATH in the units
 	cp -a /usr/lib/python3/dist-packages/pysearpc \
