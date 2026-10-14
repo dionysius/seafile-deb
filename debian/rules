@@ -67,8 +67,8 @@ PYSEAF = $(SEAFPREFIX)/lib/python3/site-packages
 # statically linked go binaries: record the go toolchain source in Built-Using
 BUILT_USING = $(shell dpkg-query -f '$${source:Package} (= $${source:Version})' -W $$(dpkg-query -S "$$(go env GOROOT)/bin/go" | cut -d: -f1))
 # seahub's venv is compiled for the distribution python; pin the runtime to that minor
-PY3_MINOR = $(shell python3 -c 'import sys; print("%d.%d" % sys.version_info[:2])')
-PY3_NEXT = $(shell python3 -c 'import sys; print("%d.%d" % (sys.version_info[0], sys.version_info[1] + 1))')
+PY3_VER := $(shell pkgconf --modversion python3)
+PY3_NEXT := $(shell echo $(PY3_VER) | awk -F. '{print $$1"."$$2+1}')
 
 %:
 	dh $@
@@ -182,8 +182,8 @@ override_dh_auto_install-arch:
 # by seafevents; neither is declared in the three requirements.txt above
 # libmemcached-dev (Build-Depends) is only for this step: uv still builds django-pylibmc's
 # own pylibmc dependency from source here even though it's discarded and replaced below
-	cd $(HUBDEST) && $(UV) lock --python python3
-	$(UV) venv --relocatable --python python3 $(VENV)
+	cd $(HUBDEST) && $(UV) lock --python /usr/bin/python3
+	$(UV) venv --relocatable --python /usr/bin/python3 $(VENV)
 	cd $(HUBDEST) && UV_PROJECT_ENVIRONMENT=$(VENV) \
 		$(UV) sync --frozen --no-dev --inexact
 # self-contained venv (system site-packages would leak conflicts); bundle the
@@ -310,4 +310,4 @@ override_dh_shlibdeps-arch:
 
 override_dh_gencontrol:
 	dh_gencontrol -- -Vmisc:Built-Using='$(BUILT_USING)' \
-		-V'python3:Depends=python3 (>= $(PY3_MINOR)), python3 (<< $(PY3_NEXT))'
+		-V'python3:Depends=python3 (>= $(PY3_VER)~), python3 (<< $(PY3_NEXT))'
