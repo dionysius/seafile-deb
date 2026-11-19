@@ -252,7 +252,7 @@ Forwarded: not-yet
 +        self._server.run()
 --- a/server/http-server.c
 +++ b/server/http-server.c
-@@ -3256,16 +3256,6 @@ http_server_run (void *arg)
+@@ -3263,16 +3263,6 @@ http_server_run (void *arg)
      HttpServerStruct *server = arg;
      HttpServer *priv = server->priv;
  
@@ -269,7 +269,7 @@ Forwarded: not-yet
      http_request_init (server);
  
      evhtp_use_threads (priv->evhtp, NULL, server->worker_threads, NULL);
-@@ -3415,6 +3405,19 @@ cleanup_expired_httptemp_file (void *arg)
+@@ -3422,6 +3412,19 @@ cleanup_expired_httptemp_file (void *arg)
  int
  seaf_http_server_start (HttpServerStruct *server)
  {
