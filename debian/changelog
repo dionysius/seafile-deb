@@ -1,3 +1,18 @@
+seafile-server (14.0.9-1) unstable; urgency=medium
+
+  * Config templates: commented settings show the active default or are marked as examples, examples taken from the upstream manual
+  * seaf-fsck-fhs-paths.patch: refresh, the second hunk applied with an offset
+  * venv: python3 dependency in dh_python3's range form, the version from pkgconf
+  * venv: exact uv sync, frozen and no-dev set through environment variables
+  * seahub runs gunicorn through the venv's python, named by setproctitle; the venv is no longer relocatable and keeps only its interpreter in bin/
+  * Units notify systemd once ready: seaf-server, seaf-fuse, the go fileserver and notification server and seafevents send READY=1 (systemd-readiness-notification.patch), gunicorn does for seahub and seafdav
+  * seafile.target is ordered after its members again, so starting or restarting it waits until they are ready; seaf-gc and seaf-fsck refuse while a unit is still stopping, CI drops its wait loops
+  * Support the optional seafile-thumbnail-server: commented ENABLE_THUMBNAIL_SERVER in seahub_settings.py and /thumbnail/ proxy routes, suggested by seafile-server
+  * systemd-readiness-notification.patch: refresh for 14.0.9, the http-server.c hunks applied with an offset
+  * update to [14.0.9](https://github.com/haiwen/seafile-server/releases/tag/v14.0.9-server)
+
+ -- dionysius <dragon.dionysius@gmail.com>  Thu, 19 Nov 2026 03:24:42 +0100
+
 seafile-server (14.0.8-1) unstable; urgency=medium
 
   * README: drop the development warning, the packaging is stable
